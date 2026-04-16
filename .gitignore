@@ -1,0 +1,50 @@
+# ========== ENVIRONMENT & SECRETS ==========
+.env
+.env.local
+.env.production
+.env.staging
+.env.*.local
+
+# ========== DEPENDENCIES ==========
+node_modules/
+.pnp
+.pnp.js
+
+# ========== BUILD OUTPUT ==========
+.next/
+out/
+build/
+dist/
+
+# ========== DATABASE ==========
+*.sqlite
+*.sqlite3
+dev.sqlite
+
+# ========== LOGS ==========
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+error.log
+server_log.txt
+
+# ========== OS FILES ==========
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========== IDE ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+
+# ========== UPLOADS (user data) ==========
+uploads/
+
+# ========== MISC ==========
+*.tsbuildinfo
+.venv/
+__pycache__/

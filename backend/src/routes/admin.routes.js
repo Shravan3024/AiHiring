@@ -1,0 +1,133 @@
+const express = require("express");
+const authenticateToken = require("../middleware/auth.middleware");
+const checkRole = require("../middleware/role.middleware");
+const {
+  getHRs,
+  createHR,
+  deleteHR
+} = require("../controllers/admin.controller");
+const {
+  createTechnicalQuestion,
+  getTechnicalQuestions,
+  deleteTechnicalQuestion
+} = require("../controllers/admin.question.controller");
+const {
+  getDashboardStats,
+  getHiringVolumeTrend,
+  getRoleWiseApplications,
+  getFunnelAnalysis,
+  getApprovalBottleneck,
+  getSystemHealth,
+} = require("../controllers/admin.dashboard.controller");
+const {
+  createJob,
+  updateJob,
+  getJobs,
+  getJobById,
+  activateJob,
+  closeJob,
+  deleteJob,
+} = require("../controllers/admin.job.controller");
+const {
+  createAIConfig,
+  updateAIConfig,
+  getAIConfig,
+  getAllAIConfigs,
+  testAIConfig,
+} = require("../controllers/admin.aiConfig.controller");
+const {
+  deployAIModel,
+  activateAIModel,
+  rollbackAIModel,
+  getAIModels,
+  updateModelAccuracy,
+} = require("../controllers/admin.aiModel.controller");
+const {
+  createWorkflow,
+  updateWorkflow,
+  getWorkflows,
+  getWorkflowByJobId,
+} = require("../controllers/admin.workflow.controller");
+const {
+  createOfferTemplate,
+  updateOfferTemplate,
+  getOfferTemplates,
+  getOfferTemplate,
+} = require("../controllers/admin.offerTemplate.controller");
+const {
+  getAuditLogs,
+  searchAuditLogs,
+  getDataRetentionPolicy,
+  updateDataRetentionPolicy,
+  getSystemHealth: getSystemHealthAudit,
+  updateSystemHealth,
+} = require("../controllers/admin.audit.controller");
+
+const router = express.Router();
+
+// Apply authentication middleware
+router.use(authenticateToken);
+router.use(checkRole(["ADMIN"]));
+
+// ===================== DASHBOARD =====================
+router.get("/dashboard/stats", getDashboardStats);
+router.get("/dashboard/hiring-trend", getHiringVolumeTrend);
+router.get("/dashboard/role-applications", getRoleWiseApplications);
+router.get("/dashboard/funnel", getFunnelAnalysis);
+router.get("/dashboard/approval-bottleneck", getApprovalBottleneck);
+router.get("/dashboard/system-health", getSystemHealth);
+
+// ===================== JOB MANAGEMENT =====================
+router.post("/jobs", createJob);
+router.get("/jobs", getJobs);
+router.get("/jobs/:jobId", getJobById);
+router.put("/jobs/:jobId", updateJob);
+router.patch("/jobs/:jobId/activate", activateJob);
+router.patch("/jobs/:jobId/close", closeJob);
+router.delete("/jobs/:jobId", deleteJob);
+
+// ===================== AI CONFIGURATION =====================
+router.post("/ai-config", createAIConfig);
+router.get("/ai-config", getAllAIConfigs);
+router.get("/ai-config/job/:jobId", getAIConfig);
+router.put("/ai-config/:configId", updateAIConfig);
+router.post("/ai-config/:configId/test", testAIConfig);
+
+// ===================== AI MODEL MANAGEMENT =====================
+router.post("/ai-models", deployAIModel);
+router.get("/ai-models", getAIModels);
+router.patch("/ai-models/:modelId/activate", activateAIModel);
+router.post("/ai-models/:modelId/rollback", rollbackAIModel);
+router.put("/ai-models/:modelId/accuracy", updateModelAccuracy);
+
+// ===================== WORKFLOW MANAGEMENT =====================
+router.post("/workflows", createWorkflow);
+router.get("/workflows", getWorkflows);
+router.get("/workflows/job/:jobId", getWorkflowByJobId);
+router.put("/workflows/:workflowId", updateWorkflow);
+
+// ===================== OFFER TEMPLATES =====================
+router.post("/offer-templates", createOfferTemplate);
+router.get("/offer-templates", getOfferTemplates);
+router.get("/offer-templates/:templateId", getOfferTemplate);
+router.put("/offer-templates/:templateId", updateOfferTemplate);
+
+// ===================== AUDIT & COMPLIANCE =====================
+router.get("/audit-logs", getAuditLogs);
+router.get("/audit-logs/search", searchAuditLogs);
+router.get("/data-retention-policy", getDataRetentionPolicy);
+router.put("/data-retention-policy", updateDataRetentionPolicy);
+router.get("/system-health", getSystemHealthAudit);
+router.put("/system-health", updateSystemHealth);
+
+// ===================== HR MANAGEMENT =====================
+router.get("/hrs", getHRs);
+router.post("/hrs", createHR);
+router.delete("/hrs/:id", deleteHR);
+
+// ===================== TECHNICAL QUESTION BANK (ADMIN ONLY) =====================
+router.post("/questions", createTechnicalQuestion);
+router.get("/questions", getTechnicalQuestions);
+router.delete("/questions/:questionId", deleteTechnicalQuestion);
+
+module.exports = router;

@@ -1,0 +1,322 @@
+{
+  "info": {
+    "name": "HR Panel E2E Testing",
+    "description": "End-to-end tests for newly implemented HR Panel endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Analytics Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/analytics?jobId={{jobId}}",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "analytics"],
+              "query": [
+                {
+                  "key": "jobId",
+                  "value": "{{jobId}}"
+                },
+                {
+                  "key": "departmentId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "skillLevel",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Analytics to CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": {{jobId}},\n  \"departmentId\": null,\n  \"skillLevel\": \"all\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai/analytics/export",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "analytics", "export"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "HR Applications",
+      "item": [
+        {
+          "name": "Get All Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/applications?status={{status}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "applications"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{status}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/applications/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "applications", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "HR Actions",
+      "item": [
+        {
+          "name": "Send Offer Letter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"salary\": 1000000,\n  \"joining_date\": \"2026-05-01\",\n  \"designation\": \"Software Engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hr/send-offer/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "send-offer", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Rejection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Did not meet minimum technical requirements for this position\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hr/send-rejection/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "send-rejection", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Schedule Interview",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interview_date\": \"2026-04-15\",\n  \"interview_time\": \"10:00 AM\",\n  \"interviewer\": \"John Manager\",\n  \"interview_type\": \"technical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hr/schedule-interview/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "schedule-interview", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Internal Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Strong technical background, consider for team lead role\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hr/add-note/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["hr", "add-note", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Analysis",
+      "item": [
+        {
+          "name": "Get AI Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/analysis/{{applicationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "analysis", "{{applicationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Make Final AI Decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": {{applicationId}},\n  \"jobId\": {{jobId}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai/decision/make",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "decision", "make"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "status",
+      "value": "RECOMMENDED_BY_AI",
+      "type": "string"
+    }
+  ]
+}
