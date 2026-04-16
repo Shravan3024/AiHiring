@@ -1,4 +1,6 @@
-module.exports = (sequelize, DataTypes) => {
+const { DataTypes } = require("sequelize");
+
+module.exports = (sequelize) => {
   const ApprovalRecord = sequelize.define('ApprovalRecord', {
     id: {
       type: DataTypes.UUID,
@@ -15,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'Applications', key: 'id' }
     },
     hrUserId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: 'Users', key: 'id' }
     },
@@ -82,7 +84,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     escalationReason: DataTypes.TEXT,
     escalatedTo: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       references: { model: 'Users', key: 'id' }
     },
     auditTrail: {

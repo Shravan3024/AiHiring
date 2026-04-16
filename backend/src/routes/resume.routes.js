@@ -28,13 +28,11 @@ router.post(
   resumeController.uploadResume
 );
 
-// TODO: reparseResume function not yet implemented
 // POST /api/resume/reparse/:applicationId
-// router.post(
-//   "/reparse/:applicationId",
-//   auth,
-//   // role(["HR", "ADMIN"]), // Add role check if possible, or assume auth covers it for now
-//   resumeController.reparseResume
-// );
+router.post(
+  "/reparse/:applicationId",
+  auth,
+  resumeController.reparseResume
+);
 
 module.exports = router;

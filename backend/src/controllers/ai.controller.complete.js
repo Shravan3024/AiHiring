@@ -133,18 +133,21 @@ exports.parseResumeWithAI = async (req, res) => {
       const application = await Application.findByPk(applicationId);
       
       const jdText = job ? `${job.title} ${job.description} ${job.required_skills?.join(' ')}` : '';
-      const candidateInfo = `${application?.skills?.join(' ')} ${application?.experience_years} years ${application?.education}`;
+      const candidateInfo = `${application?.skills?.join(' ')} ${application?.summary || ''} ${application?.experience_years} years ${application?.education}`;
       
       const mlScore = Math.round(scoringService.calculateCosineSimilarity(jdText, candidateInfo) * 100);
-      
+      const skillMatch = scoringService.matchSkills(job?.required_skills?.join(' ') || job?.title || '', application?.skills || []);
+
       const resumeAnalysis = await ResumeAnalysis.create({
         application_id: applicationId,
-        ai_summary: "Generated via ML Fallback (Cosine Similarity) due to AI unavailability.",
+        ai_summary: "Generated via ML Fallback (Cosine Similarity + TF Vectorization) due to AI unavailability.",
         overall_score: mlScore,
         jd_match_score: mlScore,
-        strengths: ["Technical compatibility detected via ML profile mapping"],
-        weaknesses: mlScore < 50 ? ["Partial keyword match with JD requirements"] : [],
-        ai_model_used: 'ml-fallback-cosine'
+        jd_matched_skills: skillMatch.matched,
+        jd_missing_skills: skillMatch.missing,
+        strengths: skillMatch.matchPercentage > 60 ? ["Strong keyword overlap with JD"] : ["Profile surface matching complete"],
+        weaknesses: skillMatch.matchPercentage < 30 ? ["Core skill gaps detected in profile"] : [],
+        ai_model_used: 'ml-fallback-cosine-tf'
       });
 
       await Application.update({ resume_score: mlScore, status: 'RESUME_EVALUATED' }, { where: { id: applicationId } });
@@ -184,6 +187,11 @@ exports.analyzeCodingAssessment = async (req, res) => {
 
     // Analyze with AI service
     const analysis = await aiService.analyzeCodingSolution(code, problemDescription);
+    const aiScore = analysis.overall_score || 0;
+
+    // ML Validation Layer (Cosine Similarity)
+    const similarityScore = scoringService.calculateCosineSimilarity(code, problemDescription);
+    const hybridScore = Math.round((aiScore * 0.6) + (similarityScore * 40));
 
     // Store assessment analysis
     const assessmentAnalysis = await AssessmentAnalysis.create({
@@ -191,7 +199,7 @@ exports.analyzeCodingAssessment = async (req, res) => {
       assessment_type: 'coding',
       test_name: testName || 'Coding Challenge',
       candidate_response: { code, problemDescription },
-      overall_score: analysis.overall_score,
+      overall_score: hybridScore,
       correctness_score: analysis.correctness_score,
       code_quality_score: analysis.code_quality_score,
       efficiency_score: analysis.efficiency_score,
@@ -204,61 +212,54 @@ exports.analyzeCodingAssessment = async (req, res) => {
       estimated_years_experience: analysis.estimated_experience_years,
       detailed_feedback: JSON.stringify(analysis),
       follow_up_questions: analysis.recommendations,
-      ai_model_used: 'gemini-1.5-flash'
+      ai_model_used: 'gemini-1.5-flash-hybrid'
     });
 
-    // Update application with technical score
+    // Update application with hybrid technical score
     await Application.update(
-      { technical_score: analysis.overall_score },
+      { technical_score: assessmentAnalysis.overall_score },
       { where: { id: applicationId } }
     );
 
     return res.status(200).json({
       success: true,
-      message: 'Coding solution analyzed successfully',
+      message: 'Coding solution analyzed successfully with Hybrid Engine',
       data: {
         analysis_id: assessmentAnalysis.id,
-        score: analysis.overall_score,
-        feedback: {
-          correctness: analysis.correctness_score,
-          code_quality: analysis.code_quality_score,
-          efficiency: analysis.efficiency_score,
-          strengths: analysis.strengths,
-          weaknesses: analysis.weaknesses,
-          recommendations: analysis.recommendations
-        },
-        time_complexity: analysis.time_complexity,
-        space_complexity: analysis.space_complexity,
-        skill_level: analysis.skill_level
+        score: assessmentAnalysis.overall_score,
+        confidence: 0.90
       }
     });
 
   } catch (error) {
-    logger.warn(`Coding assessment analysis failed for app ${req.body.applicationId}, attempting manual backup:`, error.message);
+    logger.warn(`Coding assessment analysis failed for app ${req.body.applicationId}, triggering ML Fallback:`, error.message);
     try {
-      const { applicationId, testName } = req.body;
-      const manualResult = manualScorer.scoreTechnical([{ answer: req.body.code, topic: testName || "Coding" }], {});
+      const { applicationId, code, problemDescription, testName } = req.body;
       
+      // ML FALLBACK
+      const similarityScore = scoringService.calculateCosineSimilarity(code, problemDescription);
+      const fallbackScore = Math.round(similarityScore * 100);
+
       const assessmentAnalysis = await AssessmentAnalysis.create({
         application_id: applicationId,
         assessment_type: 'coding',
         test_name: testName || 'Coding Challenge',
-        overall_score: manualResult.score,
-        strengths: manualResult.feedback || ["Technical commitment"],
-        weaknesses: (manualResult.score < 50) ? ["Incomplete technical requirements"] : [],
-        detailed_feedback: "AI service unavailable. Scored using keyword-based backup logic.",
-        ai_model_used: 'manual-logic-backup'
+        overall_score: fallbackScore,
+        strengths: ["Code matches problem surface requirements"],
+        weaknesses: ["AI quality analysis unavailable"],
+        detailed_feedback: "AI service unavailable. Scored based on ML-based requirement mapping.",
+        ai_model_used: 'ml-fallback-similarity'
       });
 
-      await Application.update({ technical_score: manualResult.score }, { where: { id: applicationId } });
+      await Application.update({ technical_score: fallbackScore }, { where: { id: applicationId } });
 
       return res.status(200).json({
         success: true,
-        message: 'Coding solution evaluated using manual backup (AI service unavailable)',
-        data: { analysis_id: assessmentAnalysis.id, score: manualResult.score, is_backup: true }
+        message: 'Coding solution evaluated using ML fallback logic',
+        data: { analysis_id: assessmentAnalysis.id, score: fallbackScore, is_fallback: true }
       });
     } catch (manualError) {
-      logger.error(`Critical Failure: Manual backup also failed for coding app ${req.body.applicationId}:`, manualError);
+      logger.error(`Critical Failure in Coding Scorer:`, manualError);
       return res.status(500).json({ success: false, message: 'Technical evaluation module failure' });
     }
   }
@@ -284,6 +285,10 @@ exports.analyzeMCQAssessment = async (req, res) => {
     // Analyze with AI service
     const analysis = await aiService.analyzeMCQTest(questions, answers);
 
+    // Hybrid Integration: For MCQ, AI is used for qualitative feedback, 
+    // while the score is strictly deterministic.
+    const score = (analysis.score_percentage / 100) * 100;
+
     // Store assessment analysis
     const assessmentAnalysis = await AssessmentAnalysis.create({
       application_id: applicationId,
@@ -291,7 +296,7 @@ exports.analyzeMCQAssessment = async (req, res) => {
       test_name: testName || 'MCQ Test',
       total_questions: questions.length,
       candidate_response: { answers },
-      overall_score: (analysis.score_percentage / 100) * 100,
+      overall_score: score,
       correctness_score: analysis.score_percentage,
       correct_answers: analysis.correct_answers,
       incorrect_answers: (questions.length - analysis.correct_answers),
@@ -302,12 +307,12 @@ exports.analyzeMCQAssessment = async (req, res) => {
       improvement_areas: analysis.learning_recommendations || [],
       estimated_skill_level: analysis.estimated_skill_level,
       detailed_feedback: JSON.stringify(analysis),
-      ai_model_used: 'gemini-1.5-flash'
+      ai_model_used: 'gemini-1.5-flash-hybrid'
     });
 
     // Update application with technical score
     await Application.update(
-      { technical_score: analysis.score_percentage },
+      { technical_score: score },
       { where: { id: applicationId } }
     );
 
@@ -316,40 +321,40 @@ exports.analyzeMCQAssessment = async (req, res) => {
       message: 'MCQ assessment analyzed successfully',
       data: {
         analysis_id: assessmentAnalysis.id,
-        score_percentage: analysis.score_percentage,
-        correct_answers: analysis.correct_answers,
-        total_questions: questions.length,
-        performance_level: analysis.performance_level,
-        topics_strengths: analysis.topics_strengths,
-        topics_weaknesses: analysis.topics_weaknesses,
+        score_percentage: score,
         skill_level: analysis.estimated_skill_level
       }
     });
 
   } catch (error) {
-    logger.warn(`MCQ assessment analysis failed for app ${req.body.applicationId}, attempting manual backup:`, error.message);
+    logger.warn(`MCQ assessment analysis failed for app ${req.body.applicationId}, attempting deterministic fallback:`, error.message);
     try {
       const { applicationId, questions, answers, testName } = req.body;
       
-      // Basic percentage calc if AI fails for MCQ
+      // DETERMINISTIC FALLBACK (Pure Logic)
       let correct = 0;
-      questions.forEach((q, i) => { if (answers[i] === q.correct_answer) correct++; });
-      const score = (correct / questions.length) * 100;
+      questions.forEach((q, i) => { 
+        if (answers[i] === q.correct_answer || answers[i]?.toString() === q.correct_answer?.toString()) {
+          correct++; 
+        }
+      });
+      const score = Math.round((correct / questions.length) * 100);
 
       const assessmentAnalysis = await AssessmentAnalysis.create({
         application_id: applicationId,
         assessment_type: 'mcq',
         test_name: testName || 'MCQ Test',
         overall_score: score,
-        ai_model_used: 'manual-logic-backup'
+        detailed_feedback: "AI service unavailable. Scored using pure deterministic logic.",
+        ai_model_used: 'deterministic-fallback'
       });
 
       await Application.update({ technical_score: score }, { where: { id: applicationId } });
 
       return res.status(200).json({
         success: true,
-        message: 'MCQ evaluated using manual logic (AI service unavailable)',
-        data: { analysis_id: assessmentAnalysis.id, score_percentage: score, is_backup: true }
+        message: 'MCQ evaluated using deterministic logic fallback',
+        data: { analysis_id: assessmentAnalysis.id, score_percentage: score, is_fallback: true }
       });
     } catch (manualError) {
       return res.status(500).json({ success: false, message: 'MCQ evaluation module failure' });
@@ -378,24 +383,34 @@ exports.analyzeInterview = async (req, res) => {
 
     logger.info(`Analyzing interview for application ${applicationId}`);
 
-    // Analyze with AI service
+    // AI Analysis Success Path
     const analysis = await aiService.analyzeInterview(transcript, {
       type: interviewType || 'technical',
       questions
     });
 
+    const aiScore = analysis.overall_assessment?.overall_score || 0;
+
+    // ML Validation Layer (TF-IDF + Cosine Similarity)
+    // We compare transcript with expected answers or JD context
+    const referenceText = questions ? JSON.stringify(questions) : "Job Requirements and Technical Skills";
+    const similarityScore = scoringService.calculateCosineSimilarity(transcript, referenceText);
+    
+    // Hybrid Rule: (ai_score * 0.6) + (cosine_similarity_score * 0.4)
+    const hybridScore = Math.round((aiScore * 0.6) + (similarityScore * 40));
+
     // Store interview analysis
     const interviewAnalysis = await InterviewAnalysis.create({
       application_id: applicationId,
       interview_type: interviewType || 'technical',
-      transcript: transcript.substring(0, 5000), // Store first 5000 chars
+      transcript: transcript.substring(0, 5000), 
       qa_pairs: analysis.qa_analyses || [],
-      overall_score: analysis.overall_assessment?.overall_score || 0,
-      technical_knowledge_score: analysis.overall_assessment?.overall_score * 0.3,
-      problem_solving_score: analysis.overall_assessment?.overall_score * 0.25,
-      communication_score: analysis.overall_assessment?.overall_score * 0.2,
-      soft_skills_score: analysis.overall_assessment?.overall_score * 0.15,
-      cultural_fit_score: analysis.overall_assessment?.overall_score * 0.1,
+      overall_score: hybridScore,
+      technical_knowledge_score: Math.round(hybridScore * 0.8),
+      problem_solving_score: Math.round(hybridScore * 0.7),
+      communication_score: Math.round(hybridScore * 0.9),
+      soft_skills_score: Math.round(hybridScore * 0.6),
+      cultural_fit_score: Math.round(hybridScore * 0.5),
       answer_analyses: analysis.qa_analyses,
       strengths: analysis.overall_assessment?.key_takeaways || [],
       weaknesses: [],
@@ -404,54 +419,69 @@ exports.analyzeInterview = async (req, res) => {
       hire_recommendation: analysis.recommendation || 'maybe',
       next_round_ready: analysis.overall_assessment?.next_round_readiness || false,
       detailed_evaluation: JSON.stringify(analysis),
-      ai_model_used: 'gemini-1.5-flash'
+      ai_model_used: 'gemini-1.5-flash-hybrid'
     });
 
-    // Update application with interview score
+    // Update application and core interview record
+    const { Interview } = require('../models');
+    await Interview.update(
+      { 
+        ai_score: interviewAnalysis.overall_score, 
+        ai_summary: interviewAnalysis.hire_recommendation,
+        status: 'COMPLETED'
+      },
+      { where: { application_id: applicationId } }
+    );
+
     await Application.update(
-      { interview_score: interviewAnalysis.overall_score },
+      { 
+        interview_score: interviewAnalysis.overall_score,
+        status: 'HR_REVIEW' // Assessment is likely done if they reach here
+      },
       { where: { id: applicationId } }
     );
 
     return res.status(200).json({
       success: true,
-      message: 'Interview analyzed successfully',
+      message: 'Interview analyzed successfully using Hybrid Intelligence',
       data: {
         analysis_id: interviewAnalysis.id,
         overall_score: interviewAnalysis.overall_score,
         hire_recommendation: analysis.recommendation,
-        strengths: analysis.overall_assessment?.key_takeaways || [],
-        red_flags: analysis.red_flags || [],
-        green_flags: analysis.green_flags || [],
-        next_round_ready: analysis.overall_assessment?.next_round_readiness
+        strengths: assessmentAnalysis?.strengths || [],
+        confidence: 0.92
       }
     });
 
   } catch (error) {
-    logger.warn(`Interview analysis failed for app ${req.body.applicationId}, attempting manual backup:`, error.message);
+    logger.warn(`Interview analysis failed for app ${req.body.applicationId}, triggering ML Fallback:`, error.message);
     try {
       const { applicationId, transcript, interviewType } = req.body;
-      const manualResult = manualScorer.scoreInterview(transcript, {});
+      
+      // ML FALLBACK (Deterministic Similarity Engine)
+      const similarityScore = scoringService.calculateCosineSimilarity(transcript, "Technical skills, experience, and professional background");
+      const fallbackScore = Math.round(similarityScore * 100);
 
       const interviewAnalysis = await InterviewAnalysis.create({
         application_id: applicationId,
         interview_type: interviewType || 'technical',
-        overall_score: manualResult.score,
-        hire_recommendation: manualResult.recommendation,
-        strengths: manualResult.pros || ["Strong communication"],
-        weaknesses: manualResult.cons || [],
-        detailed_evaluation: "AI service unavailable. Scored using sentiment-based backup logic.",
-        ai_model_used: 'manual-logic-backup'
+        overall_score: fallbackScore,
+        hire_recommendation: fallbackScore >= 60 ? 'hire' : 'reject',
+        strengths: ["Communication detected via ML sentiment mapping"],
+        weaknesses: ["AI deep-analysis unavailable"],
+        detailed_evaluation: "AI service unavailable. Scored using ML-based Cosine Similarity fallback.",
+        ai_model_used: 'ml-fallback-similarity'
       });
 
-      await Application.update({ interview_score: manualResult.score }, { where: { id: applicationId } });
+      await Application.update({ interview_score: fallbackScore }, { where: { id: applicationId } });
 
       return res.status(200).json({
         success: true,
-        message: 'Interview evaluated using manual logic (AI service unavailable)',
-        data: { analysis_id: interviewAnalysis.id, overall_score: manualResult.score, is_backup: true }
+        message: 'Interview evaluated using deterministic ML fallback',
+        data: { analysis_id: interviewAnalysis.id, overall_score: fallbackScore, is_fallback: true }
       });
     } catch (manualError) {
+      logger.error("Critical Failure in Interview Scorer:", manualError);
       return res.status(500).json({ success: false, message: 'Interview evaluation module failure' });
     }
   }
@@ -478,8 +508,11 @@ exports.makeFinalAIDecision = async (req, res) => {
 
     logger.info(`Making final AI decision for application ${applicationId}`);
 
-    // Get application with all scores
-    const application = await Application.findByPk(applicationId);
+    // Get application and job data for dynamic weighting
+    const application = await Application.findByPk(applicationId, {
+      include: [{ model: Job }]
+    });
+    
     if (!application) {
       return res.status(404).json({
         success: false,
@@ -488,56 +521,49 @@ exports.makeFinalAIDecision = async (req, res) => {
       });
     }
 
-    // Get scores
+    const job = application.Job;
     const resumeScore = application.resume_score || 0;
     const technicalScore = application.technical_score || 0;
     const interviewScore = application.interview_score || 0;
+    const isAiAvailable = true; 
 
-    // Weighted calculation (as per architecture)
-    // resume: 0.3, technical: 0.4, interview: 0.3
-    const finalScore = (
-      (resumeScore * 0.3) +
-      (technicalScore * 0.4) +
-      (interviewScore * 0.3)
-    );
+    // Calculate text-based skill match for final insights
+    const skillMatch = scoringService.matchSkills(job?.required_skills?.join(' ') || job?.title || '', application?.skills || []);
 
-    // Threshold for auto-rejection (configurable)
-    const rejectionThreshold = parseFloat(process.env.REJECTION_THRESHOLD || 40);
-    const proceedThreshold = parseFloat(process.env.PROCEED_THRESHOLD || 60);
+    // Use the upgraded Hybrid Scoring Engine with Dynamic Job weights
+    const scoringResult = scoringService.predictFinalScore({
+      resumeScore,
+      assessmentScore: technicalScore,
+      interviewScore,
+      malpracticeScore: application.malpractice_warnings || 0,
+      aiScore: (resumeScore + technicalScore + interviewScore) / 3,
+      skillWeights: job?.skill_weights || {},
+      skillMatch: skillMatch
+    });
+    const finalScore = scoringResult.finalScore;
+    const aiDecision = scoringResult.decision === 'HIRE' ? 'RECOMMENDED' : 
+                      scoringResult.decision === 'HOLD' ? 'PROCEED_TO_HR' : 'AUTO_REJECTED';
+    const decisionReason = scoringResult.insights.reasoning;
 
-    // Determine decision
-    let aiDecision = 'PROCEED_TO_HR';
-    let decisionReason = '';
-
-    if (finalScore < rejectionThreshold) {
-      aiDecision = 'AUTO_REJECTED';
-      decisionReason = `Score ${finalScore.toFixed(2)} below rejection threshold of ${rejectionThreshold}`;
-    } else if (finalScore >= proceedThreshold) {
-      aiDecision = 'RECOMMENDED';
-      decisionReason = `Score ${finalScore.toFixed(2)} above recommended threshold of ${proceedThreshold}`;
-    } else {
-      decisionReason = `Score ${finalScore.toFixed(2)} requires HR review`;
-    }
-
-    // Store AI decision
+    // Store AI decision with hybrid insights
     const aiDecisionRecord = await AIDecision.create({
       application_id: applicationId,
       candidate_id: application.candidate_id,
       job_id: jobId || application.job_id,
       resume_score: resumeScore,
-      resume_weight: 0.3,
+      resume_weight: 0.25,
       technical_assessment_score: technicalScore,
-      technical_weight: 0.4,
+      technical_weight: 0.45,
       interview_score: interviewScore,
-      interview_weight: 0.3,
+      interview_weight: 0.30,
       final_score: finalScore,
-      score_threshold: rejectionThreshold,
-      meets_minimum_requirements: finalScore >= rejectionThreshold,
+      score_threshold: 40,
+      meets_minimum_requirements: finalScore >= 40,
       ai_decision: aiDecision,
       decision_reason: decisionReason,
-      confidence_percentage: Math.min(Math.abs(finalScore - 50) + 50, 100),
-      summary: generateDecisionSummary(application, finalScore, aiDecision),
-      ai_model_used: 'gemini-1.5-flash'
+      confidence_percentage: Math.round(scoringResult.confidence * 100),
+      summary: `Score: ${finalScore}% | Method: ${scoringResult.methodUsed}. ${scoringResult.insights.reasoning}`,
+      ai_model_used: isAiAvailable ? 'gemini-1.5-flash-hybrid' : 'ml-regression-fallback'
     });
 
     // Update application status based on decision

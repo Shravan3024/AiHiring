@@ -25,8 +25,7 @@ module.exports = (sequelize) => {
     comment: "USER_ID or SYSTEM"
   },
   changed_by_role: {
-    type: DataTypes.ENUM("candidate", "hr", "md", "admin", "system"),
-    comment: "Role that made the change"
+    type: DataTypes.ENUM("candidate", "hr", "md", "admin", "system")
   },
   // AI-specific tracking
   is_ai_decision: {

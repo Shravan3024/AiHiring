@@ -64,6 +64,18 @@ module.exports = (sequelize) => {
     type: DataTypes.FLOAT,
     defaultValue: 0
   },
+  ai_score: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
+  ml_score: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
+  final_score: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
   ip_address: {
     type: DataTypes.STRING,
     allowNull: true

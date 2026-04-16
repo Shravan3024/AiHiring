@@ -18,10 +18,8 @@ const Notification = notificationModel(sequelize);
 
 const resumeModel = require("./Resume");
 
-// TODO: MCQ models are not yet created - commented out until they exist
-// const MCQQuestion = require("./mcqQuestion");
-// const MCQTest = require("./mcqTest");
-// const MCQAnswer = require("./mcqAnswer");
+const mcqQuestionModel = require("./mcqQuestion");
+const mcqAnswerModel = require("./mcqAnswer");
 
 const interviewModel = require("./interview");
 const interviewAnswerModel = require("./interviewAnswer");
@@ -50,6 +48,8 @@ const InterviewSession = interviewSessionModel(sequelize);
 const CandidateSession = candidateSessionModel(sequelize);
 const DocumentRecord = documentRecordModel(sequelize);
 const NotificationQueue = notificationQueueModel(sequelize);
+const MCQQuestion = mcqQuestionModel(sequelize);
+const MCQAnswer = mcqAnswerModel(sequelize);
 
 // ===================== ADMIN PANEL MODELS =====================
 const adminJobModel = require("./adminJob");
@@ -60,6 +60,7 @@ const offerTemplateModel = require("./offerTemplate");
 const adminAuditLogModel = require("./adminAuditLog");
 const dataRetentionPolicyModel = require("./dataRetentionPolicy");
 const systemHealthModel = require("./systemHealth");
+const approvalRecordModel = require("./approvalRecord");
 
 // Initialize admin models
 const AdminJob = adminJobModel(sequelize);
@@ -70,6 +71,13 @@ const OfferTemplate = offerTemplateModel(sequelize);
 const AdminAuditLog = adminAuditLogModel(sequelize);
 const DataRetentionPolicy = dataRetentionPolicyModel(sequelize);
 const SystemHealth = systemHealthModel(sequelize);
+const ApprovalRecord = approvalRecordModel(sequelize);
+
+// Associations for ApprovalRecord
+Application.hasMany(ApprovalRecord, { foreignKey: 'applicationId' });
+ApprovalRecord.belongsTo(Application, { foreignKey: 'applicationId' });
+User.hasMany(ApprovalRecord, { foreignKey: 'hrUserId', as: 'approvals' });
+ApprovalRecord.belongsTo(User, { foreignKey: 'hrUserId', as: 'reviewer' });
 
 const Resume = resumeModel(sequelize);
 
@@ -93,9 +101,15 @@ const AIDecision = aiDecisionModel(sequelize);
 
 // ===================== SCORING MODELS =====================
 const manualJobMappingModel = require("./manualJobMapping");
+const hrApprovalRuleModel = require("./hrApprovalRule");
 const ManualJobMapping = manualJobMappingModel(sequelize);
+const HRApprovalRule = hrApprovalRuleModel(sequelize);
 
 // ===================== ASSOCIATIONS =====================
+
+// User ↔ HRApprovalRule
+User.hasMany(HRApprovalRule, { foreignKey: "createdBy", as: "createdRules" });
+HRApprovalRule.belongsTo(User, { as: "creator", foreignKey: "createdBy" });
 
 // User ↔ Candidate
 User.hasOne(Candidate, { foreignKey: "user_id" });
@@ -117,18 +131,13 @@ Application.belongsTo(Job, { foreignKey: "job_id" });
 Application.hasOne(TechnicalRound, { foreignKey: "application_id" });
 TechnicalRound.belongsTo(Application, { foreignKey: "application_id" });
 
-// TODO: MCQ Test associations commented out until MCQ models exist
-// Application ↔ MCQ Test
-// Application.hasOne(MCQTest, { foreignKey: "application_id" });
-// MCQTest.belongsTo(Application, { foreignKey: "application_id" });
-
-// MCQ Test ↔ Answers
-// MCQTest.hasMany(MCQAnswer, { foreignKey: "mcq_test_id" });
-// MCQAnswer.belongsTo(MCQTest, { foreignKey: "mcq_test_id" });
+// MCQ Attempt ↔ Answers
+AssessmentAttempt.hasMany(MCQAnswer, { foreignKey: "attempt_id" });
+MCQAnswer.belongsTo(AssessmentAttempt, { foreignKey: "attempt_id" });
 
 // Job ↔ MCQ Questions
-// Job.hasMany(MCQQuestion, { foreignKey: "job_id" });
-// MCQQuestion.belongsTo(Job, { foreignKey: "job_id" });
+Job.hasMany(MCQQuestion, { foreignKey: "job_id" });
+MCQQuestion.belongsTo(Job, { foreignKey: "job_id" });
 
 // Application ↔ Interview
 Application.hasOne(Interview, { foreignKey: "application_id" });
@@ -194,6 +203,16 @@ InterviewAnalysis.belongsTo(Application, { foreignKey: "application_id" });
 Application.hasOne(AIDecision, { foreignKey: "application_id" });
 AIDecision.belongsTo(Application, { foreignKey: "application_id" });
 
+// ===================== ADMIN & QUESTION BANK ASSOCIATIONS =====================
+
+// Job ↔ TechnicalQuestionBank
+Job.hasMany(TechnicalQuestionBank, { foreignKey: "job_id" });
+TechnicalQuestionBank.belongsTo(Job, { foreignKey: "job_id" });
+
+// Job ↔ InterviewQuestionBank
+Job.hasMany(InterviewQuestionBank, { foreignKey: "job_id" });
+InterviewQuestionBank.belongsTo(Job, { foreignKey: "job_id" });
+
 // ===================== EXPORT =====================
 module.exports = {
   sequelize,
@@ -203,10 +222,8 @@ module.exports = {
   Application,
   TechnicalRound,
   Notification,
-  // TODO: MCQ models commented out until they exist
-  // MCQQuestion,
-  // MCQTest,
-  // MCQAnswer,
+  MCQQuestion,
+  MCQAnswer,
   Interview,
   InterviewAnswer,
   MalpracticeEvent,
@@ -236,6 +253,8 @@ module.exports = {
   AssessmentAnalysis,
   InterviewAnalysis,
   AIDecision,
-  // Scoring Models
-  ManualJobMapping
+  // Scoring & Governance Models
+  ManualJobMapping,
+  HRApprovalRule,
+  ApprovalRecord
 };

@@ -41,7 +41,7 @@ module.exports = (sequelize) => {
     comment: "Path to video/audio file"
   },
   transcription: {
-    type: DataTypes.TEXT('long'),
+    type: DataTypes.TEXT,
     allowNull: true,
     comment: "Speech-to-text transcription"
   },

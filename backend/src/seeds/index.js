@@ -1,29 +1,22 @@
 /**
  * Database Seeding Script
- * Populates Jobs + Question Banks with Mask Polymers data
- * Run once during initial setup
+ * Populates Jobs, Question Banks, and Approval Rules with Mask Polymers data
  */
 
 const { MARKETING_QUESTIONS } = require("./marketingQuestions.seeder");
 
 async function seedDatabase() {
   try {
-    // Wait for models to be available
-    let retries = 0;
     let db;
-
-    while (retries < 5) {
-      try {
-        db = require("../models");
-        if (db && db.InterviewQuestionBank && db.Job) break;
-      } catch (e) {
-        retries++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+    try {
+      db = require("../models");
+    } catch (e) {
+      console.warn("⚠️ Models not available. Skipping seeding.");
+      return;
     }
 
-    if (!db || !db.InterviewQuestionBank) {
-      console.warn("⚠️ Models not available. Skipping seeding.");
+    if (!db || !db.Job) {
+      console.warn("⚠️ Models not fully loaded. Skipping seeding.");
       return;
     }
 
@@ -33,38 +26,12 @@ async function seedDatabase() {
     // STEP 0: SEED JOBS
     // ======================================================
     console.log("💼 Checking Jobs...");
-
     const existingJobs = await db.Job.count();
-
     if (existingJobs === 0) {
       await db.Job.bulkCreate([
-        {
-          title: "Management Trainee - Marketing",
-          department: "MARKETING",
-          min_experience: 0,
-          max_experience: 1,
-          salary_min: 20000,
-          salary_max: 30000,
-          status: "ACTIVE"
-        },
-        {
-          title: "Executive - Marketing",
-          department: "MARKETING",
-          min_experience: 1,
-          max_experience: 3,
-          salary_min: 30000,
-          salary_max: 45000,
-          status: "ACTIVE"
-        },
-        {
-          title: "Assistant Manager - Marketing",
-          department: "MARKETING",
-          min_experience: 3,
-          max_experience: 6,
-          salary_min: 50000,
-          salary_max: 70000,
-          status: "ACTIVE"
-        }
+        { title: "Management Trainee - Marketing", department: "MARKETING", min_experience: 0, max_experience: 1, salary_min: 20000, salary_max: 30000, status: "ACTIVE" },
+        { title: "Executive - Marketing", department: "MARKETING", min_experience: 1, max_experience: 3, salary_min: 30000, salary_max: 45000, status: "ACTIVE" },
+        { title: "Assistant Manager - Marketing", department: "MARKETING", min_experience: 3, max_experience: 6, salary_min: 50000, salary_max: 70000, status: "ACTIVE" }
       ]);
       console.log("✅ Sample jobs seeded successfully\n");
     } else {
@@ -72,101 +39,62 @@ async function seedDatabase() {
     }
 
     // ======================================================
-    // STEP 1: CHECK IF QUESTIONS ALREADY SEEDED
+    // STEP 1: SEED INTERVIEW QUESTIONS
     // ======================================================
-    const existingQuestions = await db.InterviewQuestionBank.findAll({
-      limit: 1
-    });
+    console.log("📚 Checking Interview Questions...");
+    const existingQuestions = await db.InterviewQuestionBank.count();
+    if (existingQuestions === 0) {
+      const traineeQuestions = MARKETING_QUESTIONS.MANAGEMENT_TRAINEE;
+      const executiveQuestions = MARKETING_QUESTIONS.EXECUTIVE_MARKETING;
+      const amQuestions = MARKETING_QUESTIONS.ASSISTANT_MANAGER_MARKETING;
 
-    if (existingQuestions.length > 0) {
-      console.log("✅ Question bank already populated. Skipping question seeding.");
-      return;
+      for (const question of traineeQuestions) await db.InterviewQuestionBank.create(question);
+      for (const question of executiveQuestions) await db.InterviewQuestionBank.create(question);
+      for (const question of amQuestions) await db.InterviewQuestionBank.create(question);
+      console.log("✅ Interview questions seeded successfully\n");
+    } else {
+      console.log("✅ Question bank already populated. Skipping interview questions.\n");
     }
 
     // ======================================================
-    // STEP 2: SEED INTERVIEW QUESTIONS
+    // STEP 2: SEED TECHNICAL QUESTIONS
     // ======================================================
-    console.log("📚 Seeding Interview Questions...");
-
-    const traineeQuestions = MARKETING_QUESTIONS.MANAGEMENT_TRAINEE;
-    const executiveQuestions = MARKETING_QUESTIONS.EXECUTIVE_MARKETING;
-    const amQuestions = MARKETING_QUESTIONS.ASSISTANT_MANAGER_MARKETING;
-
-    for (const question of traineeQuestions) {
-      await db.InterviewQuestionBank.create(question);
-    }
-    console.log(`✅ Seeded ${traineeQuestions.length} Management Trainee questions`);
-
-    for (const question of executiveQuestions) {
-      await db.InterviewQuestionBank.create(question);
-    }
-    console.log(`✅ Seeded ${executiveQuestions.length} Executive questions`);
-
-    for (const question of amQuestions) {
-      await db.InterviewQuestionBank.create(question);
-    }
-    console.log(`✅ Seeded ${amQuestions.length} Assistant Manager questions`);
-
-    // ======================================================
-    // STEP 3: SEED TECHNICAL QUESTIONS
-    // ======================================================
-    console.log("\n🔬 Seeding Technical Questions...");
-
-    const technicalQuestions = [
-      {
-        questionId: "tech_mt_001",
-        jobRole: "MANAGEMENT_TRAINEE_MARKETING",
-        topic: "Polymer Fundamentals",
-        difficulty: "EASY",
-        questionType: "MCQ",
-        question: "Which of the following is NOT a thermoplastic?",
-        options: [
-          "a) Polyethylene (PE)",
-          "b) Polypropylene (PP)",
-          "c) Epoxy Resin",
-          "d) Polyvinyl Chloride (PVC)"
-        ],
-        correct_answer: "c) Epoxy Resin",
-        explanation:
-          "Epoxy is a thermoset (cross-linked network), cannot be remelted.",
-        keywords: ["thermoset", "thermoplastic", "epoxy"],
-        estimatedTime: 2,
-        createdBy: "admin@maskpolymers.com"
-      },
-      {
-        questionId: "tech_mt_002",
-        jobRole: "MANAGEMENT_TRAINEE_MARKETING",
-        topic: "Processing",
-        difficulty: "MEDIUM",
-        questionType: "THEORY",
-        question:
-          "Explain how the melt flow index (MFI) affects polymer processing.",
-        expectedAnswer:
-          "Higher MFI means lower viscosity and easier flow during processing.",
-        keywords: ["MFI", "viscosity", "processing"],
-        estimatedTime: 3,
-        createdBy: "admin@maskpolymers.com"
-      }
-    ];
-
-    for (const question of technicalQuestions) {
-      await db.TechnicalQuestionBank.create(question);
+    console.log("🔬 Checking Technical Questions...");
+    const existingTech = await db.TechnicalQuestionBank.count();
+    if (existingTech === 0) {
+      const technicalQuestions = [
+        {
+          questionId: "tech_mt_001", jobRole: "MANAGEMENT_TRAINEE_MARKETING", topic: "Polymer Fundamentals", difficulty: "EASY", questionType: "MCQ",
+          question: "Which of the following is NOT a thermoplastic?",
+          options: ["a) Polyethylene (PE)", "b) Polypropylene (PP)", "c) Epoxy Resin", "d) Polyvinyl Chloride (PVC)"],
+          correct_answer: "c) Epoxy Resin", explanation: "Epoxy is a thermoset (cross-linked network), cannot be remelted.",
+          keywords: ["thermoset", "thermoplastic", "epoxy"], estimatedTime: 2, createdBy: "admin@maskpolymers.com"
+        }
+      ];
+      for (const question of technicalQuestions) await db.TechnicalQuestionBank.create(question);
+      console.log("✅ Technical questions seeded successfully\n");
+    } else {
+      console.log("✅ Technical questions already exist.\n");
     }
 
-    console.log(`✅ Seeded ${technicalQuestions.length} Technical questions\n`);
+    // ======================================================
+    // STEP 3: SEED HR APPROVAL RULES
+    // ======================================================
+    console.log("🔐 Checking HR Approval Rules...");
+    const existingRules = await db.HRApprovalRule.count();
+    if (existingRules === 0) {
+      await db.HRApprovalRule.bulkCreate([
+        { ruleId: "RULE_RESUME", stage: "RESUME", approvalsRequired: 1, description: "Single HR review for initial resume screening" },
+        { ruleId: "RULE_TECHNICAL", stage: "TECHNICAL", approvalsRequired: 1, description: "Technical assessment approval threshold" },
+        { ruleId: "RULE_INTERVIEW", stage: "INTERVIEW", approvalsRequired: 1, description: "AI Interview performance validation" },
+        { ruleId: "RULE_FINAL", stage: "FINAL", approvalsRequired: 3, description: "Multi-HR concurrence required for candidate selection" }
+      ]);
+      console.log("✅ HR Approval Rules seeded successfully\n");
+    } else {
+      console.log("✅ HR Approval Rules already exist.\n");
+    }
 
-    // ======================================================
-    // SUMMARY
-    // ======================================================
-    console.log("🎉 Database seeding completed successfully!");
-    console.log(`\n📊 Summary:`);
-    console.log(
-      `  - Interview Questions: ${traineeQuestions.length +
-      executiveQuestions.length +
-      amQuestions.length
-      }`
-    );
-    console.log(`  - Technical Questions: ${technicalQuestions.length}`);
+    console.log("🎉 Database seeding step finished!");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
   }

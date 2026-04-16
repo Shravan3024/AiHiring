@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.sqlite
+*.log
+uploads/
+scratch/
+db_audit.json
+db_dump.json
+server_log.txt
+.gemini/
+.DS_Store
+dist/
+build/

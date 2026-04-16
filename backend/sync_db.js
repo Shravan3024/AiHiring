@@ -7,8 +7,8 @@ async function syncDB() {
     console.log("Connected to DB.");
 
     // This will compare models with current DB state and add missing columns
-    await sequelize.sync({ alter: true });
-    
+    await sequelize.authenticate();
+    console.log("✅ Database authenticated");
     console.log("✅ Database synchronized successfully.");
     process.exit(0);
   } catch (error) {

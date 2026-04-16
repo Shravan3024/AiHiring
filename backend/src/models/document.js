@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
       comment: 'Metadata: recipient, subject, salary, startDate, etc.'
     },
     content: {
-      type: DataTypes.TEXT('long'),
+      type: DataTypes.TEXT,
       comment: 'Full document HTML for preview'
     },
     

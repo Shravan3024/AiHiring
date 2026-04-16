@@ -2,7 +2,8 @@ const {
   Application, Candidate, User,
   TechnicalRound, Interview,
   MalpracticeEvent, Offer, Job, HRInternalNote,
-  ResumeAnalysis, AssessmentAnalysis, InterviewAnalysis
+  ResumeAnalysis, AssessmentAnalysis, InterviewAnalysis,
+  ApplicationStatusLog
 } = require('../models');
 const { Op } = require('sequelize');
 const { STATUS_GROUPS, computeApplicationScore, getFitBand } = require('../utils/applicationStatus.utils');
@@ -49,7 +50,7 @@ class CandidateProfileController {
         include: [
           { 
             model: Candidate, 
-            attributes: ['id', 'user_id', 'phone', 'location', 'education', 'specialization', 'skills', 'cgpa', 'year_of_passout', 'summary', 'ai_summary', 'integrity_score', 'resume_path'],
+            attributes: ['id', 'user_id', 'phone', 'location', 'education', 'specialization', 'skills', 'cgpa', 'year_of_passout', 'summary', 'ai_summary', 'integrity_score', 'resume_path', 'profile_image_path'],
             include: [{ model: User, attributes: ['id', 'name', 'email'] }] 
           },
           { model: TechnicalRound, required: false, attributes: ['id', 'score', 'status', 'ai_feedback'] },
@@ -58,7 +59,17 @@ class CandidateProfileController {
           { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary'] },
           { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score'] },
           { model: InterviewAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'qa_pairs', 'detailed_evaluation', 'interview_session_id'] },
-          { model: Job,           required: false, attributes: ['id', 'title', 'department'] }
+          { model: Job,           required: false, attributes: ['id', 'title', 'department'] },
+          { 
+            model: require('../models').InterviewSession, 
+            required: false, 
+            attributes: ['id', 'recording_path', 'answers_provided', 'ai_analysis'] 
+          },
+          {
+            model: require('../models').MalpracticeEvent,
+            required: false,
+            attributes: ['id', 'type', 'severity', 'createdAt']
+          }
         ]
       });
 
@@ -79,6 +90,7 @@ class CandidateProfileController {
         resumeScore,
         technicalScore,
         interviewScore,
+        malpracticeWarnings: application.malpractice_warnings || 0
       });
 
       const fitBand = getFitBand(aggregateScore);
@@ -136,6 +148,16 @@ class CandidateProfileController {
           aiFitBand,
           integrityScore:   application.Candidate?.integrity_score || 100,
 
+          proctoringSummary: {
+            integrityScore: application.Candidate?.integrity_score || 100,
+            malpracticeWarnings: application.malpractice_warnings || 0,
+            violations: await MalpracticeEvent.findAll({
+              where: { application_id: applicationId },
+              order: [['createdAt', 'DESC']],
+              limit: 5
+            })
+          },
+
           scores: {
             resume: resumeScore,
             technical: technicalScore, interview: interviewScore,
@@ -143,7 +165,7 @@ class CandidateProfileController {
           },
 
           evaluationProsCons: buildProsCons(
-            { resumeScore, technicalScore, interviewScore }, 
+            { resumeScore, technicalScore, interviewScore, malpracticeScore: application.malpractice_warnings || 0 }, 
             { 
               resumeAnalysis: application.ResumeAnalysis, 
               assessmentAnalysis: application.AssessmentAnalysis, 
@@ -166,6 +188,32 @@ class CandidateProfileController {
             ai_model_used: application.InterviewAnalysis.ai_model_used
           } : null,
           offerData:     application.Offer ? { salary: application.Offer.salary, joiningDate: application.Offer.joining_date, status: application.Offer.status } : null,
+          
+          interviewHighlights: application.InterviewSession ? (() => {
+            const firstWithVideo = (application.InterviewSession.questions_asked || []).find(q => q.recording_path);
+            const recordingBase = application.InterviewSession.recording_path || firstWithVideo?.recording_path;
+            
+            return {
+              videoUrl: recordingBase ? `http://localhost:5000${recordingBase}` : null,
+              highlights: (application.InterviewSession.questions_asked || []).map((ans, idx) => ({
+                question: ans.question_text || ans.question || `Question ${idx + 1}`,
+                timestamp: ans.timestamp || ans.answered_at ? new Date(ans.answered_at).toLocaleTimeString([], {minute: '2-digit', second: '2-digit'}) : "00:00",
+                duration: ans.response_duration_seconds || 45,
+                score: ans.analysis?.relevance ? Math.round(ans.analysis.relevance * 100) : 0,
+                confidence: ans.analysis?.confidence ? (ans.analysis.confidence > 0.7 ? 'High' : 'Medium') : 'N/A'
+              }))
+            };
+          })() : null,
+
+          proctoringSummary: {
+            violationsCount: (application.MalpracticeEvents || []).length,
+            severityScore: (application.MalpracticeEvents || []).reduce((sum, e) => sum + (e.severity || 1), 0),
+            events: (application.MalpracticeEvents || []).map(e => ({
+              type: e.type,
+              severity: e.severity,
+              timestamp: e.createdAt
+            }))
+          },
 
           malpracticeEvents: malpractice.map(e => ({ type: e.event_type || e.type, severity: e.severity, timestamp: e.createdAt })),
           internalNotes: notes.map(n => ({
@@ -174,13 +222,26 @@ class CandidateProfileController {
              createdAt: n.createdAt
           })),
           approvals: {
-            totalNeeded: 1,
+            totalNeeded: 1, // This can be dynamic based on job-specific rules
             received: ['RECOMMENDED_BY_AI', 'SELECTED', 'OFFERED'].includes(application.status) ? 1 : 0,
             records: application.hr_decision ? [{
               reviewer: 'HR', decision: application.hr_decision,
               reason: application.hr_notes, timestamp: application.updatedAt, order: 1,
             }] : [],
           },
+          // Full Audit Trace
+          auditLogs: {
+            statusLogs: await ApplicationStatusLog.findAll({
+              where: { application_id: applicationId },
+              order: [['createdAt', 'DESC']],
+              limit: 50
+            }),
+            approvalRecords: await require('../models').ApprovalRecord.findAll({
+              where: { applicationId },
+              include: [{ model: require('../models').User, as: 'reviewer', attributes: ['name', 'role'] }],
+              order: [['createdAt', 'DESC']]
+            })
+          }
         }
       });
 

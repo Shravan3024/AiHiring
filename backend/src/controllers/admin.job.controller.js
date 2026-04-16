@@ -108,7 +108,7 @@ const createJob = async (req, res) => {
     if (technicalQuestions && Array.isArray(technicalQuestions)) {
       const tqToCreate = technicalQuestions.map(q => ({
         ...q,
-        jobId: job.id,
+        job_id: job.id,
         jobRole: title,
         topic: q.topic || "General",
         questionType: q.questionType || "THEORY",
@@ -121,7 +121,7 @@ const createJob = async (req, res) => {
     if (interviewQuestions && Array.isArray(interviewQuestions)) {
       const iqToCreate = interviewQuestions.map(q => ({
         ...q,
-        jobId: job.id,
+        job_id: job.id,
         jobRole: title,
         category: q.category || "TECHNICAL_DEEP_DIVE",
         expectedAnswer: q.expectedAnswer || "To be discussed",
@@ -176,10 +176,10 @@ const updateJob = async (req, res) => {
 
     // Update Questions (Delete existing and bulk create)
     if (technicalQuestions && Array.isArray(technicalQuestions)) {
-      await TechnicalQuestionBank.destroy({ where: { jobId: job.id } });
+      await TechnicalQuestionBank.destroy({ where: { job_id: job.id } });
       const tqToCreate = technicalQuestions.map(q => ({
         ...q,
-        jobId: job.id,
+        job_id: job.id,
         jobRole: title || job.title,
         topic: q.topic || "General",
         questionType: q.questionType || "THEORY",
@@ -189,10 +189,10 @@ const updateJob = async (req, res) => {
     }
 
     if (interviewQuestions && Array.isArray(interviewQuestions)) {
-      await InterviewQuestionBank.destroy({ where: { jobId: job.id } });
+      await InterviewQuestionBank.destroy({ where: { job_id: job.id } });
       const iqToCreate = interviewQuestions.map(q => ({
         ...q,
-        jobId: job.id,
+        job_id: job.id,
         jobRole: title || job.title,
         category: q.category || "TECHNICAL_DEEP_DIVE",
         expectedAnswer: q.expectedAnswer || "To be discussed",

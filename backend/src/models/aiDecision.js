@@ -79,7 +79,6 @@ module.exports = (sequelize) => {
       // Final Decision
       ai_decision: {
         type: DataTypes.ENUM("AUTO_REJECTED", "PROCEED_TO_HR", "RECOMMENDED", "AUTO_SELECTED"),
-        comment: "Final AI decision on candidate",
       },
       decision_reason: {
         type: DataTypes.TEXT,
@@ -117,7 +116,6 @@ module.exports = (sequelize) => {
       // Risk Assessment
       risk_level: {
         type: DataTypes.ENUM("low", "medium", "high"),
-        comment: "Risk level if hired",
       },
       risk_factors: {
         type: ARRAY_STRING,
@@ -153,7 +151,6 @@ module.exports = (sequelize) => {
       hr_review_decision: {
         type: DataTypes.ENUM("APPROVED", "REJECTED", "NEEDS_CLARIFICATION", "PENDING"),
         defaultValue: "PENDING",
-        comment: "HR's decision after reviewing AI recommendation",
       },
       hr_review_notes: {
         type: DataTypes.TEXT,
@@ -172,7 +169,6 @@ module.exports = (sequelize) => {
       },
       previous_decision: {
         type: DataTypes.ENUM("AUTO_REJECTED", "PROCEED_TO_HR", "RECOMMENDED", "AUTO_SELECTED"),
-        comment: "Previous decision if recalculated",
       },
       recalculation_reason: {
         type: DataTypes.STRING,

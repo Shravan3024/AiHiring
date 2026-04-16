@@ -14,8 +14,7 @@ module.exports = (sequelize) => {
   session_token: {
     type: DataTypes.STRING(500),
     unique: true,
-    allowNull: false,
-    comment: "JWT token for this session"
+    allowNull: false
   },
   ip_address: {
     type: DataTypes.STRING,

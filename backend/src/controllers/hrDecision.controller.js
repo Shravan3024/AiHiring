@@ -93,11 +93,12 @@ class HRDecisionController {
 
       // Aggregate Score if moving to final
       if (decision === 'APPROVED' || decision === 'REJECTED') {
-         application.overall_score = computeApplicationScore({
-           resumeScore: application.resume_score,
-           technicalScore: application.technical_score,
-           interviewScore: application.interview_score,
-         });
+          application.overall_score = computeApplicationScore({
+            resumeScore: application.resume_score,
+            technicalScore: application.technical_score,
+            interviewScore: application.interview_score,
+            malpracticeWarnings: application.malpractice_warnings || 0
+          });
       }
 
       await application.save();
@@ -369,14 +370,17 @@ class HRDecisionController {
    * GET /hr/approval-rules
    */
   static async getApprovalRules(req, res) {
-    return res.status(200).json({
-      success: true,
-      data: [{
-        ruleId: 'default_final', stage: 'FINAL',
-        approvalsRequired: 1, isActive: true,
-        description: 'Single HR approval required',
-      }]
-    });
+    try {
+      const { HRApprovalRule } = require('../models');
+      const rules = await HRApprovalRule.findAll({
+        where: { isActive: true },
+        order: [['stage', 'ASC']]
+      });
+      return res.status(200).json({ success: true, data: rules });
+    } catch (error) {
+      console.error('Error fetching approval rules:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching approval rules' });
+    }
   }
 }
 

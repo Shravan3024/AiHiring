@@ -1,16 +1,26 @@
 const express = require("express");
 const authenticateToken = require("../middleware/auth.middleware");
 const checkRole = require("../middleware/role.middleware");
+
 const {
   getHRs,
   createHR,
-  deleteHR
+  deleteHR,
+  updateHR,
+  forceLogoutHR,
+  getApprovalRules,
+  createApprovalRule
 } = require("../controllers/admin.controller");
+
 const {
   createTechnicalQuestion,
   getTechnicalQuestions,
-  deleteTechnicalQuestion
+  deleteTechnicalQuestion,
+  createMCQQuestion,
+  getMCQQuestions,
+  deleteMCQQuestion
 } = require("../controllers/admin.question.controller");
+
 const {
   getDashboardStats,
   getHiringVolumeTrend,
@@ -19,6 +29,7 @@ const {
   getApprovalBottleneck,
   getSystemHealth,
 } = require("../controllers/admin.dashboard.controller");
+
 const {
   createJob,
   updateJob,
@@ -28,6 +39,7 @@ const {
   closeJob,
   deleteJob,
 } = require("../controllers/admin.job.controller");
+
 const {
   createAIConfig,
   updateAIConfig,
@@ -35,6 +47,7 @@ const {
   getAllAIConfigs,
   testAIConfig,
 } = require("../controllers/admin.aiConfig.controller");
+
 const {
   deployAIModel,
   activateAIModel,
@@ -42,18 +55,21 @@ const {
   getAIModels,
   updateModelAccuracy,
 } = require("../controllers/admin.aiModel.controller");
+
 const {
   createWorkflow,
   updateWorkflow,
   getWorkflows,
   getWorkflowByJobId,
 } = require("../controllers/admin.workflow.controller");
+
 const {
   createOfferTemplate,
   updateOfferTemplate,
   getOfferTemplates,
   getOfferTemplate,
 } = require("../controllers/admin.offerTemplate.controller");
+
 const {
   getAuditLogs,
   searchAuditLogs,
@@ -123,11 +139,21 @@ router.put("/system-health", updateSystemHealth);
 // ===================== HR MANAGEMENT =====================
 router.get("/hrs", getHRs);
 router.post("/hrs", createHR);
+router.put("/hrs/:id", updateHR);
 router.delete("/hrs/:id", deleteHR);
+router.post("/hrs/:id/logout", forceLogoutHR);
 
-// ===================== TECHNICAL QUESTION BANK (ADMIN ONLY) =====================
-router.post("/questions", createTechnicalQuestion);
-router.get("/questions", getTechnicalQuestions);
-router.delete("/questions/:questionId", deleteTechnicalQuestion);
+// ===================== APPROVAL RULES =====================
+router.get("/approval-rules", getApprovalRules);
+router.post("/approval-rules", createApprovalRule);
+
+// ===================== QUESTION BANK =====================
+router.post("/questions/technical", createTechnicalQuestion);
+router.get("/questions/technical", getTechnicalQuestions);
+router.delete("/questions/technical/:questionId", deleteTechnicalQuestion);
+
+router.post("/questions/mcq", createMCQQuestion);
+router.get("/questions/mcq", getMCQQuestions);
+router.delete("/questions/mcq/:id", deleteMCQQuestion);
 
 module.exports = router;

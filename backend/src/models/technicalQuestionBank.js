@@ -10,6 +10,10 @@ module.exports = (sequelize) => {
   field: "questionId", // 🔥 FIX
   defaultValue: () => `tq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 },
+job_id: {
+  type: DataTypes.INTEGER,
+  allowNull: true,
+},
       jobRole: {
         type: DataTypes.ENUM(
           "MANAGEMENT_TRAINEE_MARKETING",
@@ -27,6 +31,10 @@ module.exports = (sequelize) => {
       difficulty: {
         type: DataTypes.ENUM("EASY", "MEDIUM", "HARD"),
         defaultValue: "MEDIUM",
+      },
+      weight: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1,
       },
       questionType: {
         type: DataTypes.ENUM("MCQ", "CODING", "THEORY", "DEBUGGING"),

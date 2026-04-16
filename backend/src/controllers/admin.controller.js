@@ -11,7 +11,8 @@ exports.getHRs = async (req, res) => {
     const mapped = hrs.map(u => ({ ...u.toJSON(), _id: String(u.id) }));
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    console.error("getHRs error:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 

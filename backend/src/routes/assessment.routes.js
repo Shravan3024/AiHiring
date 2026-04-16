@@ -53,16 +53,16 @@ router.get(
 );
 
 // TODO: logMalpractice method not yet implemented in assessment controller
-// /**
-//  * LOG MALPRACTICE
-//  * POST /api/assessment/:attemptId/malpractice
-//  */
-// router.post(
-//   '/:attemptId/malpractice',
-//   authMiddleware,
-//   roleMiddleware(['CANDIDATE']),
-//   assessmentController.logMalpractice
-// );
+/**
+ * LOG MALPRACTICE
+ * POST /api/assessment/:attemptId/malpractice
+ */
+router.post(
+  '/:attemptId/malpractice',
+  authMiddleware,
+  roleMiddleware(['CANDIDATE']),
+  assessmentController.logMalpractice
+);
 
 // ==================== HR/ADMIN ROUTES ====================
 

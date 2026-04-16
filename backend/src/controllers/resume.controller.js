@@ -330,6 +330,111 @@ exports.uploadResume = async (req, res) => {
 };
 
 /**
+ * Re-parse an existing resume for an application
+ * POST /api/resume/reparse/:applicationId
+ */
+exports.reparseResume = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { Application, Candidate, Job, ResumeAnalysis } = require('../models');
+
+    const application = await Application.findByPk(applicationId, {
+      include: [{ model: Candidate }, { model: Job }]
+    });
+
+    if (!application || !application.Candidate) {
+      return res.status(404).json({ success: false, message: 'Application or Candidate not found' });
+    }
+
+    const candidate = application.Candidate;
+    const resumePath = candidate.resume_path;
+
+    if (!resumePath) {
+      return res.status(400).json({ success: false, message: 'No resume found for this candidate' });
+    }
+
+    const path = require('path');
+    const absolutePath = path.join(__dirname, '../../', resumePath);
+
+    if (!require('fs').existsSync(absolutePath)) {
+      return res.status(404).json({ success: false, message: `Resume file not found: ${resumePath}` });
+    }
+
+    logger.info(`[Reparse] Triggering re-parse for application ${applicationId}`);
+
+    const aiParsedData = await aiService.parseResumeWithAI(absolutePath);
+    
+    let jdScores = { score: 0, matched_skills: [], missing_skills: [] };
+    if (application.Job) {
+      const jobRequirements = {
+        title: application.Job.title,
+        description: application.Job.description,
+        required_skills: application.Job.required_skills || [],
+        min_experience: application.Job.min_experience || 0
+      };
+      jdScores = await aiService.scoreResume(aiParsedData, jobRequirements);
+    }
+
+    // Update or Create AI Analysis
+    let resumeAnalysisRecord = await ResumeAnalysis.findOne({ where: { application_id: applicationId } });
+    
+    const aiAnalysis = {
+      contact_info: aiParsedData.contact_info || {},
+      education: aiParsedData.education || [],
+      experience: aiParsedData.experience || [],
+      skills: aiParsedData.skills || {},
+      certifications: aiParsedData.certifications || [],
+      ai_summary: aiParsedData.summary || 'No summary available',
+      strengths: aiParsedData.strengths || [],
+      weaknesses: aiParsedData.weaknesses || [],
+      recommendations: aiParsedData.recommendations || [],
+      overall_score: aiParsedData.overall_score || 0,
+      jd_match_score: jdScores.score || 0,
+      jd_matched_skills: jdScores.matched_skills || [],
+      jd_missing_skills: jdScores.missing_skills || [],
+      role_fit: aiParsedData.role_fit || {},
+      red_flags: aiParsedData.red_flags || [],
+      green_flags: aiParsedData.green_flags || []
+    };
+
+    if (resumeAnalysisRecord) {
+      await resumeAnalysisRecord.update(aiAnalysis);
+    } else {
+      await ResumeAnalysis.create({
+        application_id: applicationId,
+        resume_id: 0,
+        ...aiAnalysis
+      });
+    }
+
+    const resumeScore = Math.round(aiAnalysis.jd_match_score || aiAnalysis.overall_score);
+    await application.update({
+      resume_score: resumeScore,
+      skills: aiAnalysis.jd_matched_skills || candidate.skills
+    });
+
+    await candidate.update({
+        skills: aiParsedData.skills ? Object.values(aiParsedData.skills).flat() : candidate.skills,
+        education: aiParsedData.education?.[0]?.degree || candidate.education
+    });
+
+    logger.info(`[Reparse] Completed successfully for app ${applicationId}. Score: ${resumeScore}`);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        score: resumeScore,
+        analysis: aiAnalysis
+      }
+    });
+
+  } catch (error) {
+    logger.error(`[Reparse] Critical failure: ${error.message}`);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * Check if all assessment scores are available and trigger auto-rejection if needed
  */
 const checkAndTriggerAutoRejection = async (applicationId, logger) => {

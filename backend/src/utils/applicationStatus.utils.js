@@ -65,8 +65,9 @@ function computeApplicationScore({
   resumeScore,
   technicalScore,
   interviewScore,
+  malpracticeWarnings = 0
 }) {
-  if (typeof overallScore === 'number' && !Number.isNaN(overallScore)) {
+  if (typeof overallScore === 'number' && !Number.isNaN(overallScore) && overallScore > 0) {
     return Math.round(overallScore);
   }
 
@@ -84,7 +85,13 @@ function computeApplicationScore({
     0
   );
 
-  return Math.round(weightedScore / weightTotal);
+  let finalScore = Math.round(weightedScore / weightTotal);
+
+  // Apply integrity penalty: -5 points per warning, max -25
+  const integrityPenalty = Math.min(malpracticeWarnings * 5, 25);
+  finalScore = Math.max(0, finalScore - integrityPenalty);
+
+  return finalScore;
 }
 
 function getFitBand(score) {

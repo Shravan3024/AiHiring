@@ -1,4 +1,6 @@
-module.exports = (sequelize, DataTypes) => {
+const { DataTypes } = require("sequelize");
+
+module.exports = (sequelize) => {
   const HRApprovalRule = sequelize.define('HRApprovalRule', {
     id: {
       type: DataTypes.UUID,
@@ -69,11 +71,11 @@ module.exports = (sequelize, DataTypes) => {
     notificationTemplate: DataTypes.STRING,
     escalationNotificationTemplate: DataTypes.STRING,
     createdBy: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       references: { model: 'Users', key: 'id' }
     },
     lastModifiedBy: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       references: { model: 'Users', key: 'id' }
     },
     isActive: {

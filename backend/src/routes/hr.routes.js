@@ -106,6 +106,20 @@ router.get(
   HRDashboardController.getDashboardOverview
 );
 
+router.get(
+  "/dashboard/time-to-hire",
+  auth,
+  role(["HR", "ADMIN"]),
+  HRDashboardController.getTimeToHirePerRole
+);
+
+router.get(
+  "/dashboard/rejection-reasons",
+  auth,
+  role(["HR", "ADMIN"]),
+  HRDashboardController.getRejectionReasons
+);
+
 
 // ===============================
 // CANDIDATE 360 PROFILE
