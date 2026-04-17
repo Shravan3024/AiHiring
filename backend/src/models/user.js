@@ -25,7 +25,7 @@ module.exports = (sequelize) => {
     },
 
     role: {
-      type: DataTypes.ENUM("ADMIN", "HR", "CANDIDATE", "MD"),
+      type: DataTypes.STRING, // Changed from ENUM for Supabase compatibility
       allowNull: false
     },
 
@@ -35,7 +35,7 @@ module.exports = (sequelize) => {
     },
 
     hr_role: {
-      type: DataTypes.ENUM("VIEWER", "REVIEWER", "APPROVER", "SENIOR_HR"),
+      type: DataTypes.STRING, // Changed from ENUM for Supabase compatibility
       allowNull: true
     },
 
@@ -58,5 +58,8 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true
     }
+  }, {
+    tableName: "Users",
+    timestamps: true
   });
 };

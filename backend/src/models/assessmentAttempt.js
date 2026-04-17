@@ -12,11 +12,11 @@ module.exports = (sequelize) => {
     allowNull: false
   },
   assessment_type: {
-    type: DataTypes.ENUM("TECHNICAL", "APTITUDE", "CODING"),
+    type: DataTypes.STRING, // Changed from ENUM for Supabase stability
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM("NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "EVALUATED"),
+    type: DataTypes.STRING, // Changed from ENUM for Supabase stability
     defaultValue: "NOT_STARTED"
   },
   started_at: {
@@ -41,24 +41,20 @@ module.exports = (sequelize) => {
   },
   duration_minutes: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    comment: "Time taken to complete assessment"
+    allowNull: true
   },
   metadata: {
     type: DataTypes.JSON,
     allowNull: true,
-    comment: "Additional attempt metadata like selected question IDs",
     defaultValue: {}
   },
   answers: {
     type: DataTypes.JSON,
-    allowNull: true,
-    comment: "Candidate answers stored as JSON"
+    allowNull: true
   },
   anti_cheating_data: {
     type: DataTypes.JSON,
-    allowNull: true,
-    comment: "Tab switches, fullscreen exits, etc."
+    allowNull: true
   },
   malpractice_score: {
     type: DataTypes.FLOAT,
@@ -86,16 +82,13 @@ module.exports = (sequelize) => {
   },
   ai_feedback: {
     type: DataTypes.TEXT,
-    allowNull: true,
-    comment: "AI-generated feedback (limited view for candidate)"
-  },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  updated_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    allowNull: true
   }
+  }, {
+    tableName: "AssessmentAttempts", // Ensured exact case-sensitive name
+    freezeTableName: true,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at"
   });
 };

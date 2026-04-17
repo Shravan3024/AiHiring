@@ -32,7 +32,7 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      type: DataTypes.STRING, // Changed from ENUM for Supabase compatibility
       defaultValue: "ACTIVE"
     },
     location: {
@@ -62,8 +62,11 @@ module.exports = (sequelize) => {
       allowNull: true
     },
     urgency: {
-      type: DataTypes.ENUM("NORMAL", "FAST_TRACK"),
+      type: DataTypes.STRING, // Changed from ENUM for Supabase compatibility
       defaultValue: "NORMAL"
     }
+  }, {
+    tableName: "Jobs",
+    timestamps: true
   });
 };

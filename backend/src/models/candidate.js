@@ -39,15 +39,13 @@ module.exports = (sequelize) => {
   },
 
   parsed_resume: {
-    type: DataTypes.JSON,
-    comment: "Extracted resume data from AI parser"
+    type: DataTypes.JSON
   },
 
   resume_path: {
     type: DataTypes.STRING
   },
 
-  // Uploaded candidate avatar (stored as `/uploads/profile-images/<filename>`)
   profile_image_path: {
     type: DataTypes.STRING,
     allowNull: true
@@ -62,11 +60,8 @@ module.exports = (sequelize) => {
   },
 
   summary: {
-    type: DataTypes.TEXT,
-    comment: "User-edited professional summary"
+    type: DataTypes.TEXT
   },
-
-  // 🔥 NEW PRODUCTION FIELDS
 
   current_stage: {
     type: DataTypes.STRING,
@@ -82,8 +77,6 @@ module.exports = (sequelize) => {
     type: DataTypes.FLOAT,
     defaultValue: 100
   },
-
-  // 🔐 OTP & Security
 
   otp: {
     type: DataTypes.STRING,
@@ -115,29 +108,29 @@ module.exports = (sequelize) => {
     allowNull: true
   },
 
-    last_login_ip: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
+  last_login_ip: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
 
-    // ── Resume parsed fields ──────────────────────────────────
-    skills: {
-      type: sequelize.getDialect() === 'postgres' ? DataTypes.ARRAY(DataTypes.TEXT) : DataTypes.JSON,
-      allowNull: true,
-      defaultValue: []
-    },
+  skills: {
+    type: DataTypes.JSON, // Standardized to JSON for cross-dialect stability without sync
+    allowNull: true,
+    defaultValue: []
+  },
 
-    cgpa: {
-      type: DataTypes.FLOAT,
-      allowNull: true
-    },
+  cgpa: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
 
-    year_of_passout: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
+  year_of_passout: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
 
   }, {
+    tableName: "Candidates",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at"

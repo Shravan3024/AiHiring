@@ -1,43 +1,35 @@
-require("dotenv").config();
+require('dotenv').config();
 
-console.log("Loading app...");
+console.log("🚀 Initializing Mask Polymers Backend...");
+
 const app = require("./app");
-console.log("Loading config/db...");
 const { sequelize } = require("./config/db");
 
-console.log("Loading models...");
-// ✅ IMPORTANT: Load ALL models from index
-const db = require("./models");
-console.log("Models loaded!");
+// Load models to ensure associations are registered
+require("./models");
 
 const PORT = process.env.PORT || 5000;
+
 async function startServer() {
-  const isPostgres = sequelize.getDialect() === 'postgres';
-  
   try {
-    // 🔄 Authenticate only - no more auto-sync or migrations
+    // 🔍 Connection Test
+    console.log("📡 Connecting to Supabase PostgreSQL...");
     await sequelize.authenticate();
     console.log("✅ Database authenticated successfully");
 
-    // 🚀 Start server
-    app.listen(PORT, async () => {
-      console.log(`🚀 Mask Polymers Backend running on port ${PORT}`);
-      console.log(`📡 Connected to: ${isPostgres ? 'Remote Supabase' : 'Local SQLite'}`);
-      
-      // Auto-Seed if needed
-      try {
-        const seedDatabase = require("./seeds");
-        await seedDatabase();
-      } catch (seedErr) {
-        console.error("⚠️ Seeding failed:", seedErr.message);
-      }
+    // NOTE: Schema sync is disabled as per production requirements. 
+    // All tables must be created directly in Supabase.
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌍 Environment: Production (Supabase)`);
     });
 
-  } catch (err) {
-    console.error("❌ Fatal startup error:", err.message);
-    if (isPostgres) {
-      console.error("💡 TIP: Verify your DATABASE_URL in .env or the Supabase connection status.");
-    }
+  } catch (error) {
+    console.error("\n❌ DATABASE CONNECTION FAILED:");
+    console.error("--------------------------------");
+    console.error(error);
+    console.error("--------------------------------\n");
     process.exit(1);
   }
 }

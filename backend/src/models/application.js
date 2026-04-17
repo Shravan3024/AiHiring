@@ -19,51 +19,24 @@ module.exports = (sequelize) => {
     specialization: DataTypes.STRING,
     experience_years: DataTypes.INTEGER,
     status: {
-      type: DataTypes.ENUM(
-        "APPLIED",
-        "RESUME_SUBMITTED",
-        "RESUME_EVALUATED",
-        "ASSESSMENT_UNLOCKED",
-        "TECHNICAL_ROUND_PENDING",
-        "TECHNICAL_ROUND_IN_PROGRESS",
-        "TECHNICAL_ROUND_COMPLETED",
-        "INTERVIEW_UNLOCKED",
-        "INTERVIEW_SCHEDULED",
-        "INTERVIEW_IN_PROGRESS",
-        "INTERVIEW_COMPLETED",
-        "RE_INTERVIEW_REQUESTED",
-        "HR_REVIEW",
-        "SELECTED",
-        "OFFERED",
-        "HIRED",
-        "OFFER_REJECTED",
-        "REJECTED",
-        "REJECTED_BY_CANDIDATE",
-        "AUTO_REJECTED",
-        "RECOMMENDED_BY_AI",
-        "PROCEED_TO_HR"
-      ),
+      type: DataTypes.STRING, // Changed from ENUM for Supabase compatibility
       defaultValue: "APPLIED"
     },
     attempt_count: {
       type: DataTypes.INTEGER,
-      defaultValue: 1,
-      comment: "Track how many times the candidate has applied for this role"
+      defaultValue: 1
     },
     resume_score: {
       type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: "AI resume matching score (0-100)"
+      allowNull: true
     },
     technical_score: {
       type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: "Technical assessment score"
+      allowNull: true
     },
     interview_score: {
       type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: "AI interview analysis score"
+      allowNull: true
     },
     hr_decision: {
       type: DataTypes.STRING,
@@ -71,51 +44,41 @@ module.exports = (sequelize) => {
     },
     hr_notes: {
       type: DataTypes.TEXT,
-      allowNull: true,
-      comment: "Internal notes (not visible to candidate)"
+      allowNull: true
     },
     overall_score: {
       type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: "Combined score from all rounds"
+      allowNull: true
     },
     resume_url: {
       type: DataTypes.TEXT,
-      allowNull: true,
-      comment: "Public URL to the uploaded resume file"
+      allowNull: true
     },
     skills: {
-      type: sequelize.getDialect() === 'postgres' ? DataTypes.ARRAY(DataTypes.TEXT) : DataTypes.JSON,
+      type: DataTypes.JSON, // Simplified to JSON for broad compatibility
       allowNull: true,
-      defaultValue: [],
-      comment: "Parsed skills from resume"
+      defaultValue: []
     },
     cgpa: {
       type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: "CGPA extracted from resume"
+      allowNull: true
     },
     year_of_passout: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      comment: "Year of passout extracted from resume"
+      allowNull: true
     },
     summary: {
       type: DataTypes.TEXT,
-      allowNull: true,
-      comment: "Professional summary of the candidate"
+      allowNull: true
     },
     applied_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
     }
+  }, {
+    tableName: "Applications",
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 };
