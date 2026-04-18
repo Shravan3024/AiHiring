@@ -21,13 +21,13 @@ class HRDashboardController {
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.pendingReview } } }),
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.shortlisted } } }),
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.rejected } } }),
-        Application.findAll({ where: { status: { [Op.in]: STATUS_GROUPS.shortlisted } }, attributes: ['applied_at', 'createdAt', 'updatedAt'] }),
+        Application.findAll({ where: { status: { [Op.in]: STATUS_GROUPS.shortlisted } }, attributes: ['applied_at', 'created_at', 'updated_at'] }),
       ]);
 
       const avgTimeToHire = selectedApps.length > 0
         ? Math.round(selectedApps.reduce((acc, app) => {
-            const start = app.applied_at || app.createdAt;
-            return acc + Math.floor((new Date(app.updatedAt) - new Date(start)) / 86400000);
+            const start = app.applied_at || app.created_at;
+            return acc + Math.floor((new Date(app.updated_at) - new Date(start)) / 86400000);
           }, 0) / selectedApps.length)
         : 0;
 
@@ -104,7 +104,7 @@ class HRDashboardController {
         where: { status: { [Op.notIn]: STATUS_GROUPS.rejected } },
         attributes: ['resume_score', 'technical_score', 'interview_score'],
         limit: 100,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const tally = [
@@ -140,7 +140,7 @@ class HRDashboardController {
     try {
       const applications = await Application.findAll({
         where: { status: { [Op.in]: ['APPLIED', 'RESUME_SUBMITTED', ...STATUS_GROUPS.pendingReview, 'RE_INTERVIEW_REQUESTED'] } },
-        attributes: ['id', 'status', 'updatedAt'],
+        attributes: ['id', 'status', 'updated_at'],
         include: [
           { 
             model: Candidate, 
@@ -149,13 +149,13 @@ class HRDashboardController {
           }, 
           { model: Job, attributes: ['title'] }
         ],
-        order: [['updatedAt', 'ASC']],
+        order: [['updated_at', 'ASC']],
         limit: 20,
       });
 
       const actions = applications.map(app => {
-        const hoursInReview = Math.round((Date.now() - new Date(app.updatedAt).getTime()) / 3600000);
-        const daysWaiting = Math.max(0, Math.floor((Date.now() - new Date(app.updatedAt).getTime()) / 86400000));
+        const hoursInReview = Math.round((Date.now() - new Date(app.updated_at).getTime()) / 3600000);
+        const daysWaiting = Math.max(0, Math.floor((Date.now() - new Date(app.updated_at).getTime()) / 86400000));
         const hoursRemaining = Math.max(0, 24 - hoursInReview);
         return {
           _id:            String(app.id),
@@ -185,13 +185,13 @@ class HRDashboardController {
       const since = new Date(Date.now() - days * 86400000);
 
       const applications = await Application.findAll({
-        where: { createdAt: { [Op.gte]: since }, hr_decision: { [Op.ne]: null } },
-        attributes: ['hr_decision', 'overall_score', 'createdAt'],
+        where: { created_at: { [Op.gte]: since }, hr_decision: { [Op.ne]: null } },
+        attributes: ['hr_decision', 'overall_score', 'created_at'],
       });
 
       const byMonth = {};
       applications.forEach(app => {
-        const month = new Date(app.createdAt).toLocaleString('default', { month: 'short' });
+        const month = new Date(app.created_at).toLocaleString('default', { month: 'short' });
         if (!byMonth[month]) byMonth[month] = { month, aiDecisions: 0, hrDecisions: 0 };
         const aiPositive = (app.overall_score || 0) >= 60;
         if (aiPositive) byMonth[month].aiDecisions++;
@@ -242,7 +242,7 @@ class HRDashboardController {
           },
           { model: Job, attributes: ['title'] }
         ],
-        order: [['updatedAt', 'ASC']], limit: 5,
+        order: [['updated_at', 'ASC']], limit: 5,
       });
 
       return res.status(200).json({
@@ -271,15 +271,15 @@ class HRDashboardController {
        const selectedApps = await Application.findAll({
          where: { status: { [Op.in]: STATUS_GROUPS.shortlisted } },
          include: [{ model: Job, attributes: ['title'] }],
-         attributes: ['applied_at', 'createdAt', 'updatedAt']
+         attributes: ['applied_at', 'created_at', 'updated_at']
        });
 
        const roleTime = {};
        selectedApps.forEach(app => {
           const role = app.Job?.title || 'General';
           if (!roleTime[role]) roleTime[role] = { totalDays: 0, count: 0 };
-          const start = app.applied_at || app.createdAt;
-          const days = Math.floor((new Date(app.updatedAt) - new Date(start)) / 86400000);
+          const start = app.applied_at || app.created_at;
+          const days = Math.floor((new Date(app.updated_at) - new Date(start)) / 86400000);
           roleTime[role].totalDays += days;
           roleTime[role].count += 1;
        });

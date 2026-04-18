@@ -59,10 +59,11 @@ module.exports = (sequelize) => {
   metadata: {
     type: DataTypes.JSON,
     allowNull: true
-  },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
   }
+  }, {
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    tableName: 'DocumentRecords'
   });
 };

@@ -115,8 +115,7 @@ export default function IntegratedAssessmentPage() {
 
   const logMalpracticeMutation = useMutation<AxiosResponse<any>, Error, { type: string; severity?: number; meta: any }>({
     mutationFn: (data) => {
-       if (!assessment?.attempt_id) throw new Error("Attempt ID not found");
-       return candidateApi.logMalpractice(String(assessment.attempt_id), data);
+       return candidateApi.logMalpractice(applicationId, data);
     },
   });
 
@@ -138,10 +137,26 @@ export default function IntegratedAssessmentPage() {
   // 5. Proctoring
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      console.log("Initializing camera Subnet...");
+      // Using more standard constraints for wider compatibility
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 },
+          frameRate: { ideal: 15, max: 24 } 
+        }, 
+        audio: false 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(e => console.error("Play failed:", e));
+          console.log("Camera Stream Active");
+        };
+      }
     } catch (err) {
-      toast.error("Camera access is mandatory.");
+      console.error("Camera fail:", err);
+      toast.error("Camera access is mandatory. Please check browser permissions and hardware.");
     }
   };
 
@@ -162,18 +177,16 @@ export default function IntegratedAssessmentPage() {
   };
 
   const handleStart = async () => {
-    // Attempt fullscreen first as it requires direct gesture
-    if (containerRef.current?.requestFullscreen) {
-      try {
-        await containerRef.current.requestFullscreen();
-        setIsFullScreen(true);
-      } catch (e) {
-        console.warn("Initial FS failed, will retry via button.");
-      }
-    }
     setIsStarted(true);
-    await startCamera();
   };
+
+  useEffect(() => {
+    if (isStarted) {
+      handleFullScreen();
+      startCamera();
+    }
+    return () => stopCamera();
+  }, [isStarted]);
 
   useEffect(() => {
     if (!isStarted) return;
@@ -182,8 +195,16 @@ export default function IntegratedAssessmentPage() {
     const handleVisibility = () => {
       if (document.visibilityState === "hidden" && !isSubmitting) {
         setWarningCount(v => v + 1);
-        logMalpracticeMutation.mutate({ type: "TAB_SWITCH", meta: { timestamp: new Date() } });
-        toast.error("Security Warning: Tab switching detected.");
+        logMalpracticeMutation.mutate({ 
+          type: "TAB_SWITCH", 
+          severity: 5,
+          meta: { 
+            timestamp: new Date().toISOString(),
+            applicationId: applicationId,
+            currentQuestion: currentQuestionIndex + 1
+          } 
+        });
+        toast.error("Security Warning: Tab switching detected. This incident has been logged.");
       }
     };
 
@@ -354,7 +375,7 @@ export default function IntegratedAssessmentPage() {
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-black">
+    <div ref={containerRef} className="min-h-screen bg-black overflow-y-auto">
       {/* ⚠️ PROCTORING LAYER */}
       {(!isFullScreen && !isSubmitting) && (
         <div className="fixed inset-0 z-[1000] bg-black flex items-center justify-center font-mono p-12 text-white text-center">
@@ -376,7 +397,7 @@ export default function IntegratedAssessmentPage() {
       ) : (
         <div className="min-h-screen bg-[#050505] text-slate-300 font-mono flex flex-col items-stretch text-left">
           {/* HEADER */}
-          <div className="h-28 border-b border-slate-900 bg-black/95 flex items-center justify-between px-16 sticky top-0 z-[100]">
+          <div className="h-20 border-b border-slate-900 bg-black/95 flex items-center justify-between px-8 sticky top-0 z-[100]">
              <div className="flex items-center gap-8">
                 <div className="h-14 w-14 bg-white rounded-3xl flex items-center justify-center text-black font-black text-2xl">M</div>
                 <h1 className="text-sm font-black text-white uppercase tracking-widest">Technical Subnet 01</h1>
@@ -390,28 +411,27 @@ export default function IntegratedAssessmentPage() {
              </div>
           </div>
 
-          <div className="flex-1 flex gap-12 p-16">
+          <div className="h-full flex flex-col lg:flex-row gap-6 p-6 lg:p-10 relative">
              {/* MAIN QUESTION AREA */}
-             <div className="flex-1 flex flex-col gap-8">
-                <div className="flex-1 border-slate-900 bg-black rounded-[3.5rem] overflow-hidden flex flex-col border-2 shadow-2xl shadow-blue-900/10">
-                   <div className="p-16 border-b border-slate-900 bg-slate-950/50">
+             <div className="flex-1 flex flex-col gap-6">
+                <div className="border-slate-900 bg-black rounded-[2.5rem] flex flex-col border-2 shadow-2xl shadow-blue-900/10">
+                    <div className="p-8 lg:p-12 border-b border-slate-900 bg-slate-950/50">
                       <div className="flex gap-3 mb-6">
                         <Badge className="bg-blue-600/10 text-blue-400 border-blue-600/20">{assessment.questions[currentQuestionIndex].category}</Badge>
                         <Badge className="bg-slate-900 text-slate-400">{assessment.questions[currentQuestionIndex].difficulty}</Badge>
                       </div>
-                      <h2 className="text-4xl font-black text-white leading-tight underline decoration-blue-500/30 underline-offset-8">
+                       <h2 className="text-2xl lg:text-3xl font-black text-white leading-tight underline decoration-blue-500/30 underline-offset-8">
                          {assessment.questions[currentQuestionIndex].question}
                       </h2>
                    </div>
-                   
-                   <div className="p-16 space-y-6 flex-1 overflow-y-auto">
+                    <div className="p-8 lg:p-10 space-y-4">
                       {assessment.questions[currentQuestionIndex].options && assessment.questions[currentQuestionIndex].options.length > 0 ? (
                         assessment.questions[currentQuestionIndex].options.map((opt, i) => (
                           <button 
                             key={i} 
                             onClick={() => handleAnswer(opt)} 
                             className={cn(
-                              "w-full p-8 text-left rounded-[2rem] border-2 transition-all flex items-center gap-8 group", 
+                              "w-full p-6 text-left rounded-[2rem] border-2 transition-all flex items-center gap-8 group", 
                               answers[assessment.questions[currentQuestionIndex].id] === opt 
                                 ? "bg-blue-600 border-blue-500 text-white" 
                                 : "bg-black border-slate-900 hover:border-slate-700"
@@ -428,22 +448,22 @@ export default function IntegratedAssessmentPage() {
                           placeholder="Type your detailed solution here..."
                           value={answers[assessment.questions[currentQuestionIndex].id] || ""} 
                           onChange={(e) => handleAnswer(e.target.value)} 
-                          className="w-full h-96 bg-black border-2 border-slate-900 rounded-[2.5rem] p-12 text-2xl text-slate-300 focus:border-blue-600 focus:outline-none transition-colors scrollbar-hide" 
+                          className="w-full h-48 bg-black border-2 border-slate-900 rounded-[1.5rem] p-8 text-xl text-slate-300 focus:border-blue-600 focus:outline-none transition-colors scrollbar-hide" 
                         />
                       )}
                    </div>
 
-                   <div className="p-16 flex justify-between bg-black/50 border-t border-slate-900">
-                      <Button variant="outline" disabled={currentQuestionIndex === 0} onClick={() => setCurrentQuestionIndex(v => v - 1)} className="h-20 px-12 rounded-3xl border-slate-800 text-slate-400 font-bold uppercase">BACK</Button>
-                      <Button disabled={currentQuestionIndex === assessment.questions.length - 1} onClick={() => setCurrentQuestionIndex(v => v + 1)} className="bg-white text-black h-20 px-16 rounded-3xl font-black uppercase">NEXT</Button>
+                   <div className="p-8 lg:px-12 lg:py-8 flex justify-between bg-black/50 border-t border-slate-900">
+                      <Button variant="outline" disabled={currentQuestionIndex === 0} onClick={() => setCurrentQuestionIndex(v => v - 1)} className="h-16 px-10 rounded-2xl border-slate-800 text-slate-400 font-bold uppercase">BACK</Button>
+                      <Button disabled={currentQuestionIndex === assessment.questions.length - 1} onClick={() => setCurrentQuestionIndex(v => v + 1)} className="bg-white text-black h-16 px-12 rounded-2xl font-black uppercase">NEXT</Button>
                    </div>
                 </div>
              </div>
 
              {/* SIDEBAR PROCTORING */}
-             <div className="w-[450px] flex flex-col gap-10">
-                <div className="aspect-[3/4] bg-slate-950 rounded-[4rem] border-2 border-slate-900 overflow-hidden relative grayscale contrast-125 hover:grayscale-0 transition-all duration-700 group">
-                   <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+              <div className="w-full lg:w-[400px] flex flex-col gap-6 sticky top-28">
+                <div className="aspect-[3/4] bg-slate-950 rounded-[4rem] border-2 border-slate-900 overflow-hidden relative group">
+                   <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror-x" />
                    <div className="absolute top-10 left-10 p-3 bg-red-600 rounded-full animate-pulse z-10 shadow-lg shadow-red-900/50" />
                    <div className="absolute bottom-10 left-10 right-10 bg-black/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
                       <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">AI PROCTOR ACTIVE</p>
@@ -457,7 +477,7 @@ export default function IntegratedAssessmentPage() {
                         <span className="text-[10px] font-black text-slate-500 uppercase">Test Progress</span>
                         <span className="text-xs font-black text-blue-400">{Math.round(((currentQuestionIndex + 1) / assessment.questions.length) * 100)}%</span>
                       </div>
-                      <Progress value={((currentQuestionIndex + 1) / assessment.questions.length) * 100} className="h-2 mb-10 bg-slate-900" />
+                      <Progress value={((currentQuestionIndex + 1) / assessment.questions.length) * 100} className="h-2 mb-10 bg-slate-900 transition-all duration-700 ease-in-out [&>div]:transition-all [&>div]:duration-700" />
                       
                       <div className="grid grid-cols-5 gap-4">
                         {assessment.questions.map((q, i) => (

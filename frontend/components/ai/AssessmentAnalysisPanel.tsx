@@ -14,6 +14,8 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
+import api from "@/lib/api";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AssessmentPanelProps {
   applicationId: number;
@@ -27,13 +29,8 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({
   const { data: assessments } = useQuery({
     queryKey: ["assessments", applicationId],
     queryFn: async () => {
-      const response = await fetch(`/api/ai/analysis/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch assessments");
-      return response.json();
+      const response = await api.get(`/ai/analysis/${applicationId}`);
+      return response.data;
     },
   });
 
@@ -222,15 +219,42 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({
                     )}
                   </div>
 
-                  {/* Recommendations */}
-                  {assess.improvement_areas && assess.improvement_areas.length > 0 && (
-                    <div className="p-3 border-l-4 border-blue-500 bg-blue-50 rounded space-y-2">
-                      <h4 className="font-semibold text-sm text-gray-700">Recommendations</h4>
-                      <ul className="text-xs text-gray-700 space-y-1">
-                        {assess.improvement_areas.slice(0, 3).map((rec: string, idx: number) => (
-                          <li key={idx}>✓ {rec}</li>
-                        ))}
-                      </ul>
+                  {/* Detailed Q&A */}
+                  {assess.detailed_qa && assess.detailed_qa.length > 0 && (
+                    <div className="pt-6 border-t border-gray-100">
+                      <h4 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+                         <Zap className="w-5 h-5 text-amber-500" /> Assessment Trace: Item Consistency
+                      </h4>
+                      <div className="rounded-2xl border overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-gray-50/80">
+                            <TableRow>
+                              <TableHead className="w-12 text-center">#</TableHead>
+                              <TableHead>Assessment Prompt</TableHead>
+                              <TableHead>Candidate Vector</TableHead>
+                              <TableHead>Control Key</TableHead>
+                              <TableHead className="text-right">Verdict</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {assess.detailed_qa.map((qa: any, idx: number) => (
+                              <TableRow key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                <TableCell className="text-center font-mono text-gray-400 text-xs">{idx + 1}</TableCell>
+                                <TableCell className="font-medium text-gray-900 max-w-md">{qa.question_text}</TableCell>
+                                <TableCell className="text-sm text-gray-600 italic">"{qa.candidate_answer || 'No input signal'}"</TableCell>
+                                <TableCell className="text-sm font-semibold text-blue-600">{qa.correct_answer || 'N/A'}</TableCell>
+                                <TableCell className="text-right">
+                                  {qa.is_correct ? (
+                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">VALIDATED</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-red-600 border-red-100">MISMATCH</Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   )}
                 </CardContent>

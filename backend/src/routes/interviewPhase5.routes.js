@@ -25,7 +25,7 @@ router.get('/config', authMiddleware, interviewController.getInterviewConfig);
  * GET /interview/application/:applicationId/start
  * Private: Candidate only
  */
-router.get(
+router.post(
   '/application/:applicationId/start',
   authMiddleware,
   roleMiddleware(['CANDIDATE']),

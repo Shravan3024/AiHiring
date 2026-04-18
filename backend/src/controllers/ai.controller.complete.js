@@ -663,6 +663,42 @@ exports.getAIAnalysis = async (req, res) => {
       where: { application_id: applicationId }
     });
 
+    // Fetch AssessmentAttempt to get the actual answers provided
+    const { AssessmentAttempt, TechnicalQuestionBank } = require('../models');
+    const assessmentAttempts = await AssessmentAttempt.findAll({
+      where: { application_id: applicationId },
+      order: [['created_at', 'DESC']]
+    });
+
+    // Enrich assessment analyses with question details if available
+    const enrichedAssessments = await Promise.all(assessmentAnalyses.map(async (analysis) => {
+      const attempt = assessmentAttempts.find(a => a.id === analysis.attempt_id) || assessmentAttempts[0];
+      if (attempt && attempt.answers) {
+        // Fetch questions from bank to get question text and correct answers
+        const questionIds = attempt.answers.map((a: any) => a.question_id);
+        const questions = await TechnicalQuestionBank.findAll({
+          where: { questionId: questionIds }
+        });
+
+        const detailedAnswers = attempt.answers.map((ans: any) => {
+          const q = questions.find(q => q.questionId === ans.question_id);
+          return {
+            question_id: ans.question_id,
+            question_text: q?.question || 'Question text unavailable',
+            candidate_answer: ans.answer_text,
+            correct_answer: q?.correct_answer || q?.expected_answer || 'N/A',
+            is_correct: ans.answer_text === q?.correct_answer
+          };
+        });
+
+        return {
+          ...analysis.toJSON(),
+          detailed_qa: detailedAnswers
+        };
+      }
+      return analysis;
+    }));
+
     const interviewAnalysis = await InterviewAnalysis.findOne({
       where: { application_id: applicationId }
     });
@@ -676,9 +712,10 @@ exports.getAIAnalysis = async (req, res) => {
       message: 'AI analysis retrieved successfully',
       data: {
         resume_analysis: resumeAnalysis,
-        assessment_analyses: assessmentAnalyses,
+        assessment_analyses: enrichedAssessments,
         interview_analysis: interviewAnalysis,
-        ai_decision: aiDecision
+        ai_decision: aiDecision,
+        assessment_attempts: assessmentAttempts
       }
     });
 

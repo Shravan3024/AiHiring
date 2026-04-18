@@ -19,7 +19,7 @@ exports.getAllApplications = async (req, res) => {
         { model: Job },
         { model: TechnicalRound }
       ],
-      order: [["createdAt", "DESC"]]
+      order: [["created_at", "DESC"]]
     });
 
     const mapped = applications.map(app => {

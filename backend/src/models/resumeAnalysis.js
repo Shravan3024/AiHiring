@@ -31,25 +31,25 @@ module.exports = (sequelize) => {
         type: DataTypes.JSON,
       },
       certifications: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       languages: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       ai_summary: {
         type: DataTypes.TEXT,
       },
       strengths: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       weaknesses: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       recommendations: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       key_achievements: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       overall_score: {
         type: DataTypes.FLOAT,
@@ -58,10 +58,10 @@ module.exports = (sequelize) => {
         type: DataTypes.FLOAT,
       },
       jd_matched_skills: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       jd_missing_skills: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       role_fit: {
         type: DataTypes.JSON,
@@ -70,10 +70,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
       },
       red_flags: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       green_flags: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       total_years_experience: {
         type: DataTypes.INTEGER,

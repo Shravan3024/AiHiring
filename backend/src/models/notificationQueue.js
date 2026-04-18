@@ -52,10 +52,6 @@ module.exports = (sequelize) => {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
   sent_at: {
     type: DataTypes.DATE,
     allowNull: true
@@ -73,5 +69,10 @@ module.exports = (sequelize) => {
     allowNull: true,
     comment: "Error message if status is FAILED"
   }
+  }, {
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    tableName: 'NotificationQueues'
   });
 };

@@ -5,15 +5,15 @@ module.exports = (sequelize) => {
     "TechnicalQuestionBank",
     {
       questionId: {
-  type: DataTypes.STRING,
-  primaryKey: true,
-  field: "questionId", // 🔥 FIX
-  defaultValue: () => `tq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-},
-job_id: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-},
+        type: DataTypes.STRING,
+        primaryKey: true,
+        field: "questionId",
+        defaultValue: () => `tq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      },
+      job_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
       jobRole: {
         type: DataTypes.ENUM(
           "MANAGEMENT_TRAINEE_MARKETING",
@@ -22,10 +22,10 @@ job_id: {
           "RUBBER_PROCESS_ENGINEER"
         ),
         allowNull: false,
-        field: "jobRole", // 🔥 FIX
+        field: "jobRole",
       },
       topic: {
-        type: DataTypes.STRING, // e.g., "Machine Learning", "React", "Data Structures"
+        type: DataTypes.STRING,
         allowNull: false,
       },
       difficulty: {
@@ -35,9 +35,10 @@ job_id: {
       weight: {
         type: DataTypes.INTEGER,
         defaultValue: 1,
+        field: "section_weight"
       },
       questionType: {
-        type: DataTypes.ENUM("MCQ", "CODING", "THEORY", "DEBUGGING"),
+        type: DataTypes.STRING, // Changed from ENUM to allow more flexibility: MCQ, SCENARIO, APTITUDE, BEHAVIORAL, etc.
         defaultValue: "THEORY",
       },
       question: {
@@ -50,10 +51,22 @@ job_id: {
         defaultValue: [],
       },
       correct_answer: {
-        type: DataTypes.STRING, // The correct option text, e.g., "c) Option 3"
+        type: DataTypes.STRING,
         allowNull: true,
       },
-      // For Coding/Debugging
+      // For Coding/Debugging/AI Analysis
+      expected_answer: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      evaluation_type: {
+        type: DataTypes.STRING, // MCQ, AI
+        defaultValue: "AI",
+      },
+      section_type: {
+        type: DataTypes.STRING, // MCQ, SCENARIO, APTITUDE, TECHNICAL, BEHAVIORAL, etc.
+        allowNull: true,
+      },
       codeSnippet: {
         type: DataTypes.TEXT,
         defaultValue: null,
@@ -63,24 +76,24 @@ job_id: {
         defaultValue: null,
       },
       testCases: {
-        type: DataTypes.JSON, // [{ input, expectedOutput }]
+        type: DataTypes.JSON,
         defaultValue: [],
       },
-      // General
       explanation: {
         type: DataTypes.TEXT,
-        allowNull: true, // Nullable for some question types
+        allowNull: true,
       },
       hints: {
-        type: DataTypes.JSON, // ["hint1", "hint2"]
+        type: DataTypes.JSON,
         defaultValue: [],
       },
       keywords: {
         type: DataTypes.JSON,
         defaultValue: [],
+        field: "scoring_keywords"
       },
       estimatedTime: {
-        type: DataTypes.INTEGER, // in minutes
+        type: DataTypes.INTEGER,
         defaultValue: 5,
       },
       maxAttempts: {
@@ -99,6 +112,9 @@ job_id: {
     {
       timestamps: true,
       tableName: "technical_question_bank",
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 };
+

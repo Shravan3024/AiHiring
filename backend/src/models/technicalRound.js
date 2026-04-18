@@ -27,5 +27,10 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true
     }
+  }, {
+    tableName: "TechnicalRounds",
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 };

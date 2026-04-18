@@ -54,8 +54,22 @@ export default function CandidateDashboard() {
   });
 
   const apps = overview?.applications || overview?.dashboard?.applications || [];
-  const validApp = apps.find((app: any) => app.status === "APPLIED");
-  const stage = validApp?.stage || validApp?.status || "Applied";
+  const validApp = apps.find((app: any) => 
+    !["REJECTED", "AUTO_REJECTED", "HIRED", "APPLICATION_CLOSED"].includes(app.status || "")
+  );
+
+  const getStage = (status?: string) => {
+    if (!status) return "Applied";
+    const s = status.toUpperCase();
+    if (s.includes("OFFER") || s.includes("SELECTED")) return "Offer";
+    if (s.includes("INTERVIEW")) return "Interview";
+    if (s.includes("ASSESSMENT") || s.includes("TECHNICAL")) return "Assessment";
+    if (s.includes("SCREENING")) return "Screening";
+    if (s === "HIRED") return "Hired";
+    return "Applied";
+  };
+
+  const stage = getStage(validApp?.status);
 
   const quickActions = [
     { label: "My Profile", icon: Settings, href: "/candidate/profile", color: "bg-slate-100 text-slate-600", desc: "Update your details" },

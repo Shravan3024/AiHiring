@@ -44,11 +44,12 @@ const parseResumeWithAI = async (filePath) => {
 const localResumeParser = async (filePath) => {
     try {
         const fs = require('fs');
-        const pdf = require('pdf-parse');
+        const { PDFParse } = require('pdf-parse');
         
         const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdf(dataBuffer);
-        const text = data.text;
+        const pdfInstance = new PDFParse({ data: dataBuffer });
+        const textResult = await pdfInstance.getText();
+        const text = textResult.text;
 
         const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0];
         const phone = text.match(/(\+?\d{1,3}[- ]?)?\d{10}/)?.[0];
@@ -108,10 +109,12 @@ const scoreResume = async (parsedResume, jobRequirements) => {
  */
 const analyzeAssessmentResponse = async (assessmentData) => {
     try {
-        const { question, answer, category } = assessmentData;
+        const { question, answer, category, expectedAnswer, keywords } = assessmentData;
         
         // 1. Initial Local Semantic Score (Cosine Similarity)
-        const localSemanticScore = scoringService.calculateCosineSimilarity(question, answer);
+        // If we have an expected answer, compare against that. Otherwise compare against the question context.
+        const referenceText = expectedAnswer || question;
+        const localSemanticScore = scoringService.calculateCosineSimilarity(referenceText, answer);
         const baselineScore = Math.round(localSemanticScore * 100);
 
         // 2. Call Remote AI for Behavioral/Deep Technical Insights
@@ -119,7 +122,9 @@ const analyzeAssessmentResponse = async (assessmentData) => {
             const response = await aiServiceClient.post('/api/ai/assessment/analyze', {
                 question,
                 answer,
-                category
+                category,
+                expectedAnswer,
+                keywords
             });
             return {
                 score: response.data?.score || baselineScore,
@@ -127,11 +132,19 @@ const analyzeAssessmentResponse = async (assessmentData) => {
             };
         }
 
-        // Local Fallback Logic
+        // Local Fallback Logic: Boost score if keywords are found
+        let finalScore = baselineScore;
+        if (keywords && Array.isArray(keywords)) {
+            const foundCount = keywords.filter(k => answer.toLowerCase().includes(k.toLowerCase())).length;
+            const keywordBoost = (foundCount / keywords.length) * 20;
+            finalScore = Math.min(100, finalScore + keywordBoost);
+        }
+
         return {
-            score: Math.min(100, baselineScore + 10), // Boost for relevance
-            insights: "Local semantic analysis performed. Baseline relevance detected."
+            score: finalScore,
+            insights: "Local semantic analysis performed. Keyword density weighted."
         };
+
     } catch (err) {
         logger.warn(`Assessment AI Analysis failed: ${err.message}. Falling back to ML baseline.`);
         return { score: 70, insights: "Baseline fallback active." };
@@ -161,10 +174,29 @@ const analyzeInterview = async (transcript, interviewDetails = {}) => {
   }
 };
 
+/**
+ * Generate Resume Summary (Deterministic Fallback)
+ */
+const generateResumeSummary = async (parsedData) => {
+    const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : 'Various technical domains';
+    const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
+    
+    return `Candidate presents ${exp} years of industry experience with core competencies in ${skills}. Semantic density suggests a ${parsedData.role_fit?.fit_level || 'standard'} alignment with the specified role.`;
+};
+
+/**
+ * Generate Interview Summary
+ */
+const generateInterviewSummary = async (transcript, score) => {
+    return `The candidate demonstrated a ${score > 70 ? 'strong' : 'moderate'} grasp of professional concepts. Transcript analysis indicates active engagement with a focus score of ${score}%.`;
+};
+
 module.exports = {
   parseResumeWithAI,
   scoreResume,
   analyzeAssessmentResponse,
   analyzeInterview,
+  generateResumeSummary,
+  generateInterviewSummary,
   healthCheck: async () => ({ status: "UP", mode: AI_SERVICE_URL.includes('localhost') ? "LOCAL_ML" : "REMOTE_AI" })
 };

@@ -26,5 +26,10 @@ module.exports = (sequelize) => {
     meta: {
       type: DataTypes.JSON
     }
+  }, {
+    tableName: 'MalpracticeEvents',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 };

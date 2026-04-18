@@ -557,23 +557,27 @@ class ProctoringController {
    */
   static async logMalpractice(req, res) {
     try {
-      const { application_id, type, meta, severity } = req.body;
+      const { application_id, type, meta, severity, reference_id, referenceId } = req.body;
+      const targetAppId = application_id || reference_id || referenceId;
       const candidateId = req.candidate?.id;
 
-      if (!application_id || !type) {
-        return res.status(400).json({ success: false, message: 'application_id and type are required' });
+      if (!targetAppId || !type) {
+        return res.status(400).json({ success: false, message: 'application_id/reference_id and type are required' });
       }
 
-      // Verify application belongs to candidate
-      const app = await Application.findByPk(application_id);
+      // Verify application belongs to candidate (if not internal or if candidateId is present)
+      const app = await Application.findByPk(targetAppId);
       if (!app || (candidateId && app.candidate_id !== candidateId)) {
         return res.status(403).json({ success: false, message: 'Unauthorized' });
       }
 
       const event = await MalpracticeEvent.create({
-        application_id,
+        application_id: targetAppId,
         type,
-        meta,
+        meta: { 
+          ...meta, 
+          reference_id: targetAppId
+        },
         severity: severity || 1
       });
 

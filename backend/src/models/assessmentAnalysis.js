@@ -73,19 +73,19 @@ module.exports = (sequelize) => {
         type: DataTypes.JSON,
       },
       strengths: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       weaknesses: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       improvement_areas: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       optimization_suggestions: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       design_issues: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       estimated_skill_level: {
         type: DataTypes.STRING, // Changed from ENUM
@@ -97,10 +97,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
       },
       follow_up_questions: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       red_flags: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       proctoring_data: {
         type: DataTypes.JSON,

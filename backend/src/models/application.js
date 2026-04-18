@@ -55,7 +55,7 @@ module.exports = (sequelize) => {
       allowNull: true
     },
     skills: {
-      type: DataTypes.JSON, // Simplified to JSON for broad compatibility
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
       defaultValue: []
     },
@@ -74,6 +74,18 @@ module.exports = (sequelize) => {
     applied_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at'
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at'
     }
   }, {
     tableName: "Applications",

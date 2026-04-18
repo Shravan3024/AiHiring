@@ -83,7 +83,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING, // Changed from ENUM
       },
       risk_factors: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       summary: {
         type: DataTypes.TEXT,
@@ -95,7 +95,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
       },
       recommendations_for_hr: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       top_alternatives: {
         type: DataTypes.JSON,

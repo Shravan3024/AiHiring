@@ -221,7 +221,7 @@ export const candidateApi = {
   getInterviewConfig: () => api.get("/interview/config"),
 
 startInterviewPhase5: (applicationId: string) =>
-  api.get(`/interview/application/${applicationId}/start`),
+  api.post(`/interview/application/${applicationId}/start`),
 
 submitResponsePhase5: (sessionId: string, data: any) =>
   api.post(`/interview/${sessionId}/response`, data),
@@ -235,8 +235,8 @@ getInterviewStatusPhase5: (sessionId: string) =>
 
   getNotifications: () => api.get("/notifications/candidate/my"),
 
-  logMalpractice: (attemptId: string, data: object) => 
-    api.post(`/assessment/${attemptId}/malpractice`, data),
+  logMalpractice: (referenceId: string, data: object) => 
+    api.post("/proctoring/log-malpractice", { ...data, reference_id: referenceId }),
 
   // Jobs
   getJobs: () => api.get("/jobs"),

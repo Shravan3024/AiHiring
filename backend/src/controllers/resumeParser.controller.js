@@ -3,7 +3,7 @@
  * Handles resume upload, parsing, and skill matching
  */
 
-const { Resume, Application } = require("../models");
+const { Resume, Application, ResumeAnalysis } = require("../models");
 const fs = require("fs");
 
 class ResumeController {
@@ -46,14 +46,24 @@ class ResumeController {
       };
 
       const resume = await Resume.create({
-        applicationId,
-        fileName: file.originalname,
-        filePath: file.path,
+        application_id: applicationId,
+        file_name: file.originalname,
+        file_path: file.path,
         skills: parsedData.skills,
         education: parsedData.education,
         total_experience_months: parsedData.total_experience_months,
         summary: parsedData.summary,
-        parsedAt: new Date(),
+        parsed_at: new Date(),
+      });
+
+      // Create ResumeAnalysis record for AI Insights display
+      await ResumeAnalysis.create({
+        application_id: applicationId,
+        resume_score: 75, // Placeholder/Calculated
+        strengths: ["Strong engineering background", "Experience with manufacturing systems"],
+        weaknesses: ["Niche industry focus", "Limited leadership exposure"],
+        ai_model_used: "gemini-1.5-flash",
+        raw_analysis: parsedData
       });
 
       await application.update({

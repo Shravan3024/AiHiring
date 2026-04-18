@@ -147,11 +147,13 @@ export default function CandidateInterview() {
             
             if (faces.length > 1) {
                setFaceDetectionStatus("Action Required: Multi-User Presence");
-               candidateApi.logMalpractice({
-                  application_id: applicationId,
-                  type: "MULTIPLE_FACES",
-                  meta: { faces: faces.length, timestamp: new Date() }
-               }).catch(console.error);
+               if (interviewId && applicationId) {
+                  candidateApi.logMalpractice(applicationId!, {
+                     application_id: applicationId,
+                     type: "MULTIPLE_FACES",
+                     meta: { faces: faces.length, timestamp: new Date() }
+                  }).catch(console.error);
+               }
                toast.warning("Compliance Alert: Multiple individuals detected in your area.");
             } else if (faces.length === 0) {
                setFaceDetectionStatus("Connection Lost");
@@ -171,11 +173,13 @@ export default function CandidateInterview() {
     if (!started || completed || !applicationId) return;
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        candidateApi.logMalpractice({
-          application_id: applicationId,
-          type: "TAB_SWITCH",
-          meta: { timestamp: new Date(), question: currentQ + 1 }
-        }).catch(console.error);
+        if (interviewId && applicationId) {
+          candidateApi.logMalpractice(applicationId, {
+            application_id: applicationId,
+            type: "TAB_SWITCH",
+            meta: { timestamp: new Date(), question: currentQ + 1 }
+          }).catch(console.error);
+        }
         toast.warning("Compliance Notice: Navigation away from the session has been logged.");
       }
     };
@@ -215,11 +219,13 @@ export default function CandidateInterview() {
     if (!started || completed) return;
     const handle = () => {
       if (!document.fullscreenElement && !completed) {
-        candidateApi.logMalpractice({
-          application_id: applicationId!,
-          type: "FULLSCREEN_EXIT",
-          meta: { timestamp: new Date(), question: currentQ + 1 }
-        }).catch(console.error);
+        if (interviewId && applicationId) {
+          candidateApi.logMalpractice(applicationId, {
+            application_id: applicationId,
+            type: "FULLSCREEN_EXIT",
+            meta: { timestamp: new Date(), question: currentQ + 1 }
+          }).catch(console.error);
+        }
         toast.error("Compliance Notice: Fullscreen mode is required for assessment integrity.");
       }
     };
@@ -381,7 +387,7 @@ export default function CandidateInterview() {
 
   if (completed) {
     return (
-      <PanelLayout title="Interview Complete" allowedRoles={["CANDIDATE"]}>
+      <PanelLayout title="Interview Complete" allowedRoles={["CANDIDATE"]} fullScreen={true}>
         <div className="flex items-center justify-center min-h-[90vh] bg-slate-50/50 p-6">
           <Card className="w-full max-w-lg bg-white border-slate-200 text-slate-900 shadow-xl rounded-[2.5rem] overflow-hidden border">
             <CardContent className="p-16 text-center space-y-10">
@@ -399,7 +405,7 @@ export default function CandidateInterview() {
   }
 
   return (
-    <PanelLayout title="Professional Interview Portal" allowedRoles={["CANDIDATE"]}>
+    <PanelLayout title="Professional Interview Portal" allowedRoles={["CANDIDATE"]} fullScreen={true}>
       <div className="min-h-[85vh] flex flex-col items-center justify-center p-6 bg-slate-50/50">
         {!started ? (
           <Card className="max-w-3xl w-full bg-white border-slate-200 text-slate-900 shadow-2xl rounded-[2.5rem] overflow-hidden border">

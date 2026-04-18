@@ -9,6 +9,7 @@ import {
   Download, RefreshCw, Clock, GraduationCap, Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import api from "@/lib/api";
 
 interface ResumeAnalysisPanelProps {
   applicationId: number;
@@ -32,16 +33,11 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
       formData.append("applicationId", applicationId.toString());
       if (jobId) formData.append("jobId", jobId.toString());
 
-      const response = await fetch("/api/ai/resume/parse", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
+      const response = await api.post("/dashboard/candidate/resume/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      if (!response.ok) throw new Error("Resume parsing failed");
-      return response.json();
+      return response.data;
     },
     onSuccess: (data) => {
       onAnalysisComplete?.(data.data);
@@ -55,13 +51,8 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
   const { data: analysis } = useQuery({
     queryKey: ["resume-analysis", applicationId],
     queryFn: async () => {
-      const response = await fetch(`/api/ai/analysis/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch analysis");
-      return response.json();
+      const response = await api.get(`/ai/analysis/${applicationId}`);
+      return response.data;
     },
   });
 

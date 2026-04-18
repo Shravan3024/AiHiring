@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { hrApi } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -174,36 +175,32 @@ export default function PipelinePage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 flex-grow max-w-[200px] hidden xl:block">
-                  <div className="flex justify-between text-[10px] uppercase font-black tracking-widest text-slate-400">
-                    <span>Progress</span>
-                    <span>{(() => {
-                      const stageMap: Record<string, number> = {
-                        "APPLIED": 1, "RESUME_SUBMITTED": 1, "RESUME_EVALUATED": 2,
-                        "ASSESSMENT_UNLOCKED": 3, "TECHNICAL_ROUND_IN_PROGRESS": 3, "TECHNICAL_ROUND_COMPLETED": 4,
-                        "INTERVIEW_UNLOCKED": 5, "INTERVIEW_IN_PROGRESS": 5, "INTERVIEW_COMPLETED": 6,
-                        "PROCEED_TO_HR": 6, "RECOMMENDED_BY_AI": 7, "SELECTED": 7, "OFFERED": 7
-                      };
-                      const cur = stageMap[candidate.applicationStatus] || 1;
-                      return Math.round((cur / 7) * 100);
-                    })()}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-600 transition-all duration-1000" 
-                      style={{ width: `${(() => {
-                        const status = candidate.applicationStatus;
-                        const isRejected = ["REJECTED", "AUTO_REJECTED"].includes(status);
-                        if (isRejected) return 100;
-                        const stageMap: Record<string, number> = {
-                          "APPLIED": 1, "RESUME_SUBMITTED": 1, "RESUME_EVALUATED": 2,
-                          "ASSESSMENT_UNLOCKED": 3, "TECHNICAL_ROUND_IN_PROGRESS": 3, "TECHNICAL_ROUND_COMPLETED": 4,
-                          "INTERVIEW_UNLOCKED": 5, "INTERVIEW_IN_PROGRESS": 5, "INTERVIEW_COMPLETED": 6,
-                          "PROCEED_TO_HR": 7, "RECOMMENDED_BY_AI": 7, "SELECTED": 7, "OFFERED": 7
-                        };
-                        return Math.round(((stageMap[status] || 1) / 7) * 100);
-                      })()}%` }}
-                    />
-                  </div>
+                  {(() => {
+                    const status = candidate.applicationStatus;
+                    const isRejected = ["REJECTED", "AUTO_REJECTED"].includes(status);
+                    const stageMap: Record<string, number> = {
+                      "APPLIED": 1, "RESUME_SUBMITTED": 1, "RESUME_EVALUATED": 2,
+                      "ASSESSMENT_UNLOCKED": 3, "TECHNICAL_ROUND_IN_PROGRESS": 4, "TECHNICAL_ROUND_COMPLETED": 5,
+                      "INTERVIEW_UNLOCKED": 6, "INTERVIEW_IN_PROGRESS": 7, "INTERVIEW_COMPLETED": 8,
+                      "PROCEED_TO_HR": 9, "HR_REVIEW": 9, "RECOMMENDED_BY_AI": 9, "SELECTED": 10, "OFFERED": 10
+                    };
+                    const percent = isRejected ? 100 : Math.round(((stageMap[status] || 1) / 10) * 100);
+                    
+                    return (
+                      <>
+                        <div className="flex justify-between text-[10px] uppercase font-black tracking-widest text-slate-400">
+                          <span>{isRejected ? "Terminated" : "Progress"}</span>
+                          <span>{percent}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={cn("h-full transition-all duration-1000", isRejected ? "bg-red-500" : "bg-blue-600")}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center hidden md:block">

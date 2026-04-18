@@ -18,6 +18,7 @@ const HRDashboardController = require("../controllers/hrDashboard.controller");
 const CandidateProfileController = require("../controllers/candidateProfile.controller");
 const HRDecisionController = require("../controllers/hrDecision.controller");
 const { getNotifications } = require("../controllers/notification.controller");
+const ReportController = require("../controllers/report.controller");
 
 
 // ===============================
@@ -240,11 +241,19 @@ router.post(
   scheduleInterview
 );
 
+
 router.post(
   "/add-note/:applicationId",
   auth,
   role(["HR", "ADMIN"]),
   addInternalNote
+);
+
+router.get(
+  "/report/:applicationId",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.generateCandidateReport
 );
 
 // ✅ Removed: PUT /approval-rules/:ruleId

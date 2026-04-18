@@ -44,7 +44,7 @@ class CandidateProfileController {
       attributes: [
         'id', 'candidate_id', 'job_id', 'status', 'resume_score', 
         'technical_score', 'interview_score', 'overall_score', 'hr_decision', 
-          'hr_notes', 'summary', 'applied_at', 'createdAt', 'updatedAt',
+          'hr_notes', 'summary', 'applied_at', 'created_at', 'updated_at',
           'experience_years', 'skills', 'cgpa', 'year_of_passout'
         ],
         include: [
@@ -68,7 +68,7 @@ class CandidateProfileController {
           {
             model: require('../models').MalpracticeEvent,
             required: false,
-            attributes: ['id', 'type', 'severity', 'createdAt']
+            attributes: ['id', 'type', 'severity', 'created_at']
           }
         ]
       });
@@ -103,14 +103,14 @@ class CandidateProfileController {
       try {
         malpractice = await MalpracticeEvent.findAll({
           where: { application_id: applicationId },
-          order: [['createdAt', 'DESC']], limit: 20
+          order: [['created_at', 'DESC']], limit: 20
         });
       } catch (_) {}
 
       try {
          notes = await HRInternalNote.findAll({
             where: { applicationId },
-            order: [['createdAt', 'DESC']],
+            order: [['created_at', 'DESC']],
             include: [{ model: User, as: 'author', attributes: ['name', 'role'] }]
          });
       } catch (_) {}
@@ -153,7 +153,7 @@ class CandidateProfileController {
             malpracticeWarnings: application.malpractice_warnings || 0,
             violations: await MalpracticeEvent.findAll({
               where: { application_id: applicationId },
-              order: [['createdAt', 'DESC']],
+              order: [['created_at', 'DESC']],
               limit: 5
             })
           },
@@ -211,35 +211,35 @@ class CandidateProfileController {
             events: (application.MalpracticeEvents || []).map(e => ({
               type: e.type,
               severity: e.severity,
-              timestamp: e.createdAt
+              timestamp: e.created_at
             }))
           },
 
-          malpracticeEvents: malpractice.map(e => ({ type: e.event_type || e.type, severity: e.severity, timestamp: e.createdAt })),
+          malpracticeEvents: malpractice.map(e => ({ type: e.event_type || e.type, severity: e.severity, timestamp: e.created_at })),
           internalNotes: notes.map(n => ({
              id: n.id, content: n.content, type: n.noteType,
              author: n.author?.name || 'System', version: n.version,
-             createdAt: n.createdAt
+             created_at: n.created_at
           })),
           approvals: {
             totalNeeded: 1, // This can be dynamic based on job-specific rules
             received: ['RECOMMENDED_BY_AI', 'SELECTED', 'OFFERED'].includes(application.status) ? 1 : 0,
             records: application.hr_decision ? [{
               reviewer: 'HR', decision: application.hr_decision,
-              reason: application.hr_notes, timestamp: application.updatedAt, order: 1,
+              reason: application.hr_notes, timestamp: application.updated_at, order: 1,
             }] : [],
           },
           // Full Audit Trace
           auditLogs: {
             statusLogs: await ApplicationStatusLog.findAll({
               where: { application_id: applicationId },
-              order: [['createdAt', 'DESC']],
+              order: [['created_at', 'DESC']],
               limit: 50
             }),
             approvalRecords: await require('../models').ApprovalRecord.findAll({
               where: { applicationId },
               include: [{ model: require('../models').User, as: 'reviewer', attributes: ['name', 'role'] }],
-              order: [['createdAt', 'DESC']]
+              order: [['created_at', 'DESC']]
             })
           }
         }
@@ -260,7 +260,7 @@ class CandidateProfileController {
 
         const applications = await Application.findAll({
           where: { status: { [Op.in]: STATUS_GROUPS.pipeline } },
-          attributes: ['id', 'candidate_id', 'job_id', 'status', 'resume_score', 'technical_score', 'interview_score', 'overall_score', 'updatedAt'],
+          attributes: ['id', 'candidate_id', 'job_id', 'status', 'resume_score', 'technical_score', 'interview_score', 'overall_score', 'updated_at'],
           include: [
             { 
               model: Candidate, 
@@ -272,7 +272,7 @@ class CandidateProfileController {
             { model: MalpracticeEvent, required: false, attributes: ['id'] },
             { model: Job, required: false, attributes: ['id', 'title'] }
           ],
-          order: [['createdAt', 'ASC']]
+          order: [['created_at', 'ASC']]
         });
 
         let candidates = applications.map(app => {
@@ -289,7 +289,7 @@ class CandidateProfileController {
           });
 
           const fitBandVal = getFitBand(aiScore);
-          const daysInStage = Math.floor((Date.now() - new Date(app.updatedAt).getTime()) / 86400000);
+          const daysInStage = Math.floor((Date.now() - new Date(app.updated_at).getTime()) / 86400000);
 
           return {
             applicationId:     app.id,

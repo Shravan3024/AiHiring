@@ -85,14 +85,11 @@ module.exports = (sequelize) => {
     type: DataTypes.TEXT,
     allowNull: true,
     comment: "Internal HR notes (not visible to candidate)"
-  },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  updated_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
   }
+  }, {
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    tableName: 'InterviewSessions'
   });
 };

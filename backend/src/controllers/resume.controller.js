@@ -12,7 +12,7 @@ exports.uploadResume = async (req, res) => {
     }
 
     const fs = require('fs');
-    const pdf = require('pdf-parse');
+    const { PDFParse } = require('pdf-parse');
 
     const resumeUrl = `/uploads/resumes/${req.file.filename}`;
 
@@ -35,8 +35,9 @@ exports.uploadResume = async (req, res) => {
 
     try {
       const dataBuffer = fs.readFileSync(req.file.path);
-      const data = await pdf(dataBuffer);
-      const text = data.text;
+      const pdfInstance = new PDFParse({ data: dataBuffer });
+      const textResult = await pdfInstance.getText();
+      const text = textResult.text;
 
       // ---------------- CGPA ----------------
       const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
@@ -213,19 +214,18 @@ exports.uploadResume = async (req, res) => {
     }
 
     // ========== AI PARSING & SCORING (NEW) ==========
+    // ========== AI PARSING & SCORING (NEW) ==========
     let aiAnalysis = null;
     let resumeAnalysisRecord = null;
 
     try {
       logger.info(`[Resume AI] Starting AI parsing for resume: ${req.file.filename}`);
       
-      // Call AI service to parse resume with Google Generative AI
       const aiParsedData = await aiService.parseResumeWithAI(req.file.path);
       logger.info(`[Resume AI] AI parsing completed, score: ${aiParsedData.overall_score || 0}`);
 
-      // Get the latest application to score against job requirements
       let application = null;
-      let jdScores = { score: 0, matched_skills: [], missing_skills: [] };
+      let jdScores = { overall_fit_percentage: 0, matched_skills: [], missing_skills: [] };
 
       if (candidate) {
         application = await Application.findOne({
@@ -235,7 +235,6 @@ exports.uploadResume = async (req, res) => {
         });
 
         if (application && application.Job) {
-          // Score resume against job requirements
           try {
             const jobRequirements = {
               title: application.Job.title,
@@ -245,56 +244,65 @@ exports.uploadResume = async (req, res) => {
             };
 
             jdScores = await aiService.scoreResume(aiParsedData, jobRequirements);
-            logger.info(`[Resume AI] JD match score: ${jdScores.score || 0}`);
+            logger.info(`[Resume AI] JD match score: ${jdScores.overall_fit_percentage || 0}`);
           } catch (scoreError) {
             logger.warn(`[Resume AI] JD scoring failed (non-blocking): ${scoreError.message}`);
-            // Continue even if scoring fails
+          }
+
+          // ========== ADDING MANUAL SCORING SERVICE FALLBACK/ENHANCEMENT ==========
+          try {
+            const manualScoringService = require('../services/manualScoring.service');
+            const manualResults = await manualScoringService.scoreResumeManual(application.id, application.Job.id, aiParsedData);
+            
+            // Merge manual results if JD score is low or remote AI failed
+            if (jdScores.overall_fit_percentage < 40) {
+               jdScores.overall_fit_percentage = manualResults.overall_fit_percentage;
+               jdScores.matched_skills = manualResults.matched_skills;
+               jdScores.missing_skills = manualResults.missing_skills;
+            }
+            
+            // Add manual insights
+            aiParsedData.strengths = [...(aiParsedData.strengths || []), ...(manualResults.strengths || [])];
+            aiParsedData.weaknesses = [...(aiParsedData.weaknesses || []), ...(manualResults.weaknesses || [])];
+          } catch (mErr) {
+            logger.error(`[Manual Scorer] Failed: ${mErr.message}`);
           }
         }
       }
 
-      // Build AI analysis object
       aiAnalysis = {
         contact_info: aiParsedData.contact_info || {},
         education: aiParsedData.education || [],
         experience: aiParsedData.experience || [],
         skills: aiParsedData.skills || {},
         certifications: aiParsedData.certifications || [],
-        languages: aiParsedData.languages || [],
         ai_summary: aiParsedData.summary || 'No summary available',
-        strengths: aiParsedData.strengths || [],
-        weaknesses: aiParsedData.weaknesses || [],
+        strengths: Array.from(new Set(aiParsedData.strengths || [])),
+        weaknesses: Array.from(new Set(aiParsedData.weaknesses || [])),
         recommendations: aiParsedData.recommendations || [],
-        key_achievements: aiParsedData.key_achievements || [],
         overall_score: aiParsedData.overall_score || parsedData.score,
-        jd_match_score: jdScores.score || 0,
+        jd_match_score: jdScores.overall_fit_percentage || 0,
         jd_matched_skills: jdScores.matched_skills || [],
         jd_missing_skills: jdScores.missing_skills || [],
         role_fit: aiParsedData.role_fit || {},
-        analysis_explanation: aiParsedData.analysis_explanation || '',
         red_flags: aiParsedData.red_flags || [],
         green_flags: aiParsedData.green_flags || []
       };
 
-      // Store AI analysis in database
       if (application) {
         resumeAnalysisRecord = await ResumeAnalysis.create({
           application_id: application.id,
-          resume_id: 0, // Resume model not being used here
+          resume_id: 0,
           ...aiAnalysis
         });
 
-        // Update Application with resume score
         const resumeScore = Math.round(aiAnalysis.jd_match_score || aiAnalysis.overall_score);
         await application.update({
           resume_score: resumeScore,
-          skills: aiAnalysis.jd_matched_skills || parsedData.skills
+          skills: aiAnalysis.jd_matched_skills || (aiAnalysis.skills ? Object.values(aiAnalysis.skills).flat() : [])
         });
 
         logger.info(`[Resume AI] Resume analysis stored for application ${application.id}, score: ${resumeScore}`);
-
-        // Check if we should trigger auto-rejection engine
-        // (Only if assessment and interview are also done)
         await checkAndTriggerAutoRejection(application.id, logger);
       }
 
@@ -373,6 +381,25 @@ exports.reparseResume = async (req, res) => {
         min_experience: application.Job.min_experience || 0
       };
       jdScores = await aiService.scoreResume(aiParsedData, jobRequirements);
+
+      // ========== ADDING MANUAL SCORING SERVICE FALLBACK/ENHANCEMENT ==========
+      try {
+        const manualScoringService = require('../services/manualScoring.service');
+        const manualResults = await manualScoringService.scoreResumeManual(application.id, application.Job.id, aiParsedData);
+        
+        // Merge manual results if JD score is low or remote AI failed
+        if (jdScores.overall_fit_percentage < 40) {
+           jdScores.overall_fit_percentage = manualResults.overall_fit_percentage;
+           jdScores.matched_skills = manualResults.matched_skills;
+           jdScores.missing_skills = manualResults.missing_skills;
+        }
+        
+        // Add manual insights
+        aiParsedData.strengths = Array.from(new Set([...(aiParsedData.strengths || []), ...(manualResults.strengths || [])]));
+        aiParsedData.weaknesses = Array.from(new Set([...(aiParsedData.weaknesses || []), ...(manualResults.weaknesses || [])]));
+      } catch (mErr) {
+        logger.error(`[Manual Scorer] Reparse fallback failed: ${mErr.message}`);
+      }
     }
 
     // Update or Create AI Analysis
@@ -389,7 +416,7 @@ exports.reparseResume = async (req, res) => {
       weaknesses: aiParsedData.weaknesses || [],
       recommendations: aiParsedData.recommendations || [],
       overall_score: aiParsedData.overall_score || 0,
-      jd_match_score: jdScores.score || 0,
+      jd_match_score: jdScores.overall_fit_percentage || 0,
       jd_matched_skills: jdScores.matched_skills || [],
       jd_missing_skills: jdScores.missing_skills || [],
       role_fit: aiParsedData.role_fit || {},

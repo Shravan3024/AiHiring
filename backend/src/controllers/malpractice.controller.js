@@ -41,7 +41,7 @@ exports.getMalpracticeSummary = async (req, res) => {
 
     const events = await MalpracticeEvent.findAll({
       where: { application_id },
-      order: [["createdAt", "ASC"]]
+      order: [["created_at", "ASC"]]
     });
 
     const totalViolations = events.length;

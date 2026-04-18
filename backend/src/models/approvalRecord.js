@@ -95,7 +95,10 @@ module.exports = (sequelize) => {
     ipAddress: DataTypes.STRING,
     userAgent: DataTypes.STRING
   }, {
+    tableName: 'ApprovalRecords',
     timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
     indexes: [
       { fields: ['applicationId', 'approvalStage'] },
       { fields: ['hrUserId', 'status'] },

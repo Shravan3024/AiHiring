@@ -9,6 +9,11 @@ module.exports = (sequelize) => {
         primaryKey: true,
         defaultValue: () => `iq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       },
+      jobId: {
+        type: DataTypes.INTEGER,
+        field: 'job_id',
+        allowNull: true
+      },
       jobRole: {
         type: DataTypes.ENUM(
           "SENIOR_AI_ENGINEER",
@@ -25,6 +30,7 @@ module.exports = (sequelize) => {
       },
       category: {
         type: DataTypes.ENUM(
+          "INTRODUCTORY",
           "TECHNICAL_DEEP_DIVE",
           "SYSTEM_DESIGN",
           "BEHAVIORAL",
@@ -78,6 +84,8 @@ module.exports = (sequelize) => {
     {
       timestamps: true,
       tableName: "interview_question_bank",
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 };

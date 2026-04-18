@@ -86,7 +86,7 @@ exports.getDashboardOverview = async (req, res) => {
           status_counts: statusCounts,
           unread_notifications: unreadNotifications,
         },
-        nextAction: null,
+        nextAction: await findLatestActiveAction(applications, candidate.id),
       });
 
   } catch (error) {
@@ -202,7 +202,7 @@ exports.getApplicationDetails = async (req, res) => {
     // 🔥 PRODUCTION TIMELINE FROM STATUS LOGS
     const statusLogs = await ApplicationStatusLog.findAll({
       where: { application_id: applicationId },
-      order: [["createdAt", "ASC"]]
+      order: [["created_at", "ASC"]]
     });
 
     const timeline = buildApplicationTimelineFromLogs(
@@ -396,7 +396,7 @@ function buildApplicationTimelineFromLogs(
       step: log.new_status,
       label: formatStatusLabel(log.new_status),
       completed: true,
-      date: log.createdAt,
+      date: log.created_at,
       metadata: log.metadata
     });
   });
@@ -413,4 +413,38 @@ function formatStatusLabel(status) {
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
+ * PRODUCTION ACTION SEEKER
+ */
+async function findLatestActiveAction(applications, candidateId) {
+  const activeApp = applications.find(app => 
+    !["REJECTED", "AUTO_REJECTED", "HIRED", "APPLICATION_CLOSED"].includes(app.status)
+  );
+
+  if (!activeApp) return null;
+
+  // Logic to determine what the user should do next
+  switch (activeApp.status) {
+    case "ASSESSMENT_UNLOCKED":
+    case "TECHNICAL_ROUND_PENDING":
+    case "TECHNICAL_ROUND_IN_PROGRESS":
+      return {
+        action: "START_TECHNICAL_ASSESSMENT",
+        message: "Technical Assessment Available",
+        button_label: "Continue Assessment",
+        href: `/candidate/assessment/${activeApp.id}`
+      };
+    case "INTERVIEW_UNLOCKED":
+    case "INTERVIEW_SCHEDULED":
+      return {
+        action: "JOIN_INTERVIEW",
+        message: "AI Interview Ready",
+        button_label: "Join Interview",
+        href: `/candidate/interview/${activeApp.id}`
+      };
+    default:
+      return null;
+  }
 }

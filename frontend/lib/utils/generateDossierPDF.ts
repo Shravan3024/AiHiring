@@ -95,6 +95,41 @@ export const generateDossierPDF = (data: DossierData) => {
     styles: { fontSize: 10, textColor: [185, 28, 28] }, // Red-700
   });
 
+  // Assessment Detailed Q&A
+  if (aiAnalysis.assessment_analyses && aiAnalysis.assessment_analyses.length > 0) {
+    const assessment = aiAnalysis.assessment_analyses[0];
+    if (assessment.detailed_qa && assessment.detailed_qa.length > 0) {
+      doc.addPage();
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, pageWidth, 20, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text("TECHNICAL ASSESSMENT: DETAILED Q&A", 20, 13);
+      
+      const qaBody = assessment.detailed_qa.map((qa: any, idx: number) => [
+        idx + 1,
+        qa.question_text,
+        qa.candidate_answer || "No Response",
+        qa.correct_answer || "N/A"
+      ]);
+
+      autoTable(doc, {
+        startY: 30,
+        head: [["#", "Question", "Candidate Answer", "Expected Answer"]],
+        body: qaBody,
+        theme: "striped",
+        headStyles: { fillColor: [71, 85, 105] }, // Slate-600
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 40 }
+        },
+        styles: { fontSize: 8, overflow: 'linebreak' }
+      });
+    }
+  }
+
   // Footer
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {

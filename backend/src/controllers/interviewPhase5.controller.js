@@ -221,6 +221,20 @@ exports.startInterviewPhase5 = async (req, res) => {
       }
     });
 
+    if (!interviewSession && application.status === 'INTERVIEW_UNLOCKED') {
+      // Auto-create session for self-start interviews
+      interviewSession = await InterviewSession.create({
+        application_id: applicationId,
+        interview_type: 'VIDEO',
+        status: 'IN_PROGRESS',
+        scheduled_at: new Date(),
+        questions_asked: [],
+        metadata: { auto_created: true, created_at: new Date() }
+      });
+      
+      await application.update({ status: 'INTERVIEW_IN_PROGRESS' });
+    }
+
     if (!interviewSession) {
       return res.status(400).json({ error: 'Interview not scheduled or completed.' });
     }
@@ -276,7 +290,7 @@ exports.startInterviewPhase5 = async (req, res) => {
       const extraTech = await InterviewQuestionBank.findAll({
         where: { 
           category: { [Op.notIn]: ['BEHAVIORAL', 'INTRODUCTORY'] },
-          id: { [Op.notIn]: techQuestions.map(q => q.id) }
+          questionId: { [Op.notIn]: techQuestions.map(q => q.questionId) }
         },
         order: sequelize.literal('RANDOM()'),
         limit: INTERVIEW_CONFIG.TECH_QUESTIONS - techQuestions.length
@@ -290,7 +304,7 @@ exports.startInterviewPhase5 = async (req, res) => {
       const extraBeh = await InterviewQuestionBank.findAll({
         where: { 
           category: 'BEHAVIORAL',
-          id: { [Op.notIn]: behavioralQuestions.map(q => q.id) }
+          questionId: { [Op.notIn]: behavioralQuestions.map(q => q.questionId) }
         },
         order: sequelize.literal('RANDOM()'),
         limit: INTERVIEW_CONFIG.BEHAVIORAL_QUESTIONS - behavioralQuestions.length
@@ -316,7 +330,7 @@ exports.startInterviewPhase5 = async (req, res) => {
       status: 'IN_PROGRESS',
       started_at: new Date(),
       questions_asked: finalQuestions.map(q => ({
-        id: q.questionId || q.id,
+        id: q.questionId,
         question: q.question,
         category: q.category,
         difficulty: q.difficulty,
