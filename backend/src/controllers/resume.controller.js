@@ -482,11 +482,11 @@ const checkAndTriggerAutoRejection = async (applicationId, logger) => {
         (resume_score * 0.3) + (technical_score * 0.4) + (interview_score * 0.3)
       );
 
-      // Trigger auto-rejection if below threshold
+      // Trigger review if below threshold (previously auto-rejection)
       if (finalScore < 40) {
-        logger.warn(`[Auto-Rejection] Score ${finalScore} < 40 - AUTO REJECTING application ${applicationId}`);
+        logger.info(`[Review] Score ${finalScore} < 40 - Moving to HR_REVIEW for application ${applicationId}`);
         await application.update({
-          status: 'AUTO_REJECTED',
+          status: 'HR_REVIEW',
           overall_score: finalScore
         });
       } else if (finalScore >= 60) {

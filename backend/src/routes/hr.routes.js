@@ -256,6 +256,34 @@ router.get(
   ReportController.generateCandidateReport
 );
 
+router.get(
+  "/report/interview/:applicationId",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.generateInterviewReport
+);
+
+router.get(
+  "/reports/executive/:applicationId",
+  auth,
+  role(["HR", "ADMIN", "MD"]),
+  ReportController.generateExecutiveReport
+);
+
+router.post(
+  "/applications/:applicationId/decide",
+  auth,
+  role(["HR", "ADMIN"]),
+  HRDecisionController.triggerAIDecision
+);
+
+router.get(
+  "/applications/:applicationId/benchmark",
+  auth,
+  role(["HR", "ADMIN", "MD"]),
+  HRDecisionController.getBenchmarkData
+);
+
 // ✅ Removed: PUT /approval-rules/:ruleId
 // HRDecisionController.updateApprovalRule was removed because HRApprovalRule
 // model doesn't exist yet. Re-add this route when you create that model.

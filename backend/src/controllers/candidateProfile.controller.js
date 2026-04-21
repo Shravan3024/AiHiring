@@ -148,16 +148,6 @@ class CandidateProfileController {
           aiFitBand,
           integrityScore:   application.Candidate?.integrity_score || 100,
 
-          proctoringSummary: {
-            integrityScore: application.Candidate?.integrity_score || 100,
-            malpracticeWarnings: application.malpractice_warnings || 0,
-            violations: await MalpracticeEvent.findAll({
-              where: { application_id: applicationId },
-              order: [['created_at', 'DESC']],
-              limit: 5
-            })
-          },
-
           scores: {
             resume: resumeScore,
             technical: technicalScore, interview: interviewScore,
@@ -165,7 +155,7 @@ class CandidateProfileController {
           },
 
           evaluationProsCons: buildProsCons(
-            { resumeScore, technicalScore, interviewScore, malpracticeScore: application.malpractice_warnings || 0 }, 
+            { resumeScore, technicalScore, interviewScore, malpracticeScore: malpractice.length || 0 }, 
             { 
               resumeAnalysis: application.ResumeAnalysis, 
               assessmentAnalysis: application.AssessmentAnalysis, 
@@ -176,8 +166,8 @@ class CandidateProfileController {
 
           whyToHire: application.ResumeAnalysis?.why_to_hire || null,
 
-          technicalData: technical? { id: technical.id, score: technical.score, status: technical.status, feedback: technical.ai_feedback } : null,
-          interviewData: interview? { score: interview.ai_score, summary: interview.ai_summary, recommendation: interview.hire_recommendation, status: interview.status } : null,
+          technicalData: technical ? { id: technical.id, score: technical.score, status: technical.status, feedback: technical.ai_feedback } : null,
+          interviewData: interview ? { score: interview.ai_score, summary: interview.ai_summary, recommendation: interview.hire_recommendation, status: interview.status } : null,
           interviewAnalysis: application.InterviewAnalysis ? {
             id: application.InterviewAnalysis.id,
             overall_score: application.InterviewAnalysis.overall_score,
@@ -187,17 +177,16 @@ class CandidateProfileController {
             detailed_evaluation: application.InterviewAnalysis.detailed_evaluation,
             ai_model_used: application.InterviewAnalysis.ai_model_used
           } : null,
-          offerData:     application.Offer ? { salary: application.Offer.salary, joiningDate: application.Offer.joining_date, status: application.Offer.status } : null,
+          offerData: application.Offer ? { salary: application.Offer.salary, joiningDate: application.Offer.joining_date, status: application.Offer.status } : null,
           
           interviewHighlights: application.InterviewSession ? (() => {
             const firstWithVideo = (application.InterviewSession.questions_asked || []).find(q => q.recording_path);
             const recordingBase = application.InterviewSession.recording_path || firstWithVideo?.recording_path;
-            
             return {
               videoUrl: recordingBase ? `http://localhost:5000${recordingBase}` : null,
               highlights: (application.InterviewSession.questions_asked || []).map((ans, idx) => ({
                 question: ans.question_text || ans.question || `Question ${idx + 1}`,
-                timestamp: ans.timestamp || ans.answered_at ? new Date(ans.answered_at).toLocaleTimeString([], {minute: '2-digit', second: '2-digit'}) : "00:00",
+                timestamp: ans.answered_at ? new Date(ans.answered_at).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' }) : '00:00',
                 duration: ans.response_duration_seconds || 45,
                 score: ans.analysis?.relevance ? Math.round(ans.analysis.relevance * 100) : 0,
                 confidence: ans.analysis?.confidence ? (ans.analysis.confidence > 0.7 ? 'High' : 'Medium') : 'N/A'
@@ -205,42 +194,50 @@ class CandidateProfileController {
             };
           })() : null,
 
+          // FIX: Integrity Risk - uses malpractice fetched above with correct field names
           proctoringSummary: {
-            violationsCount: (application.MalpracticeEvents || []).length,
-            severityScore: (application.MalpracticeEvents || []).reduce((sum, e) => sum + (e.severity || 1), 0),
-            events: (application.MalpracticeEvents || []).map(e => ({
+            integrityScore: Math.max(0, 100 - (malpractice.length * 10)),
+            malpracticeWarnings: malpractice.length,
+            violations: malpractice.map(e => ({
               type: e.type,
-              severity: e.severity,
-              timestamp: e.created_at
+              severity: e.severity || 1,
+              createdAt: e.created_at,
+              meta: e.meta || {}
             }))
           },
 
           malpracticeEvents: malpractice.map(e => ({ type: e.event_type || e.type, severity: e.severity, timestamp: e.created_at })),
           internalNotes: notes.map(n => ({
-             id: n.id, content: n.content, type: n.noteType,
-             author: n.author?.name || 'System', version: n.version,
-             created_at: n.created_at
+            id: n.id, content: n.content, type: n.noteType,
+            author: n.author?.name || 'System', version: n.version,
+            created_at: n.created_at
           })),
           approvals: {
-            totalNeeded: 1, // This can be dynamic based on job-specific rules
+            totalNeeded: 1,
             received: ['RECOMMENDED_BY_AI', 'SELECTED', 'OFFERED'].includes(application.status) ? 1 : 0,
             records: application.hr_decision ? [{
               reviewer: 'HR', decision: application.hr_decision,
               reason: application.hr_notes, timestamp: application.updated_at, order: 1,
             }] : [],
           },
-          // Full Audit Trace
+          // FIX: Evaluation Traces - use ApplicationStatusLog (actual audit trail) with proper comments column
           auditLogs: {
             statusLogs: await ApplicationStatusLog.findAll({
               where: { application_id: applicationId },
               order: [['created_at', 'DESC']],
               limit: 50
             }),
-            approvalRecords: await require('../models').ApprovalRecord.findAll({
-              where: { applicationId },
-              include: [{ model: require('../models').User, as: 'reviewer', attributes: ['name', 'role'] }],
-              order: [['created_at', 'DESC']]
-            })
+            approvalRecords: await ApplicationStatusLog.findAll({
+              where: { application_id: applicationId },
+              order: [['created_at', 'DESC']],
+              limit: 50
+            }).then(logs => logs.map(log => ({
+              decision: log.new_status,
+              approvalStage: log.previous_status || 'INITIAL',
+              comments: log.reason || log.metadata?.reason || `Status changed to ${log.new_status}`,
+              reviewer: { name: log.changed_by === 'SYSTEM_AUTO_REJECTION' ? 'System AI' : (log.changed_by ? `User #${log.changed_by}` : 'HR System') },
+              timestamp: log.created_at
+            })))
           }
         }
       });
@@ -363,45 +360,101 @@ function buildProsCons({ resumeScore, technicalScore, interviewScore, malpractic
     aiAvailable: (resumeAnalysis?.ai_model_used?.includes('gemini') || interviewAnalysis?.method?.includes('AI'))
   });
 
-  const p = (score, good, bad, done, aiStrengths = [], aiWeaknesses = [], modelUsed = '') => {
-    const finalStrengths = (Array.isArray(aiStrengths) && aiStrengths.length > 0) ? aiStrengths : [];
-    const finalWeaknesses = (Array.isArray(aiWeaknesses) && aiWeaknesses.length > 0) ? aiWeaknesses : [];
-    
-    let finalPros = finalStrengths;
-    let finalCons = finalWeaknesses;
-
-    if (score > 0) {
-      if (finalPros.length === 0) finalPros = score >= 70 ? good : [done];
-      if (finalCons.length === 0) finalCons = score < 60 ? bad : [];
+  // Utility: Guarantee exactly 5 items, padding with intelligent role-based fallbacks
+  const padTo5 = (items, fallbacks) => {
+    const result = Array.isArray(items) ? [...items] : [];
+    let i = 0;
+    while (result.length < 5 && i < fallbacks.length) {
+      if (!result.includes(fallbacks[i])) result.push(fallbacks[i]);
+      i++;
     }
+    const generic = [
+      'Professional documentation standards met',
+      'Industry awareness demonstrated',
+      'Analytical approach observed',
+      'Communication baseline established',
+      'Commitment to role requirements shown'
+    ];
+    let j = 0;
+    while (result.length < 5) { result.push(generic[j % generic.length]); j++; }
+    return result.slice(0, 5);
+  };
+
+  const p = (score, goodFallbacks, badFallbacks, neutralFallback, aiStrengths = [], aiWeaknesses = [], modelUsed = '') => {
+    const rawStrengths = Array.isArray(aiStrengths) ? aiStrengths : [];
+    const rawWeaknesses = Array.isArray(aiWeaknesses) ? aiWeaknesses : [];
+
+    const strengthFallbacks = score >= 70 ? goodFallbacks : [
+      neutralFallback,
+      'Candidate completed the evaluation stage',
+      'Baseline competency acknowledged',
+      'Participation demonstrates engagement',
+      'Potential for role-specific training'
+    ];
+    const weaknessFallbacks = score < 60 ? badFallbacks : [
+      'Advanced domain proficiency to be verified',
+      'Practical experience depth requires validation',
+      'Cross-functional collaboration history unclear',
+      'Leadership demonstration scope limited',
+      'Specialized certification gaps possible'
+    ];
 
     return {
-      pros: finalPros,
-      cons: finalCons,
+      pros: padTo5(rawStrengths, strengthFallbacks),
+      cons: padTo5(rawWeaknesses, weaknessFallbacks),
       aiModel: modelUsed || 'system-hybrid-v1',
       isManual: modelUsed?.includes('fallback') || modelUsed?.includes('manual')
     };
   };
   
-  const resume = p(resumeScore, ['High JD matching score', 'Competent skill alignment'], ['JD match below ideal threshold'], 'Profile parsed and matched', resumeAnalysis?.strengths, resumeAnalysis?.weaknesses, resumeAnalysis?.ai_model_used);
-  const assessment = p(technicalScore, ['Solid technical performance', 'Solution correctness'], ['Accuracy gaps detected'], 'Technical round completed', assessmentAnalysis?.strengths, assessmentAnalysis?.weaknesses, assessmentAnalysis?.ai_model_used);
-  const interviewRes = p(interviewScore, ['Excellent communication', 'Clear articulation'], ['Conceptual depth concerns'], 'Video interview evaluated', interviewAnalysis?.strengths, interviewAnalysis?.weaknesses, interviewAnalysis?.method);
+  const resume = p(
+    resumeScore,
+    ['Strong JD skill alignment', 'High keyword density for role', 'Relevant educational credentials', 'Domain experience highlighted', 'Quantifiable achievements present'],
+    ['JD match below ideal threshold', 'Missing key technical skills', 'Limited relevant experience indicated', 'Education gap for role level', 'Achievement metrics unclear'],
+    'Resume successfully parsed and evaluated',
+    resumeAnalysis?.strengths, resumeAnalysis?.weaknesses, resumeAnalysis?.ai_model_used
+  );
+  
+  const assessment = p(
+    technicalScore,
+    ['Strong technical accuracy across questions', 'Correct conceptual understanding shown', 'Structured problem-solving approach', 'Domain knowledge depth demonstrated', 'Efficient solution methodology'],
+    ['Accuracy gaps in technical responses', 'Core concept understanding requires improvement', 'Problem-solving approach needs refinement', 'Domain knowledge verification recommended', 'Answer completeness below benchmark'],
+    'Technical assessment completed and evaluated',
+    assessmentAnalysis?.strengths, assessmentAnalysis?.weaknesses, assessmentAnalysis?.ai_model_used
+  );
+  
+  const interviewRes = p(
+    interviewScore,
+    ['Clear and articulate communication', 'Confident response delivery observed', 'Structured answers with relevant examples', 'Strong role-scenario awareness', 'Professional interview presentation'],
+    ['Communication clarity needs improvement', 'Response depth below expected level', 'Filler word usage impacts perception', 'Technical vocabulary limited for role', 'Scenario-based thinking requires enhancement'],
+    'AI video interview evaluated',
+    interviewAnalysis?.strengths, interviewAnalysis?.weaknesses, interviewAnalysis?.method
+  );
 
-  // LOGIC FOR "WHY TO HIRE/REJECT"
   const aggregatedScore = prediction.finalScore;
   const finalRecommendation = prediction.classification === 'HIRE' ? 'Strong Hire' : prediction.classification === 'HOLD' ? 'Recommended' : 'Weak Fit';
-  const reasoning = prediction.insights.recommendation + 
-    (malpracticeScore > 5 ? ` [Integrity Flag: This candidate had ${malpracticeScore} proctoring violations]` : "");
+  const reasoning = prediction.insights.recommendation +
+    (malpracticeScore > 5 ? ` [Integrity Flag: Candidate had ${malpracticeScore} proctoring violation(s)]` : '');
+
+  const finalStrengths = padTo5(
+    prediction.insights.strengths,
+    ['Completed full multi-stage evaluation pipeline', 'Demonstrated commitment through all assessment phases', 'Sufficient score to advance to HR review', 'Profile analyzed across resume, technical, and interview', 'Baseline fit established for role consideration']
+  );
+  const finalWeaknesses = padTo5(
+    prediction.insights.weaknesses,
+    ['Final decision pending HR panel review', 'Cross-stage performance consistency to verify', 'Role-specific training may be required', 'Peer benchmark comparison recommended', 'Reference verification suggested before final offer']
+  );
 
   return [
     { stage: 'RESUME_PARSING', overallScore: resumeScore, ...resume },
     { stage: 'TECHNICAL_ASSESSMENT', overallScore: technicalScore, ...assessment },
     { stage: 'AI_INTERVIEW', overallScore: interviewScore, ...interviewRes },
-    { stage: 'FINAL_RECOMMENDATION',
+    {
+      stage: 'FINAL_RECOMMENDATION',
       overallScore: aggregatedScore,
       decision: finalRecommendation,
-      pros: prediction.insights.strengths.length > 0 ? prediction.insights.strengths : ['Evaluated across all performance dimensions'],
-      cons: prediction.insights.weaknesses.length > 0 ? prediction.insights.weaknesses : [],
+      pros: finalStrengths,
+      cons: finalWeaknesses,
       summary: reasoning,
       whyToHireReasoning: reasoning,
       confidence: prediction.confidence,

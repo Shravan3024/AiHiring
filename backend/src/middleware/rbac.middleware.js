@@ -61,7 +61,10 @@ const authorize = (allowedRoles = []) => {
       }
 
       // Check if role is allowed
-      if (!allowedRoles.includes(user.role) && user.role !== 'admin') {
+      const userRole = (user.role || '').toLowerCase();
+      const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase());
+
+      if (!normalizedAllowedRoles.includes(userRole) && userRole !== 'admin') {
         logger.warn(
           `Access denied for user ${user.id} (${user.role}) to ${req.method} ${req.path}`
         );

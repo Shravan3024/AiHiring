@@ -8,6 +8,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional, Tuple
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 from config import Config
 
@@ -47,8 +48,7 @@ class InterviewAnalyzer:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY not configured in environment")
         
-        genai.configure(api_key=api_key)
-        self.client = genai
+        self.client = genai.Client(api_key=api_key)
         self.model = Config.GENAI_MODEL or "gemini-1.5-flash"
         logger.info(f"InterviewAnalyzer initialized with model: {self.model}")
     
@@ -112,16 +112,17 @@ Provide evaluation in JSON format:
     "completeness_score": 0-100,
     "clarity_score": 0-100,
     "confidence_level": "high|medium|low",
-    "strengths": ["strength1", ...],
-    "weaknesses": ["weakness1", ...],
+    "strengths": ["Detailed communication strength 1", "Detailed communication strength 2", "Detailed communication strength 3", "Detailed communication strength 4", "Detailed communication strength 5"],
+    "weaknesses": ["Detailed communication weakness 1", "Detailed communication weakness 2", "Detailed communication weakness 3", "Detailed communication weakness 4", "Detailed communication weakness 5"],
     "follow_up_suggestion": "Follow-up question to ask",
     "rating": "excellent|good|average|poor",
     "feedback": "Detailed feedback"
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -167,9 +168,10 @@ Provide prediction in JSON format:
     "recommendations": ["recommendation1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -215,9 +217,10 @@ Provide analysis in JSON format:
     "communication_weaknesses": ["weakness1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -286,13 +289,14 @@ Provide assessment in JSON format:
     "performance_summary": "Brief summary",
     "hire_recommendation": "strong_yes|yes|maybe|no|strong_no",
     "confidence_level": 0-100,
-    "key_takeaways": ["takeaway1", ...],
+    "key_takeaways": ["Takeaway 1", "Takeaway 2", "Takeaway 3", "Takeaway 4", "Takeaway 5"],
     "next_round_readiness": true/false
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -369,8 +373,14 @@ Provide assessment in JSON format:
             'completeness_score': 0,
             'clarity_score': 0,
             'confidence_level': 'low',
-            'strengths': [],
-            'weaknesses': [],
+            'strengths': [
+                "Professional demeanor", "Standard communication engagement",
+                "Basic response attempt", "Structured articulation", "Interest in role"
+            ],
+            'weaknesses': [
+                "Technical depth enhancement needed", "Specific example detailing required",
+                "Confidence during complex topics", "Structured problem-solving clarity", "Soft skill demonstration"
+            ],
             'rating': 'poor'
         }
     

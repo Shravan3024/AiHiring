@@ -139,6 +139,10 @@ MCQAnswer.belongsTo(AssessmentAttempt, { foreignKey: "attempt_id" });
 Job.hasMany(MCQQuestion, { foreignKey: "job_id" });
 MCQQuestion.belongsTo(Job, { foreignKey: "job_id" });
 
+// Job ↔ ManualJobMapping
+Job.hasOne(ManualJobMapping, { foreignKey: "jobId", as: "manualMapping" });
+ManualJobMapping.belongsTo(Job, { foreignKey: "jobId", as: "job" });
+
 // Application ↔ Interview
 Application.hasOne(Interview, { foreignKey: "application_id" });
 Interview.belongsTo(Application, { foreignKey: "application_id" });

@@ -11,6 +11,10 @@ module.exports = (sequelize) => {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  candidate_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   status: {
     type: DataTypes.ENUM("SCHEDULED", "IN_PROGRESS", "SUBMITTED", "COMPLETED", "FAILED", "CANCELLED"),
     defaultValue: "SCHEDULED"
@@ -85,6 +89,18 @@ module.exports = (sequelize) => {
     type: DataTypes.TEXT,
     allowNull: true,
     comment: "Internal HR notes (not visible to candidate)"
+  },
+  dimension_scores: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  highlights: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  confidence_timeline: {
+    type: DataTypes.JSON,
+    allowNull: true
   }
   }, {
     timestamps: true,

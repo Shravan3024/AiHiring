@@ -8,6 +8,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 from config import Config
 
@@ -23,8 +24,7 @@ class SummaryGenerator:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY not configured in environment")
         
-        genai.configure(api_key=api_key)
-        self.client = genai
+        self.client = genai.Client(api_key=api_key)
         self.model = Config.GENAI_MODEL or "gemini-1.5-flash"
         logger.info(f"SummaryGenerator initialized with model: {self.model}")
     
@@ -64,9 +64,10 @@ Provide in JSON format:
     "growth_potential": "Assessment of future potential"
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -115,9 +116,10 @@ Provide detailed analysis in JSON format:
     "next_steps": ["step1", "step2", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -179,9 +181,10 @@ Provide comprehensive evaluation in JSON format:
     "next_steps": ["step1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -230,9 +233,10 @@ Provide comparison analysis in JSON format:
     "recommendations": ["recommendation1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -277,9 +281,10 @@ Provide comparison analysis in JSON format:
             
             prompt = feedback_prompts.get(feedback_type, '') + f"\n\nContext: {context}"
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,

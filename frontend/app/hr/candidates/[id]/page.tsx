@@ -78,6 +78,33 @@ export default function CandidateProfilePage() {
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [offerData, setOfferData] = useState({ template: "standard_sde", baseCTC: "", joiningDate: "" });
   const [selectedHighlight, setSelectedHighlight] = useState<any>(null);
+  const [downloadingAssessment, setDownloadingAssessment] = useState(false);
+  const [downloadingInterview, setDownloadingInterview] = useState(false);
+
+  const downloadBlob = async (
+    fetchFn: () => Promise<any>,
+    filename: string,
+    setLoading: (v: boolean) => void
+  ) => {
+    setLoading(true);
+    try {
+      const response = await fetchFn();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${filename} downloaded successfully`);
+    } catch (err) {
+      toast.error('Failed to generate PDF report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["candidate-profile", id],
@@ -250,6 +277,36 @@ export default function CandidateProfilePage() {
                 {reparseMutation.isPending ? "Parsing..." : "Reparse Profile"}
               </Button>
 
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-bold text-[10px] uppercase tracking-widest gap-2"
+                onClick={() => downloadBlob(
+                  () => hrApi.getAssessmentReport(id),
+                  `Assessment_Report_${id}.pdf`,
+                  setDownloadingAssessment
+                )}
+                disabled={downloadingAssessment}
+              >
+                {downloadingAssessment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {downloadingAssessment ? 'Generating...' : 'Assessment PDF'}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-purple-100 text-purple-700 hover:bg-purple-50 font-bold text-[10px] uppercase tracking-widest gap-2"
+                onClick={() => downloadBlob(
+                  () => hrApi.getInterviewReport(id),
+                  `Interview_Report_${id}.pdf`,
+                  setDownloadingInterview
+                )}
+                disabled={downloadingInterview}
+              >
+                {downloadingInterview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {downloadingInterview ? 'Generating...' : 'Interview PDF'}
+              </Button>
+
               {profileData.aiFitBand && (
                 <div className="text-center px-6 py-4 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
                   <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mb-2">Operational Fit</p>
@@ -408,19 +465,36 @@ export default function CandidateProfilePage() {
                   </CardHeader>
                   <CardContent className="p-6">
                     {profileData.auditLogs?.approvalRecords?.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {profileData.auditLogs.approvalRecords.map((rec: any, i: number) => (
                           <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-black uppercase text-blue-600">{rec.decision}</span>
-                                <Badge variant="outline" className="text-[8px]">{rec.approvalStage}</Badge>
-                             </div>
-                             <p className="text-[10px] font-bold text-slate-500 italic">&quot;{rec.comments}&quot;</p>
-                             <p className="text-[9px] text-slate-400 mt-2 uppercase tracking-widest">— {rec.reviewer?.name}</p>
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <span className="text-xs font-black uppercase text-blue-600">{rec.decision?.replace(/_/g, ' ')}</span>
+                                {rec.approvalStage && (
+                                  <Badge variant="outline" className="ml-2 text-[8px]">
+                                    From: {rec.approvalStage?.replace(/_/g, ' ')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <span className="text-[9px] text-slate-400">
+                                {rec.timestamp ? new Date(rec.timestamp).toLocaleString() : ''}
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-500 italic">&quot;{rec.comments}&quot;</p>
+                            <p className="text-[9px] text-slate-400 mt-2 uppercase tracking-widest">
+                              — {rec.reviewer?.name || 'System'}
+                            </p>
                           </div>
                         ))}
                       </div>
-                    ) : <p className="py-10 text-center text-slate-300 italic">No approval records found.</p>}
+                    ) : (
+                      <div className="py-10 text-center">
+                        <Clock className="w-8 h-8 mx-auto mb-3 text-slate-200" />
+                        <p className="text-slate-400 text-sm font-medium">No audit events recorded yet.</p>
+                        <p className="text-slate-300 text-xs mt-1">Events will appear as the candidate moves through pipeline stages.</p>
+                      </div>
+                    )}
                   </CardContent>
                </Card>
             </TabsContent>

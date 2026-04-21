@@ -11,6 +11,10 @@ module.exports = (sequelize) => {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  candidate_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   assessment_type: {
     type: DataTypes.STRING, // Changed from ENUM for Supabase stability
     allowNull: false
@@ -82,6 +86,18 @@ module.exports = (sequelize) => {
   },
   ai_feedback: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  structure_score: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
+  concept_coverage: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
+  keyword_heatmap: {
+    type: DataTypes.JSON,
     allowNull: true
   }
   }, {

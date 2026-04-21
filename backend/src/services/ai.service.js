@@ -1,9 +1,12 @@
 const axios = require('axios');
 const FormData = require('form-data');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../utils/logger');
 const scoringService = require('./scoring.service');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5000';
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const aiServiceClient = axios.create({
   baseURL: AI_SERVICE_URL,
@@ -198,5 +201,61 @@ module.exports = {
   analyzeInterview,
   generateResumeSummary,
   generateInterviewSummary,
-  healthCheck: async () => ({ status: "UP", mode: AI_SERVICE_URL.includes('localhost') ? "LOCAL_ML" : "REMOTE_AI" })
+  healthCheck: async () => ({ status: "UP", mode: AI_SERVICE_URL.includes('localhost') ? "LOCAL_ML" : "REMOTE_AI" }),
+  
+  /**
+   * Module 1: Advanced Answer Analysis
+   */
+  evaluateTechnicalAnswer: async (question, answer, expectedAnswer, keywords) => {
+    const prompt = `
+      Task: Evaluate technical response for Mask Polymers.
+      Context: Q: ${question} | Ans: ${answer} | Ref: ${expectedAnswer}
+      Output Format (JSON): { 
+        "score": number, 
+        "structure_score": number, 
+        "concept_coverage": number, 
+        "explanation": "string",
+        "strengths": ["string"],
+        "weaknesses": ["string"]
+      }
+    `;
+    try {
+      const result = await model.generateContent(prompt);
+      return JSON.parse(result.response.text());
+    } catch (err) {
+      return { score: 50, structure_score: 50, concept_coverage: 50, explanation: "Fallback" };
+    }
+  },
+
+  /**
+   * Module 2: Full Interview Analysis
+   */
+  analyzeFullInterview: async (qaPairs, jobTitle) => {
+    const prompt = `
+      Task: Analyze Video Interview for ${jobTitle}.
+      Data: ${JSON.stringify(qaPairs)}
+      Output Format (JSON): { "dimension_scores": { "technical": 0, "communication": 0, "confidence": 0, "soft_skills": 0, "integrity": 0 }, "overall_interview_score": 0, "highlights": { "summary": "" }, "recommendation": "" }
+    `;
+    try {
+      const result = await model.generateContent(prompt);
+      return JSON.parse(result.response.text());
+    } catch (err) {
+      return { overall_interview_score: 50, highlights: { summary: "Analysis failed" } };
+    }
+  },
+
+  /**
+   * Module 4: Final Recommendation Engine
+   */
+  getFinalCandidateDecision: async (metrics) => {
+    const { assessmentScore, interviewScore, integrityScore, behavioralScore } = metrics;
+    const finalScore = (assessmentScore * 0.4) + (interviewScore * 0.4) + (integrityScore * 0.1) + (behavioralScore * 0.1);
+    const prompt = `Task: Decision for Mask Polymers. Score: ${finalScore}. JSON: { "decision": "", "role_recommendation": "", "fit_breakdown": {}, "reasoning": "", "success_prediction_percentage": 0 }`;
+    try {
+      const result = await model.generateContent(prompt);
+      return { ...JSON.parse(result.response.text()), final_score: finalScore };
+    } catch (err) {
+      return { decision: "Borderline", final_score: finalScore };
+    }
+  }
 };

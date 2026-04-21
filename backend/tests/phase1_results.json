@@ -1,0 +1,20 @@
+{
+  "phase": "Phase 1: Intelligent Onboarding",
+  "tests": [
+    {
+      "name": "Valid PDF Upload",
+      "status": "PASS",
+      "details": "Score: 55, Summary: Extracted via Local Semantic Parser"
+    },
+    {
+      "name": "Corrupted File Upload",
+      "status": "INFO",
+      "details": "Code: 200, Message: No message"
+    },
+    {
+      "name": "Empty File Upload",
+      "status": "INFO",
+      "details": "Code: 200, Message: No message"
+    }
+  ]
+}

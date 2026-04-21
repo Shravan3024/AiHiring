@@ -1,4 +1,4 @@
-const sequelize = require('./src/config/db');
+const { sequelize } = require('./src/config/db');
 
 async function migrate() {
   try {
@@ -15,8 +15,29 @@ async function migrate() {
     await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "skills" TEXT[] DEFAULT '{}';`).catch(() => {});
     await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "cgpa" FLOAT;`).catch(() => {});
     await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "year_of_passout" INTEGER;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "final_decision" TEXT;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "role_recommendation" TEXT;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "fit_breakdown" JSON;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "ai_rationale" TEXT;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "success_probability" FLOAT;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "integrity_score" FLOAT DEFAULT 100;`).catch(() => {});
+    await sequelize.query(`ALTER TABLE "Applications" ADD COLUMN IF NOT EXISTS "behavioral_score" FLOAT DEFAULT 0;`).catch(() => {});
 
     // Admin Audit Logs table - Added for Traceability
+    // 3. Update AssessmentAttempts
+    console.log("Migrating AssessmentAttempts...");
+    await sequelize.query('ALTER TABLE "AssessmentAttempts" ADD COLUMN IF NOT EXISTS candidate_id INTEGER;');
+    await sequelize.query('ALTER TABLE "AssessmentAttempts" ADD COLUMN IF NOT EXISTS structure_score FLOAT DEFAULT 0;');
+    await sequelize.query('ALTER TABLE "AssessmentAttempts" ADD COLUMN IF NOT EXISTS concept_coverage FLOAT DEFAULT 0;');
+    await sequelize.query('ALTER TABLE "AssessmentAttempts" ADD COLUMN IF NOT EXISTS keyword_heatmap JSON;');
+    
+    // 4. Update InterviewSessions
+    console.log("Migrating InterviewSessions...");
+    await sequelize.query('ALTER TABLE "InterviewSessions" ADD COLUMN IF NOT EXISTS candidate_id INTEGER;');
+    await sequelize.query('ALTER TABLE "InterviewSessions" ADD COLUMN IF NOT EXISTS dimension_scores JSON;');
+    await sequelize.query('ALTER TABLE "InterviewSessions" ADD COLUMN IF NOT EXISTS highlights JSON;');
+    await sequelize.query('ALTER TABLE "InterviewSessions" ADD COLUMN IF NOT EXISTS confidence_timeline JSON;');
+
     console.log("Migrating admin_audit_logs...");
     const dialect = sequelize.getDialect();
     

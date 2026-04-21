@@ -277,10 +277,49 @@ class ManualScoringService {
     
     if (scores.skillsScore >= 80) pros.push(`Highly aligned with ${roleKey} core competencies`);
     if (scores.educationScore === 100) pros.push(`Possesses ideal academic background for this position`);
+    if (scores.experienceScore >= 80) pros.push(`Substantial relevant experience in ${roleKey.split('_').join(' ')}`);
+    if (scores.skillsScore >= 60) pros.push(`Demonstrated proficiency in multiple key technical areas`);
+    if (data.certifications && data.certifications.length > 0) pros.push(`Verified professional certifications enhance profile credibility`);
+
     if (scores.experienceScore < 60) cons.push(`Experience level is below threshold for ${roleKey}`);
     if (scores.skillsScore < 40) cons.push(`Significant skill gaps identified relative to ${roleKey} requirements`);
+    if (scores.educationScore < 60) cons.push(`Educational background may not perfectly align with specialized requirements`);
+    if (scores.skillsScore < 60) cons.push(`Technical depth in niche areas could be further developed`);
+    if (scores.totalScore < 50) cons.push(`Overall profile matching score indicates need for fundamental training`);
 
-    return { pros: pros.slice(0, 5), cons: cons.slice(0, 5) };
+    // Helper to pad list to 5 items
+    const padTo5 = (items, fallbackItems) => {
+        let result = [...items];
+        let i = 0;
+        while (result.length < 5 && i < fallbackItems.length) {
+            if (!result.includes(fallbackItems[i])) {
+                result.push(fallbackItems[i]);
+            }
+            i++;
+        }
+        // Last resort generic fallbacks
+        const generic = [
+            "Analytical approach and methodology",
+            "Professional documentation standards",
+            "Industry standard process awareness",
+            "Commitment to professional development",
+            "Communication within cross-functional teams"
+        ];
+        let j = 0;
+        while (result.length < 5) {
+            result.push(generic[j % generic.length]);
+            j++;
+        }
+        return result.slice(0, 5);
+    };
+
+    const rolePros = this.definedRoles[roleKey]?.vitalSkills.map(s => `Potential for mastery in ${s}`) || [];
+    const roleCons = ["Domain specific complexity assessment recommended", "Needs exposure to large scale projects", "Verify practical application of core skills"];
+
+    return { 
+        pros: padTo5(pros, rolePros), 
+        cons: padTo5(cons, roleCons) 
+    };
   }
 
   _calculateKeywordMatch(text, keywords) {

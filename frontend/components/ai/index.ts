@@ -6,6 +6,7 @@ export { AIDecisionPanel } from "./AIDecisionPanel";
 export { CandidateComparisonPanel } from "./CandidateComparisonPanel";
 export { MDAnalyticsPanel } from "./MDAnalyticsPanel";
 export { AdminAIPanel } from "./AdminAIPanel";
+export { ProctoringReviewPanel } from "./ProctoringReviewPanel";
 
 // Re-export types if needed
 export type { CandidateComparisonPanelProps } from "./CandidateComparisonPanel";

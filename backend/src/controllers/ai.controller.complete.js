@@ -549,7 +549,7 @@ exports.makeFinalAIDecision = async (req, res) => {
     const aiDecisionRecord = await AIDecision.create({
       application_id: applicationId,
       candidate_id: application.candidate_id,
-      job_id: jobId || application.job_id,
+      job_id: application.job_id,
       resume_score: resumeScore,
       resume_weight: 0.25,
       technical_assessment_score: technicalScore,
@@ -567,16 +567,17 @@ exports.makeFinalAIDecision = async (req, res) => {
     });
 
     // Update application status based on decision
+    // DISABLED AUTO-REJECTION AS PER USER REQUEST
     let newStatus = 'HR_REVIEW';
-    if (aiDecision === 'AUTO_REJECTED') {
-      newStatus = 'REJECTED';
-    } else if (aiDecision === 'RECOMMENDED') {
-      newStatus = 'HR_REVIEW';
-    }
+    // if (aiDecision === 'AUTO_REJECTED') {
+    //   newStatus = 'REJECTED';
+    // } else if (aiDecision === 'RECOMMENDED') {
+    //   newStatus = 'HR_REVIEW';
+    // }
 
     await Application.update(
       { 
-        status: newStatus,
+        status: 'HR_REVIEW', // Consistent review state
         overall_score: finalScore
       },
       { where: { id: applicationId } }
@@ -591,7 +592,7 @@ exports.makeFinalAIDecision = async (req, res) => {
       changed_by_role: 'system',
       is_ai_decision: true,
       ai_decision_id: aiDecisionRecord.id,
-      reason: decisionReason,
+      metadata: { reason: decisionReason },
       ai_score: finalScore
     });
 
@@ -609,16 +610,20 @@ exports.makeFinalAIDecision = async (req, res) => {
           technical_score: technicalScore,
           interview_score: interviewScore
         },
-        threshold: rejectionThreshold
+        threshold: 40
       }
     });
 
   } catch (error) {
     logger.error(`Final AI decision error for application ${req.body.applicationId}:`, error);
+    if (error.errors) {
+       error.errors.forEach(e => logger.error(`  - ${e.field}: ${e.message}`));
+    }
     return res.status(500).json({
       success: false,
       message: 'Error making final decision',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error',
+      error: error.message,
+      details: error.errors ? error.errors.map(e => e.message) : null,
       code: 'DECISION_ERROR'
     });
   }
@@ -674,13 +679,20 @@ exports.getAIAnalysis = async (req, res) => {
     const enrichedAssessments = await Promise.all(assessmentAnalyses.map(async (analysis) => {
       const attempt = assessmentAttempts.find(a => a.id === analysis.attempt_id) || assessmentAttempts[0];
       if (attempt && attempt.answers) {
-        // Fetch questions from bank to get question text and correct answers
-        const questionIds = attempt.answers.map((a: any) => a.question_id);
+        // Handle both Array (legacy) and Object (new) formats for answers
+        const answersArray = Array.isArray(attempt.answers) 
+          ? attempt.answers 
+          : Object.entries(attempt.answers).map(([qid, data]) => ({ 
+              question_id: qid, 
+              answer_text: typeof data === 'string' ? data : data.answer_text 
+            }));
+
+        const questionIds = answersArray.map((a) => a.question_id);
         const questions = await TechnicalQuestionBank.findAll({
           where: { questionId: questionIds }
         });
 
-        const detailedAnswers = attempt.answers.map((ans: any) => {
+        const detailedAnswers = answersArray.map((ans) => {
           const q = questions.find(q => q.questionId === ans.question_id);
           return {
             question_id: ans.question_id,
@@ -724,7 +736,7 @@ exports.getAIAnalysis = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error retrieving AI analysis',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error',
+      error: error.message,
       code: 'FETCH_ERROR'
     });
   }

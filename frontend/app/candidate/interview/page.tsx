@@ -38,17 +38,17 @@ export default function CandidateInterview() {
   const analyserRef = useRef<AnalyserNode | null>(null);
 
   useEffect(() => {
-     // Load biometric analysis engine from CDN
-     const script = document.createElement("script");
-     script.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
-     script.async = true;
-     script.onload = () => {
-       faceApiLoaded.current = true;
-       setFaceDetectionStatus("Biometric System Ready");
-     };
-     document.head.appendChild(script);
-     scriptRef.current = script;
-     return () => { if (scriptRef.current) document.head.removeChild(scriptRef.current); };
+    // Load biometric analysis engine from CDN
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
+    script.async = true;
+    script.onload = () => {
+      faceApiLoaded.current = true;
+      setFaceDetectionStatus("Biometric System Ready");
+    };
+    document.head.appendChild(script);
+    scriptRef.current = script;
+    return () => { if (scriptRef.current) document.head.removeChild(scriptRef.current); };
   }, []);
 
   const speakQuestion = (text: string) => {
@@ -70,7 +70,7 @@ export default function CandidateInterview() {
   // CRITICAL: Attach camera stream when started and stabilize feed
   useEffect(() => {
     let animationFrame: number;
-    
+
     if (started && streamRef.current && videoRef.current) {
       if (videoRef.current.srcObject !== streamRef.current) {
         videoRef.current.srcObject = streamRef.current;
@@ -137,33 +137,33 @@ export default function CandidateInterview() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (started && faceApiLoaded.current && videoRef.current) {
-       interval = setInterval(async () => {
-          try {
-            if (!videoRef.current || !(window as any).faceapi) return;
-            const faces = await (window as any).faceapi.detectAllFaces(
-              videoRef.current, 
-              new (window as any).faceapi.TinyFaceDetectorOptions()
-            );
-            
-            if (faces.length > 1) {
-               setFaceDetectionStatus("Action Required: Multi-User Presence");
-               if (interviewId && applicationId) {
-                  candidateApi.logMalpractice(applicationId!, {
-                     application_id: applicationId,
-                     type: "MULTIPLE_FACES",
-                     meta: { faces: faces.length, timestamp: new Date() }
-                  }).catch(console.error);
-               }
-               toast.warning("Compliance Alert: Multiple individuals detected in your area.");
-            } else if (faces.length === 0) {
-               setFaceDetectionStatus("Connection Lost");
-            } else {
-               setFaceDetectionStatus("Optimal Feed");
+      interval = setInterval(async () => {
+        try {
+          if (!videoRef.current || !(window as any).faceapi) return;
+          const faces = await (window as any).faceapi.detectAllFaces(
+            videoRef.current,
+            new (window as any).faceapi.TinyFaceDetectorOptions()
+          );
+
+          if (faces.length > 1) {
+            setFaceDetectionStatus("Action Required: Multi-User Presence");
+            if (interviewId && applicationId) {
+              candidateApi.logMalpractice(applicationId!, {
+                application_id: applicationId,
+                type: "MULTIPLE_FACES",
+                meta: { faces: faces.length, timestamp: new Date() }
+              }).catch(console.error);
             }
-          } catch (e) {
-             console.warn("Telemetry Frame Refresh Postponed", e);
+            toast.warning("Compliance Alert: Multiple individuals detected in your area.");
+          } else if (faces.length === 0) {
+            setFaceDetectionStatus("Connection Lost");
+          } else {
+            setFaceDetectionStatus("Optimal Feed");
           }
-       }, 3000);
+        } catch (e) {
+          console.warn("Telemetry Frame Refresh Postponed", e);
+        }
+      }, 3000);
     }
     return () => clearInterval(interval);
   }, [started, applicationId]);
@@ -210,8 +210,8 @@ export default function CandidateInterview() {
       if (el.requestFullscreen) return el.requestFullscreen();
       if ((el as any).webkitRequestFullscreen) return (el as any).webkitRequestFullscreen();
       if ((el as any).msRequestFullscreen) return (el as any).msRequestFullscreen();
-    } catch (e) { 
-      console.error("Critical: Fullscreen Request Failure", e); 
+    } catch (e) {
+      console.error("Critical: Fullscreen Request Failure", e);
     }
   };
 
@@ -323,13 +323,13 @@ export default function CandidateInterview() {
       console.error("Audio Processing Error:", e.error);
       setListening(false);
     };
-    recognition.onend = () => { if (listening) { try { recognition.start(); } catch(_) { setListening(false); } } };
+    recognition.onend = () => { if (listening) { try { recognition.start(); } catch (_) { setListening(false); } } };
     recognition.start();
     recognitionRef.current = recognition;
     setListening(true);
   };
 
-  const stopSpeech = () => { 
+  const stopSpeech = () => {
     setListening(false);
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
   };
@@ -344,20 +344,20 @@ export default function CandidateInterview() {
         const API = (window as any).faceapi;
         // Suppress IndexedDB errors by disabling its preference for it
         if (API.env) {
-           API.env.monkeyPatch({
-             createCanvasElement: (f: any) => document.createElement('canvas'),
-             createImageElement: (f: any) => document.createElement('img'),
-           });
+          API.env.monkeyPatch({
+            createCanvasElement: (f: any) => document.createElement('canvas'),
+            createImageElement: (f: any) => document.createElement('img'),
+          });
         }
         const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
         await Promise.all([
-          API.nets.tinyFaceDetector.loadFromUri(URL), 
+          API.nets.tinyFaceDetector.loadFromUri(URL),
           API.nets.faceLandmark68Net.loadFromUri(URL),
           API.nets.faceExpressionNet.loadFromUri(URL)
         ]).catch(e => console.warn("Biometric models partially loaded:", e));
         setFaceDetectionStatus("Optimal Feed");
       }
-    } catch (_) { 
+    } catch (_) {
       toast.error("Hardware Alert: Permission for camera and microphone is required.");
       throw _;
     }
@@ -416,26 +416,26 @@ export default function CandidateInterview() {
             </CardHeader>
             <CardContent className="p-16 space-y-12">
               <div className="grid grid-cols-2 gap-6">
-                 {[{ label: "Assigned Duration", val: `${interviewConfig?.DURATION_MINUTES || 60}m`, icon: Clock }, { label: "Evaluation Prompts", val: `${interviewConfig?.TOTAL_QUESTIONS || 10} Units`, icon: Target }].map((stat, i) => (
-                   <div key={i} className="bg-slate-50 border border-slate-100 p-8 rounded-3xl flex items-center gap-6 group hover:bg-white hover:shadow-md transition-all cursor-default">
-                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100 shadow-sm"><stat.icon className="w-6 h-6 text-slate-600" /></div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <p className="text-xl font-bold text-slate-900">{stat.val}</p>
-                      </div>
-                   </div>
-                 ))}
+                {[{ label: "Assigned Duration", val: `${interviewConfig?.DURATION_MINUTES || 60}m`, icon: Clock }, { label: "Evaluation Prompts", val: `${interviewConfig?.TOTAL_QUESTIONS || 10} Units`, icon: Target }].map((stat, i) => (
+                  <div key={i} className="bg-slate-50 border border-slate-100 p-8 rounded-3xl flex items-center gap-6 group hover:bg-white hover:shadow-md transition-all cursor-default">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100 shadow-sm"><stat.icon className="w-6 h-6 text-slate-600" /></div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                      <p className="text-xl font-bold text-slate-900">{stat.val}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="space-y-6">
-                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-3">Compliance & Integrity Protocols</h3>
-                 <div className="grid grid-cols-1 gap-4">
-                    {["AI Interaction: Regional assessment engines will read prompts via audio.", "Environment Monitor: Multi-user detection software is active.", "Session Integrity: Fullscreen and navigation locks are mandatory."].map((t, i) => (
-                      <div key={i} className="flex gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-blue-600 font-bold text-base">0{i+1}.</span>
-                        <span className="text-slate-600 text-sm font-medium">{t}</span>
-                      </div>
-                    ))}
-                 </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-3">Compliance & Integrity Protocols</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {["AI Interaction: Regional assessment engines will read prompts via audio.", "Environment Monitor: Multi-user detection software is active.", "Session Integrity: Fullscreen and navigation locks are mandatory."].map((t, i) => (
+                    <div key={i} className="flex gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-blue-600 font-bold text-base">0{i + 1}.</span>
+                      <span className="text-slate-600 text-sm font-medium">{t}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center gap-6 p-8 bg-blue-50/50 border border-blue-100 rounded-3xl">
                 <input type="checkbox" id="int-agree" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="w-7 h-7 rounded-lg border-slate-300 text-blue-600 cursor-pointer" />
@@ -449,8 +449,8 @@ export default function CandidateInterview() {
             <div className="lg:col-span-12 flex items-center justify-between mb-4">
               <div className="flex items-center gap-8">
                 <div className="flex flex-col">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status Link</span>
-                   <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 px-6 py-2 font-bold uppercase tracking-widest">Optimal Connection</Badge>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status Link</span>
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 px-6 py-2 font-bold uppercase tracking-widest">Optimal Connection</Badge>
                 </div>
                 <div className="flex gap-2">
                   {[...Array(interviewConfig?.TOTAL_QUESTIONS || 10)].map((_, i) => (
@@ -483,13 +483,13 @@ export default function CandidateInterview() {
                           <div className="space-y-8">
                             <div className="flex justify-center items-center gap-3 h-12">
                               {[...Array(20)].map((_, i) => (
-                                <div 
-                                  key={i} 
+                                <div
+                                  key={i}
                                   className={cn(
                                     "w-1.5 rounded-full transition-all duration-75",
                                     i < (audioLevel / 5) ? "bg-blue-500" : "bg-slate-200"
-                                  )} 
-                                  style={{ height: `${Math.max(4, (i % 2 === 0 ? audioLevel : audioLevel * 0.7) * (1 - Math.abs(i-10)/15))}px` }} 
+                                  )}
+                                  style={{ height: `${Math.max(4, (i % 2 === 0 ? audioLevel : audioLevel * 0.7) * (1 - Math.abs(i - 10) / 15))}px` }}
                                 />
                               ))}
                             </div>
@@ -499,16 +499,16 @@ export default function CandidateInterview() {
                           </div>
                         ) : (
                           <div className="max-w-3xl">
-                             <p className="text-slate-600 text-2xl font-medium leading-relaxed italic">
-                               "{answer}"
-                             </p>
+                            <p className="text-slate-600 text-2xl font-medium leading-relaxed italic">
+                              "{answer}"
+                            </p>
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-12 pt-16 mt-12 border-t border-slate-100">
                       <button onClick={listening ? stopSpeech : startSpeech} className={cn("group h-24 w-24 flex items-center justify-center rounded-full transition-all duration-300 border-2 shadow-2xl hover:scale-105 active:scale-95", listening ? "bg-red-50 border-red-200 text-red-600 shadow-red-100" : "bg-slate-900 border-slate-800 text-white shadow-slate-200")}>
-                         {listening && <div className="absolute inset-0 rounded-full animate-ping opacity-10 bg-red-400" />}
+                        {listening && <div className="absolute inset-0 rounded-full animate-ping opacity-10 bg-red-400" />}
                         {listening ? <MicOff className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
                         <span className="absolute -bottom-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">{listening ? "Mute Capture" : "Audio Capture"}</span>
                       </button>
@@ -519,34 +519,34 @@ export default function CandidateInterview() {
               )}
             </div>
             <div className="lg:col-span-4 flex flex-col gap-8">
-               <div className="bg-white border-2 border-slate-100 rounded-[3rem] overflow-hidden shadow-xl relative aspect-square">
-                  <div className="absolute top-8 left-8 z-20"><span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/90 px-4 py-2 rounded-xl backdrop-blur-md shadow-sm border border-slate-200">Session Feed: ACTIVE</span></div>
-                  <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror-x" />
-                  <div className="absolute bottom-8 left-8 right-8 grid grid-cols-2 gap-4 z-20">
-                    <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest leading-none">Analysis</p>
-                      <p className="text-xl font-bold text-slate-900 uppercase">{currentAnalysis ? (currentAnalysis.sentiment > 0.6 ? "Excellent" : currentAnalysis.sentiment < 0.4 ? "Variable" : "Stable") : "Scanning"}</p>
-                    </div>
-                    <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest leading-none">Confidence</p>
-                      <p className="text-xl font-bold text-blue-600 uppercase">{currentAnalysis ? (currentAnalysis.confidence > 0.7 ? "H-Level" : currentAnalysis.confidence > 0.4 ? "Normal" : "Low") : "Syncing"}</p>
-                    </div>
+              <div className="bg-white border-2 border-slate-100 rounded-[3rem] overflow-hidden shadow-xl relative aspect-square">
+                <div className="absolute top-8 left-8 z-20"><span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/90 px-4 py-2 rounded-xl backdrop-blur-md shadow-sm border border-slate-200">Session Feed: ACTIVE</span></div>
+                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror-x" />
+                <div className="absolute bottom-8 left-8 right-8 grid grid-cols-2 gap-4 z-20">
+                  <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest leading-none">Analysis</p>
+                    <p className="text-xl font-bold text-slate-900 uppercase">{currentAnalysis ? (currentAnalysis.sentiment > 0.6 ? "Excellent" : currentAnalysis.sentiment < 0.4 ? "Variable" : "Stable") : "Scanning"}</p>
                   </div>
-               </div>
-               <div className="bg-white border-2 border-slate-100 p-10 rounded-[3rem] space-y-8 shadow-xl">
-                  <div className="flex justify-between items-center pb-6 border-b border-slate-100">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Environment Analytics</h4>
-                    <Badge className={cn("px-4 py-1.5 font-bold uppercase text-[9px]", faceDetectionStatus === "Optimal Feed" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100")}>{faceDetectionStatus}</Badge>
+                  <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest leading-none">Confidence</p>
+                    <p className="text-xl font-bold text-blue-600 uppercase">{currentAnalysis ? (currentAnalysis.confidence > 0.7 ? "H-Level" : currentAnalysis.confidence > 0.4 ? "Normal" : "Low") : "Syncing"}</p>
                   </div>
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-end">
-                       <div className="flex flex-col"><span className="text-[11px] font-bold text-slate-900 uppercase mb-1">Response Relevance</span><span className="text-[10px] font-medium text-slate-400">Automated NLP Alignment</span></div>
-                       <span className="text-4xl font-bold text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
-                    </div>
-                    <Progress value={currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)} className="h-2.5 bg-slate-100 rounded-full" />
+                </div>
+              </div>
+              <div className="bg-white border-2 border-slate-100 p-10 rounded-[3rem] space-y-8 shadow-xl">
+                <div className="flex justify-between items-center pb-6 border-b border-slate-100">
+                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Environment Analytics</h4>
+                  <Badge className={cn("px-4 py-1.5 font-bold uppercase text-[9px]", faceDetectionStatus === "Optimal Feed" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100")}>{faceDetectionStatus}</Badge>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-end">
+                    <div className="flex flex-col"><span className="text-[11px] font-bold text-slate-900 uppercase mb-1">Response Relevance</span><span className="text-[10px] font-medium text-slate-400">Automated NLP Alignment</span></div>
+                    <span className="text-4xl font-bold text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
                   </div>
-                  <div className="pt-4 text-[10px] text-slate-400 font-medium leading-relaxed">Corporate integrity monitoring enabled. Audio normalization and multi-factor biometric analysis are fully operational.</div>
-               </div>
+                  <Progress value={currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)} className="h-2.5 bg-slate-100 rounded-full" />
+                </div>
+                <div className="pt-4 text-[10px] text-slate-400 font-medium leading-relaxed">Corporate integrity monitoring enabled. Audio normalization and multi-factor biometric analysis are fully operational.</div>
+              </div>
             </div>
           </div>
         )}

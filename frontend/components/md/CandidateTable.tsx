@@ -129,6 +129,12 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                       >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-6 h-6" />}
                       </Button>
+                      <Button
+                        className="h-12 w-12 rounded-2xl bg-slate-900 border border-slate-800 text-white hover:bg-black transition-all shadow-xl shadow-slate-200/50 active:scale-90"
+                        onClick={() => (window.location.href = `/md/applications/${app.id}`)}
+                      >
+                        <ExternalLink className="w-6 h-6" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

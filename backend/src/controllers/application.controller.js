@@ -328,11 +328,11 @@ exports.checkAndTriggerAutoRejection = async (applicationId, logger = console) =
     let newStatus = status;
     let shouldNotify = false;
 
-    // THRESHOLD 1: Auto-Reject if score < 40
+    // THRESHOLD 1: Move to review if score < 40 (Previously AUTO-REJECT)
     if (finalScore < 40) {
-      newStatus = 'AUTO_REJECTED';
-      shouldNotify = true;
-      logger?.warn(`[Auto-Rejection] ⚠️  THRESHOLD BREACHED: Score ${finalScore} < 40 - AUTOMATICALLY REJECTING application ${applicationId}`);
+      newStatus = 'HR_REVIEW';
+      shouldNotify = false;
+      logger?.warn(`[Review] Score ${finalScore} < 40 - Moving to HR_REVIEW for manual consideration (AUTO-REJECT DISABLED)`);
     }
     // THRESHOLD 2: Strong recommendation if score >= 60
     else if (finalScore >= 60) {

@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
+import api, { hrApi } from "@/lib/api";
 import { generateDossierPDF } from "@/lib/utils/generateDossierPDF";
 import { Download, FileText, BookOpen, Mic, CheckCircle, Loader2, AlertCircle, MessageSquare, Mail, Phone, MapPin, ShieldAlert, MousePointer2 } from "lucide-react";
 import { toast } from "sonner";
@@ -125,10 +125,31 @@ export default function HRApplicationDetailsPage() {
                     onClick={handleDownload}
                     variant="outline" 
                     size="sm" 
-                    className="h-7 text-[10px] gap-1 px-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50"
+                    className="h-8 text-[10px] gap-1.5 px-3 border-slate-300 text-slate-700 hover:bg-slate-50 font-bold"
                     disabled={!aiAnalysisRaw}
                   >
-                    <Download className="w-3 h-3" /> Download PDF Dossier
+                    <Download className="w-3.5 h-3.5" /> Client Dossier
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const res = await hrApi.getExecutiveReport(String(applicationId));
+                        const url = window.URL.createObjectURL(new Blob([res.data]));
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', `EXECUTIVE_REPORT_${applicationId}.pdf`);
+                        document.body.appendChild(link);
+                        link.click();
+                        toast.success("Executive PDF Generated");
+                      } catch (e) {
+                         toast.error("Failed to generate report");
+                      }
+                    }}
+                    variant="default" 
+                    size="sm" 
+                    className="h-8 text-[10px] gap-1.5 px-3 bg-blue-700 hover:bg-blue-800 text-white font-bold"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Executive AI Report
                   </Button>
                 </div>
               </div>
@@ -273,7 +294,7 @@ export default function HRApplicationDetailsPage() {
 
               <div className="mt-6">
                 <TabsContent value="decision" className="space-y-4">
-                  <AIDecisionPanel applicationId={applicationId} jobId={appData.job.id} />
+                  <AIDecisionPanel applicationId={applicationId} />
                 </TabsContent>
 
                 <TabsContent value="resume" className="space-y-4">

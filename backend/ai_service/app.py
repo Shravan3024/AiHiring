@@ -52,7 +52,7 @@ def get_capabilities():
 
 # ===================== RESUME ENDPOINTS =====================
 
-@app.route('/api/resume/parse', methods=['POST'])
+@app.route('/api/ai/resume/parse', methods=['POST'])
 def parse_resume():
     """Parse resume from file upload"""
     try:
@@ -84,7 +84,7 @@ def parse_resume():
         logger.error(f"Error parsing resume: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/resume/score', methods=['POST'])
+@app.route('/api/ai/resume/score', methods=['POST'])
 def score_resume():
     """Score resume against job requirements"""
     try:
@@ -107,7 +107,7 @@ def score_resume():
         logger.error(f"Error scoring resume: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/resume/summary', methods=['POST'])
+@app.route('/api/ai/resume/summary', methods=['POST'])
 def generate_resume_summary():
     """Generate resume summary"""
     try:
@@ -129,7 +129,7 @@ def generate_resume_summary():
 
 # ===================== ASSESSMENT ENDPOINTS =====================
 
-@app.route('/api/assessment/coding', methods=['POST'])
+@app.route('/api/ai/assessment/coding', methods=['POST'])
 def analyze_coding():
     """Analyze coding solution"""
     try:
@@ -152,7 +152,7 @@ def analyze_coding():
         logger.error(f"Error analyzing code: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/assessment/mcq', methods=['POST'])
+@app.route('/api/ai/assessment/mcq', methods=['POST'])
 def analyze_mcq():
     """Analyze MCQ test responses"""
     try:
@@ -175,7 +175,7 @@ def analyze_mcq():
         logger.error(f"Error analyzing MCQ: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/assessment/design', methods=['POST'])
+@app.route('/api/ai/assessment/design', methods=['POST'])
 def analyze_design():
     """Analyze system design"""
     try:
@@ -198,7 +198,7 @@ def analyze_design():
         logger.error(f"Error analyzing design: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/assessment/case-study', methods=['POST'])
+@app.route('/api/ai/assessment/case-study', methods=['POST'])
 def analyze_case():
     """Analyze case study response"""
     try:
@@ -221,7 +221,7 @@ def analyze_case():
         logger.error(f"Error analyzing case study: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/assessment/report', methods=['POST'])
+@app.route('/api/ai/assessment/report', methods=['POST'])
 def generate_report():
     """Generate assessment report"""
     try:
@@ -241,9 +241,28 @@ def generate_report():
         logger.error(f"Error generating report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/ai/assessment/analyze', methods=['POST'])
+def analyze_assessment():
+    """Generic assessment analysis"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        result = ai_service.analyze_assessment(data)
+        
+        return jsonify({
+            'success': True,
+            'score': result.get('overall_score', result.get('score', 70)),
+            'insights': result.get('analysis', result.get('insights', 'Assessment analysis completed'))
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in assessment analyze: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ===================== INTERVIEW ENDPOINTS =====================
 
-@app.route('/api/interview/analyze', methods=['POST'])
+@app.route('/api/ai/interview/analyze', methods=['POST'])
 def analyze_interview():
     """Analyze interview session"""
     try:
@@ -266,7 +285,7 @@ def analyze_interview():
         logger.error(f"Error analyzing interview: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/interview/answer', methods=['POST'])
+@app.route('/api/ai/interview/answer', methods=['POST'])
 def analyze_answer():
     """Analyze individual interview answer"""
     try:
@@ -289,7 +308,7 @@ def analyze_answer():
         logger.error(f"Error analyzing answer: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/interview/performance-prediction', methods=['POST'])
+@app.route('/api/ai/interview/performance-prediction', methods=['POST'])
 def predict_performance():
     """Predict on-job performance"""
     try:
@@ -309,7 +328,7 @@ def predict_performance():
         logger.error(f"Error predicting performance: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/interview/speaking-patterns', methods=['POST'])
+@app.route('/api/ai/interview/speaking-patterns', methods=['POST'])
 def analyze_patterns():
     """Analyze speaking patterns"""
     try:
@@ -331,7 +350,7 @@ def analyze_patterns():
 
 # ===================== SUMMARY ENDPOINTS =====================
 
-@app.route('/api/summary/assessment', methods=['POST'])
+@app.route('/api/ai/summary/assessment', methods=['POST'])
 def assessment_summary():
     """Generate assessment summary"""
     try:
@@ -351,7 +370,7 @@ def assessment_summary():
         logger.error(f"Error generating assessment summary: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/summary/interview', methods=['POST'])
+@app.route('/api/ai/summary/interview', methods=['POST'])
 def interview_summary():
     """Generate interview summary"""
     try:
@@ -371,7 +390,7 @@ def interview_summary():
         logger.error(f"Error generating interview summary: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/candidates/compare', methods=['POST'])
+@app.route('/api/ai/candidates/compare', methods=['POST'])
 def compare_candidates():
     """Compare multiple candidates"""
     try:
@@ -391,7 +410,7 @@ def compare_candidates():
         logger.error(f"Error comparing candidates: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/feedback/generate', methods=['POST'])
+@app.route('/api/ai/feedback/generate', methods=['POST'])
 def generate_feedback():
     """Generate feedback"""
     try:

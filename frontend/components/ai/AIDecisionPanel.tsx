@@ -1,302 +1,182 @@
 "use client";
 import React from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle, XCircle, AlertCircle, TrendingUp, RefreshCw,
-  Zap, MessageSquare, Share2,
+  Zap, MessageSquare, Share2, ClipboardCheck, Scale, Target, BrainCircuit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Cell
 } from "recharts";
+import { hrApi } from "@/lib/api";
+import { toast } from "sonner";
 
 interface AIDecisionPanelProps {
   applicationId: number;
-  jobId?: number;
-  onDecisionComplete?: (data: any) => void;
 }
 
-export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({
-  applicationId,
-  jobId,
-  onDecisionComplete,
-}) => {
-  // Make final decision mutation
-  const { mutate: makeFinalDecision, isPending } = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/ai/decision/make", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          applicationId,
-          jobId,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Decision making failed");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      onDecisionComplete?.(data.data);
-    },
-  });
+export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId }) => {
+  const queryClient = useQueryClient();
 
   // Fetch AI decision
-  const { data: decisionData, isLoading } = useQuery({
-    queryKey: ["ai-decision", applicationId],
-    queryFn: async () => {
-      const response = await fetch(`/api/ai/analysis/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch decision");
-      return response.json();
-    },
+  const { data: analysisRes, isLoading } = useQuery({
+    queryKey: ["ai-analysis-full", applicationId],
+    queryFn: async () => (await hrApi.getCandidateProfile(String(applicationId))).data,
   });
 
-  const decision = decisionData?.data?.ai_decision;
-  const resumeAnalysis = decisionData?.data?.resume_analysis;
-  const assessmentAnalysis = decisionData?.data?.assessment_analysis;
-  const interviewAnalysis = decisionData?.data?.interview_analysis;
-  
-  const scores = decision && {
-    resume: resumeAnalysis?.overall_score || decision.resume_score || 0,
-    technical: assessmentAnalysis?.overall_score || decision.technical_assessment_score || 0,
-    interview: interviewAnalysis?.overall_score || decision.interview_score || 0,
-    final: decision.final_score || 0,
-  };
+  const app = analysisRes?.data;
+  const decision = app?.final_decision;
+  const rationale = app?.ai_rationale;
+  const fitBreakdown = app?.fit_breakdown;
 
-  const getDecisionIcon = (decision: string) => {
+  // Make final decision mutation
+  const { mutate: triggerDecision, isPending } = useMutation({
+    mutationFn: () => hrApi.triggerDecision(String(applicationId)),
+    onSuccess: () => {
+      toast.success("AI Decision logic refreshed successfully.");
+      queryClient.invalidateQueries({ queryKey: ["hr-application", applicationId] });
+      queryClient.invalidateQueries({ queryKey: ["ai-analysis-full", applicationId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Decision core execution failed.");
+    }
+  });
+
+  const getDecisionStyles = (decision: string) => {
     switch (decision) {
-      case "AUTO_REJECTED":
-        return XCircle;
-      case "RECOMMENDED":
-        return CheckCircle;
-      case "PROCEED_TO_HR":
-        return AlertCircle;
+      case "Strong Hire":
+        return { color: "bg-emerald-600 text-white", icon: CheckCircle, border: "border-emerald-500", bg: "bg-emerald-50/50" };
+      case "Hire":
+        return { color: "bg-blue-600 text-white", icon: CheckCircle, border: "border-blue-500", bg: "bg-blue-50/50" };
+      case "Borderline":
+        return { color: "bg-amber-600 text-white", icon: AlertCircle, border: "border-amber-500", bg: "bg-amber-50/50" };
+      case "Reject":
+        return { color: "bg-red-600 text-white", icon: XCircle, border: "border-red-500", bg: "bg-red-50/50" };
       default:
-        return TrendingUp;
+        return { color: "bg-slate-600 text-white", icon: RefreshCw, border: "border-slate-500", bg: "bg-slate-50/50" };
     }
   };
 
-  const getDecisionColor = (decision: string) => {
-    switch (decision) {
-      case "AUTO_REJECTED":
-        return "bg-red-600 text-white";
-      case "RECOMMENDED":
-        return "bg-green-600 text-white";
-      case "PROCEED_TO_HR":
-        return "bg-yellow-600 text-white";
-      default:
-        return "bg-gray-600 text-white";
-    }
-  };
+  const styles = getDecisionStyles(decision || "");
 
-  const getDecisionLabel = (decision: string) => {
-    switch (decision) {
-      case "AUTO_REJECTED":
-        return "Auto Rejected";
-      case "RECOMMENDED":
-        return "Recommended";
-      case "PROCEED_TO_HR":
-        return "Proceed to HR";
-      default:
-        return "Pending";
-    }
-  };
-
-  // Chart data
-  const scoreChart = scores ? [
-    { name: "Resume", score: scores.resume || 0 },
-    { name: "Technical", score: scores.technical || 0 },
-    { name: "Interview", score: scores.interview || 0 },
+  const chartData = fitBreakdown ? [
+    { name: "Technical Fit", score: fitBreakdown.technical, color: "#2563eb" },
+    { name: "Comm Fit", score: fitBreakdown.communication, color: "#7c3aed" },
+    { name: "Leadership", score: fitBreakdown.leadership, color: "#059669" },
   ] : [];
 
   return (
-    <div className="space-y-6">
-      {!decision ? (
-        <Card>
-          <CardContent className="p-8">
-            <div className="text-center space-y-4">
-              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto" />
-              <h3 className="font-semibold text-gray-700">Make Final AI Decision</h3>
-              <p className="text-sm text-gray-500">
-                Complete all assessments before generating final decision
-              </p>
-              <Button
-                onClick={() => makeFinalDecision()}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Left: Decision Logic */}
+      <div className="lg:col-span-7 space-y-6">
+        <Card className={cn("border-l-8 transition-all shadow-md", styles.border)}>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn("p-2 rounded-xl", styles.color)}>
+                  <styles.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-bold">Model Decision Core</CardTitle>
+                  <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">AI Engine: gemini-2.5-flash</p>
+                </div>
+              </div>
+              <Badge className={cn("px-4 py-1.5 font-bold uppercase tracking-widest text-[10px]", styles.color)}>
+                {decision || "PENDING ANALYSIS"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             <div className={cn("p-6 rounded-2xl border", styles.bg, styles.border)}>
+                <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                   <Zap className="w-4 h-4 text-amber-500 fill-amber-500" /> Executive AI Rationale
+                </h4>
+                <p className="text-sm text-slate-700 leading-relaxed italic">
+                   "{rationale || "The system is awaiting combined metrics from Assessment, Interview, and Integrity modules to formulate a final hiring rationale."}"
+                </p>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                   <div className="bg-white p-3 rounded-xl shadow-sm"><Target className="w-5 h-5 text-blue-600" /></div>
+                   <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Success Prediction</p>
+                      <p className="text-xl font-bold text-slate-900">{app?.success_probability ? Math.round(app.success_probability * 100) : 0}%</p>
+                   </div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                   <div className="bg-white p-3 rounded-xl shadow-sm"><ClipboardCheck className="w-5 h-5 text-emerald-600" /></div>
+                   <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Integrity Index</p>
+                      <p className="text-xl font-bold text-slate-900">{app?.integrity_score || 0}/100</p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                <p className="text-[10px] font-bold text-blue-800 uppercase mb-3 flex items-center gap-2">
+                  <Scale className="w-3 h-3" /> Weighted Decision Formula
+                </p>
+                <div className="bg-white p-3 rounded-xl text-center border border-blue-200">
+                   <code className="text-[11px] font-mono font-bold text-slate-600">
+                      (Tech: 40%) + (Int: 40%) + (Integrity: 10%) + (Behav: 10%)
+                   </code>
+                </div>
+             </div>
+
+             <Button 
+                onClick={() => triggerDecision()} 
                 disabled={isPending}
-                className="bg-blue-600 hover:bg-blue-700 mt-4"
-              >
-                {isPending ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Generate Final Decision"
-                )}
-              </Button>
+                className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg transition-all font-bold gap-2"
+             >
+                {isPending ? <RefreshCw className="animate-spin w-5 h-5" /> : <BrainCircuit className="w-5 h-5" />}
+                {decision ? "Refresh Hiring Decision" : "Execute AI Decision Model"}
+             </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Right: Fit Visualization */}
+      <div className="lg:col-span-5 space-y-6">
+        <Card className="h-full border-slate-200 shadow-md">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Target className="w-5 h-5 text-indigo-500" /> Fit Analysis Detail
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                  <XAxis type="number" domain={[0, 100]} hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} fontSize={11} className="font-bold text-slate-600" />
+                  <Tooltip />
+                  <Bar dataKey="score" radius={[0, 10, 10, 0]} barSize={40}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="mt-8 space-y-4">
+               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2">Role Suggestion</h4>
+               <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-sm font-bold text-indigo-900 leading-relaxed">
+                     {app?.role_recommendation || "System recommendation pending decision core execution."}
+                  </p>
+               </div>
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {/* Main Decision Card */}
-          <Card className="border-2 border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Final AI Decision</span>
-                <Badge className={getDecisionColor(decision.ai_decision)}>
-                  {getDecisionLabel(decision.ai_decision)}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Decision Summary Box */}
-              <div className={cn(
-                "p-4 rounded-lg border-l-4 space-y-2",
-                decision.ai_decision === "AUTO_REJECTED"
-                  ? "bg-red-50 border-red-500"
-                  : decision.ai_decision === "RECOMMENDED"
-                  ? "bg-green-50 border-green-500"
-                  : "bg-yellow-50 border-yellow-500"
-              )}>
-                <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                  {React.createElement(getDecisionIcon(decision.ai_decision), {
-                    className: "w-5 h-5"
-                  })}
-                  {getDecisionLabel(decision.ai_decision)}
-                </h4>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {decision.decision_reason || decision.summary}
-                </p>
-              </div>
-
-              {/* Final Score */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg space-y-2">
-                  <p className="text-sm text-gray-600">Final Score</p>
-                  <p className="text-4xl font-bold text-blue-600">
-                    {decision.final_score?.toFixed(1)}/100
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Threshold: {decision.score_threshold}/100
-                  </p>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg space-y-2">
-                  <p className="text-sm text-gray-600">Confidence</p>
-                  <p className="text-4xl font-bold text-purple-600">
-                    {decision.confidence_percentage?.toFixed(0)}%
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Decision confidence level
-                  </p>
-                </div>
-              </div>
-
-              {/* Score Breakdown */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-700">Score Breakdown</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={scoreChart}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Bar dataKey="score" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Weighted Scores Grid */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-xs text-gray-600">Resume Score</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {scores?.resume?.toFixed(1)}
-                  </p>
-                  <p className="text-xs text-gray-500">Weight: 30%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Technical Score</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {scores?.technical?.toFixed(1)}
-                  </p>
-                  <p className="text-xs text-gray-500">Weight: 40%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Interview Score</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {scores?.interview?.toFixed(1)}
-                  </p>
-                  <p className="text-xs text-gray-500">Weight: 30%</p>
-                </div>
-              </div>
-
-              {/* How it's calculated */}
-              <div className="p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
-                <p className="font-semibold mb-2">Calculation Formula:</p>
-                <code className="text-xs bg-white p-2 rounded block overflow-auto">
-                  Final Score = (Resume × 0.3) + (Technical × 0.4) + (Interview × 0.3)
-                </code>
-              </div>
-
-              {/* Ranking (if available) */}
-              {decision.ranked_position && (
-                <div className="grid grid-cols-2 gap-4 p-4 bg-indigo-50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-600">Ranked Position</p>
-                    <p className="text-3xl font-bold text-indigo-600">
-                      #{decision.ranked_position}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Better Than</p>
-                    <p className="text-3xl font-bold text-indigo-600">
-                      {decision.percentile_rank?.toFixed(0)}%
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Add Notes
-                </Button>
-                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Decision Explanation */}
-          {decision.decision_reason && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Decision Explanation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {decision.decision_reason}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

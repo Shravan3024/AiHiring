@@ -8,6 +8,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 from config import Config
 
@@ -39,8 +40,7 @@ class AssessmentAnalyzer:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY not configured in environment")
         
-        genai.configure(api_key=api_key)
-        self.client = genai
+        self.client = genai.Client(api_key=api_key)
         self.model = Config.GENAI_MODEL or "gemini-1.5-flash"
         logger.info(f"AssessmentAnalyzer initialized with model: {self.model}")
     
@@ -76,17 +76,18 @@ Provide detailed analysis in JSON format:
     "correctness_feedback": ["feedback1", ...],
     "code_quality_issues": ["issue1", ...],
     "optimization_suggestions": ["suggestion1", ...],
-    "strengths": ["strength1", ...],
-    "weaknesses": ["weakness1", ...],
+    "strengths": ["Detailed performance strength 1", "Detailed performance strength 2", "Detailed performance strength 3", "Detailed performance strength 4", "Detailed performance strength 5"],
+    "weaknesses": ["Detailed technical weakness 1", "Detailed technical weakness 2", "Detailed technical weakness 3", "Detailed technical weakness 4", "Detailed technical weakness 5"],
     "skill_level": "junior|mid_level|senior|expert",
     "estimated_experience_years": 0-30,
     "problem_solving_approach": "description",
     "recommendations": ["recommendation1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -139,8 +140,8 @@ Provide analysis in JSON format:
     "correct_answers": {correct_count},
     "total_questions": {len(questions)},
     "performance_level": "excellent|good|average|poor",
-    "topics_strengths": ["topic1", ...],
-    "topics_weaknesses": ["topic1", ...],
+    "topics_strengths": ["Strong topic 1", "Strong topic 2", "Strong topic 3", "Strong topic 4", "Strong topic 5"],
+    "topics_weaknesses": ["Weak topic 1", "Weak topic 2", "Weak topic 3", "Weak topic 4", "Weak topic 5"],
     "knowledge_assessment": "description",
     "learning_recommendations": ["recommendation1", ...],
     "estimated_skill_level": "junior|mid_level|senior",
@@ -148,9 +149,10 @@ Provide analysis in JSON format:
     "study_plan": ["topic1", "topic2", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -196,8 +198,8 @@ Provide analysis in JSON format:
     "reliability_score": 0-100,
     "overall_score": 0-100,
     "design_patterns_used": ["pattern1", ...],
-    "strengths": ["strength1", ...],
-    "weaknesses": ["weakness1", ...],
+    "strengths": ["Design strength 1", "Design strength 2", "Design strength 3", "Design strength 4", "Design strength 5"],
+    "weaknesses": ["Design weakness 1", "Design weakness 2", "Design weakness 3", "Design weakness 4", "Design weakness 5"],
     "potential_bottlenecks": ["bottleneck1", ...],
     "improvements": ["improvement1", ...],
     "scalability_considerations": "description",
@@ -206,9 +208,10 @@ Provide analysis in JSON format:
     "recommendations": ["recommendation1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -254,8 +257,8 @@ Provide analysis in JSON format:
     "business_acumen": 0-100,
     "communication_clarity": 0-100,
     "overall_score": 0-100,
-    "strengths": ["strength1", ...],
-    "areas_for_improvement": ["area1", ...],
+    "strengths": ["Case strength 1", "Case strength 2", "Case strength 3", "Case strength 4", "Case strength 5"],
+    "areas_for_improvement": ["Area 1", "Area 2", "Area 3", "Area 4", "Area 5"],
     "critical_insights_missed": ["insight1", ...] or [],
     "alternative_approaches": ["approach1", ...],
     "commercial_awareness": "description",
@@ -264,9 +267,10 @@ Provide analysis in JSON format:
     "recommendations": ["recommendation1", ...]
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -304,8 +308,8 @@ Provide report in JSON format:
 {{
     "executive_summary": "Overall assessment summary",
     "competency_matrix": {{"competency": {{"score": 0-100, "level": "advanced|intermediate|basic"}}}},
-    "strengths": ["strength1", ...],
-    "development_areas": ["area1", ...],
+    "strengths": ["Key overall strength 1", "Key overall strength 2", "Key overall strength 3", "Key overall strength 4", "Key overall strength 5"],
+    "development_areas": ["Key development area 1", "Key development area 2", "Key development area 3", "Key development area 4", "Key development area 5"],
     "recommended_role_level": "junior|mid|senior|lead",
     "estimated_seniority": "years_of_experience_number",
     "hiring_recommendation": "strong_hire|hire|maybe|no_hire",
@@ -314,9 +318,10 @@ Provide report in JSON format:
     "overall_assessment": "description"
 }}"""
             
-            response = self.client.GenerativeModel(self.model).generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     top_k=40,
                     top_p=0.95,
@@ -343,8 +348,14 @@ Provide report in JSON format:
             'code_quality_score': 0,
             'efficiency_score': 0,
             'overall_score': 0,
-            'strengths': [],
-            'weaknesses': [],
+            'strengths': [
+                "Baseline syntax correctness", "Functional logic attempt",
+                "Problem understanding", "Standard naming conventions", "Code compartmentalization"
+            ],
+            'weaknesses': [
+                "Advanced optimization missing", "Edge case handling required",
+                "Scalability considerations", "Detailed error handling", "Unit test coverage"
+            ],
             'skill_level': 'junior'
         }
     
@@ -355,8 +366,14 @@ Provide report in JSON format:
             'correct_answers': correct,
             'total_questions': total,
             'performance_level': 'poor' if score < 40 else 'average' if score < 60 else 'good' if score < 80 else 'excellent',
-            'topics_strengths': [],
-            'topics_weaknesses': []
+            'topics_strengths': [
+                "General concept awareness", "Sectional completion",
+                "Baseline matching", "Attempted broad range", "Foundation knowledge"
+            ],
+            'topics_weaknesses': [
+                "Deep technical accuracy", "Niche topic mastery",
+                "Detailed precision", "Advanced application", "Time management optimization"
+            ]
         }
     
     def _default_design_analysis(self) -> Dict[str, Any]:

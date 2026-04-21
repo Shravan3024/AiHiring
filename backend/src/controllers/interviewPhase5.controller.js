@@ -19,6 +19,7 @@ const { sequelize, Sequelize } = require('../config/db');
 const { Op } = Sequelize;
 const fs = require('fs');
 const path = require('path');
+const aiService = require('../services/ai.service');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../utils/logger');
 const manualScoringService = require('../services/manualScoring.service');
@@ -70,9 +71,9 @@ exports.getInterviewConfig = (req, res) => {
 // Interview Configuration
 const INTERVIEW_CONFIG = {
   DURATION_MINUTES: 60,
-  TOTAL_QUESTIONS: 10,
-  TECH_QUESTIONS: 7,
-  BEHAVIORAL_QUESTIONS: 3,
+  TOTAL_QUESTIONS: 3,
+  TECH_QUESTIONS: 2,
+  BEHAVIORAL_QUESTIONS: 1,
   VIDEO_RECORDING: true,
   AUDIO_ONLY_FALLBACK: true,
   SENTIMENT_ANALYSIS: true,
@@ -352,7 +353,7 @@ exports.startInterviewPhase5 = async (req, res) => {
     });
   } catch (error) {
     console.error('Start Interview Error:', error);
-    res.status(500).json({ error: 'Failed to start interview' });
+    res.status(500).json({ error: 'Failed to start interview', details: error.message });
   }
 };
 
@@ -405,11 +406,11 @@ exports.submitResponsePhase5 = async (req, res) => {
     }
 
     let recordingPath = null;
-    if (video_blob || audio_blob) {
+    if (video_blob) {
       recordingPath = await saveRecording(
         sessionId,
         question_id,
-        video_blob || audio_blob,
+        video_blob,
         'video'
       );
     }
@@ -445,107 +446,43 @@ exports.submitResponsePhase5 = async (req, res) => {
         submitted_at: new Date()
       });
 
-      // ===== FULL AI ANALYSIS =====
-      let aiAnalysis = null;
-      let interviewScore = calculateInterviewScore(questionsAsked);
-      
-      // Perform AI analysis in a way that failure doesn't block completion response
+      let interviewScore = 0;
       try {
-        logger.info(`[Interview AI] Running Gemini analysis for session ${sessionId}`);
-        try {
-          aiAnalysis = await runGeminiInterviewAnalysis(questionsAsked);
-        } catch (geminiError) {
-          logger.warn(`[Interview AI] Gemini analysis failed, using manual backup for session ${sessionId}: ${geminiError.message}`);
-          const manualResult = await manualScoringService.scoreInterviewManual(applicationId, {
-            qa_pairs: questionsAsked.map(q => ({ question: q.question_text, answer: q.response_text }))
-          });
-          
-          aiAnalysis = {
-            final_score: manualResult.overall_score,
-            recommendation: manualResult.hire_recommendation.charAt(0).toUpperCase() + manualResult.hire_recommendation.slice(1),
-            dimension_scores: {
-              content: manualResult.overall_score / 10,
-              communication: 7, 
-              confidence: 6,
-              technical: manualResult.overall_score / 10,
-              sentiment: 6,
-              integrity: 9
-            },
-            strengths: manualResult.strengths,
-            weaknesses: manualResult.weaknesses,
-            rating: manualResult.overall_score > 70 ? 'Excellent' : 'Average',
-            is_manual_backup: true
-          };
-        }
+        logger.info(`[Interview AI] Running Gemini-2.5-flash analysis for session ${sessionId}`);
         
-        interviewScore = aiAnalysis.final_score || interviewScore;
-        logger.info(`[Interview AI] Score: ${interviewScore}, Recommendation: ${aiAnalysis.recommendation}`);
-
-        const application = await Application.findByPk(applicationId);
-        if (application) {
-          await application.update({
-            status: 'INTERVIEW_COMPLETED',
-            interview_score: Math.round(interviewScore),
-            updated_at: new Date()
-          });
-
-          // PERSIST TO interview_analysis TABLE
-          const analysisPayload = {
-            application_id: applicationId,
-            interview_session_id: interviewSession.id,
-            interview_type: 'behavioral',
-            overall_score: aiAnalysis.final_score,
-            technical_knowledge_score: (aiAnalysis.dimension_scores?.technical || 0) * 10,
-            problem_solving_score: (aiAnalysis.dimension_scores?.content || 0) * 10,
-            communication_score: (aiAnalysis.dimension_scores?.communication || 0) * 10,
-            soft_skills_score: (aiAnalysis.dimension_scores?.sentiment || 0) * 10,
-            cultural_fit_score: (aiAnalysis.dimension_scores?.integrity || 0) * 10,
-            confidence_level: aiAnalysis.dimension_scores?.confidence >= 7 ? 'high' : aiAnalysis.dimension_scores?.confidence >= 4 ? 'medium' : 'low',
-            strengths: aiAnalysis.strengths || [],
-            weaknesses: aiAnalysis.weaknesses || [],
-            key_takeaways: aiAnalysis.summary_points || [],
-            hire_recommendation: {
-              'Strong Hire': 'strong_yes',
-              'Hire': 'yes',
-              'Borderline': 'maybe',
-              'Reject': 'no'
-            }[aiAnalysis.recommendation] || 'maybe',
-            detailed_evaluation: aiAnalysis.detailed_feedback || '',
-            scoring_rationale: `Content:${aiAnalysis.dimension_scores?.content} Comm:${aiAnalysis.dimension_scores?.communication} Conf:${aiAnalysis.dimension_scores?.confidence} Sent:${aiAnalysis.dimension_scores?.sentiment} Int:${aiAnalysis.dimension_scores?.integrity}`,
-            qa_pairs: questionsAsked.map(q => ({
-              question: q.question_text || "Question",
-              answer: q.response_text || "N/A",
-              duration_seconds: q.response_duration_seconds || 0
-            })),
-            green_flags: aiAnalysis.strengths?.slice(0, 3) || [],
-            red_flags: aiAnalysis.weaknesses?.slice(0, 3) || [],
-            rating: aiAnalysis.rating || 'Average',
-            analysis_timestamp: new Date()
-          };
-
-          const existing = await InterviewAnalysis.findOne({ where: { application_id: applicationId } });
-          if (existing) {
-            await existing.update(analysisPayload);
-          } else {
-            await InterviewAnalysis.create(analysisPayload);
-          }
-          logger.info(`[Interview AI] Analysis persisted for application ${applicationId}`);
-          
-          // Log status change
-          await ApplicationStatusLog.create({
-            application_id: applicationId,
-            previous_status: 'INTERVIEW_IN_PROGRESS',
-            new_status: 'INTERVIEW_COMPLETED',
-            changed_by: candidateId,
-            metadata: { interview_score: interviewScore },
-            changed_at: new Date()
-          });
-        }
+        const qaPairs = questionsAsked.map(q => ({
+          question: q.question_text,
+          answer: q.response_text,
+          duration: q.response_duration_seconds
+        }));
+ 
+        aiAnalysis = await aiService.analyzeFullInterview(qaPairs, application.Job?.title);
+        
+        interviewScore = aiAnalysis.overall_interview_score || 0;
+        
+        await interviewSession.update({
+          questions_asked: questionsAsked,
+          status: 'COMPLETED',
+          submitted_at: new Date(),
+          overall_score: interviewScore,
+          dimension_scores: aiAnalysis.dimension_scores,
+          highlights: aiAnalysis.highlights,
+          hire_recommendation: aiAnalysis.recommendation?.toUpperCase().replace(/\s+/g, '_') || 'MAYBE'
+        });
+ 
+        await application.update({
+          status: 'INTERVIEW_COMPLETED',
+          interview_score: Math.round(interviewScore),
+          updated_at: new Date()
+        });
+ 
+        logger.info(`[Interview AI] Score: ${interviewScore}, Analysis Persisted.`);
+        
       } catch (aiErr) {
-        logger.error(`[Interview AI] Error during background analysis: ${aiErr.message}`, aiErr);
-        // We continue anyway to let the candidate finish
+        logger.error(`[Interview AI] Error: ${aiErr.message}`);
+        interviewScore = 0; // Fallback
       }
-
+ 
       // Auto-rejection engine
       try {
         const { checkAndTriggerAutoRejection } = require('./application.controller');
@@ -553,7 +490,7 @@ exports.submitResponsePhase5 = async (req, res) => {
       } catch (autoErr) {
         logger.warn(`[Auto-Rejection] Post-interview check failed: ${autoErr.message}`);
       }
-
+ 
       // Create notification
       try {
         await NotificationQueue.create({
@@ -568,7 +505,7 @@ exports.submitResponsePhase5 = async (req, res) => {
       } catch (notifErr) {
         logger.warn(`[Notification] Failed to create interview completion notification: ${notifErr.message}`);
       }
-
+ 
       return res.json({
         success: true,
         interview_complete: true,

@@ -163,6 +163,21 @@ export const hrApi = {
     api.post(`/hr/add-note/${applicationId}`, { content }),
   reEvaluateAssessment: (applicationId: string) =>
     api.post("/ai/re-evaluate", { applicationId }),
+
+  getExecutiveReport: (applicationId: string) =>
+    api.get(`/hr/reports/executive/${applicationId}`, { responseType: 'blob' }),
+
+  getAssessmentReport: (applicationId: string) =>
+    api.get(`/hr/report/${applicationId}`, { responseType: 'blob' }),
+
+  getInterviewReport: (applicationId: string) =>
+    api.get(`/hr/report/interview/${applicationId}`, { responseType: 'blob' }),
+
+  triggerDecision: (applicationId: string) =>
+    api.post(`/hr/applications/${applicationId}/decide`),
+
+  getBenchmark: (applicationId: string) =>
+    api.get(`/hr/applications/${applicationId}/benchmark`),
 };
 
 // ==================== MD ====================

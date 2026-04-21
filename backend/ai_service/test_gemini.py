@@ -1,7 +1,8 @@
 import os
 import sys
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # Load .env from backend directory
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -12,16 +13,19 @@ if not api_key:
     print("Error: GOOGLE_API_KEY environment variable not found.")
     sys.exit(1)
 
-genai.configure(api_key=api_key)
+model_name = os.environ.get('GENAI_MODEL', 'gemini-2.0-flash')
+client = genai.Client(api_key=api_key)
 
 try:
-    print("Initializing Gemini 2.5 Flash model...")
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    print(f"Initializing {model_name} model...")
     
     print("Making test request...")
-    response = model.generate_content("Say hello world.")
+    response = client.models.generate_content(
+        model=model_name,
+        contents="Say hello world."
+    )
     
-    print("\nSUCCESS! Google Gemini API Key is working perfectly.")
+    print("\nSUCCESS! Google Gemini API (google-genai) is working perfectly.")
     print("Model replied:")
     print("----------------------------------------")
     print(response.text)

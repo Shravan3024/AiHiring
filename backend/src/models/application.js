@@ -86,6 +86,34 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'updated_at'
+    },
+    final_decision: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    role_recommendation: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    fit_breakdown: {
+      type: DataTypes.JSON,
+      allowNull: true
+    },
+    ai_rationale: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    success_probability: {
+      type: DataTypes.FLOAT,
+      allowNull: true
+    },
+    integrity_score: {
+      type: DataTypes.FLOAT,
+      defaultValue: 100
+    },
+    behavioral_score: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0
     }
   }, {
     tableName: "Applications",

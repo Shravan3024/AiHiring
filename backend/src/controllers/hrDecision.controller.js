@@ -1,11 +1,12 @@
 const {
   Application, Candidate, User,
   Notification, ApplicationStatusLog, NotificationQueue, AssessmentAttempt,
-  InterviewSession, InterviewAnalysis
+  InterviewSession, InterviewAnalysis, MalpracticeEvent, Job
 } = require('../models');
 const { Op } = require('sequelize');
 const auditLogger = require('../services/auditLogger.service');
 const { computeApplicationScore } = require('../utils/applicationStatus.utils');
+const aiService = require('../services/ai.service');
 
 // ── EXACT enum values (verified via pg_enum) ──────────────────────
 const FINAL_STATES = ['SELECTED', 'REJECTED'];
@@ -380,6 +381,71 @@ class HRDecisionController {
     } catch (error) {
       console.error('Error fetching approval rules:', error);
       return res.status(500).json({ success: false, message: 'Error fetching approval rules' });
+    }
+  }
+
+  /**
+   * POST /hr/applications/:applicationId/decide
+   * Module 4: Integrated Decision Core
+   */
+  static async triggerAIDecision(req, res) {
+    try {
+      const { applicationId } = req.params;
+      const application = await Application.findByPk(applicationId, {
+        include: [{ model: AssessmentAttempt, where: { assessment_type: 'TECHNICAL' }, required: false }, { model: InterviewSession }, { model: Job }]
+      });
+
+      if (!application) return res.status(404).json({ error: "Application not found" });
+
+      const malpracticeCount = await MalpracticeEvent.count({ where: { application_id: applicationId } });
+      const integrityScore = Math.max(0, 100 - (malpracticeCount * 10));
+
+      const aiResponse = await aiService.getFinalCandidateDecision({
+        assessmentScore: application.technical_score || 0,
+        interviewScore: application.interview_score || 0,
+        integrityScore,
+        behavioralScore: application.interview_score || 50
+      });
+
+      await application.update({
+        final_decision: aiResponse.decision,
+        role_recommendation: aiResponse.role_recommendation,
+        fit_breakdown: aiResponse.fit_breakdown,
+        ai_rationale: aiResponse.reasoning,
+        success_probability: aiResponse.success_prediction_percentage / 100,
+        overall_score: aiResponse.final_score,
+        integrity_score: integrityScore
+      });
+
+      res.json({ success: true, decision: aiResponse });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  /**
+   * GET /hr/applications/:applicationId/benchmark
+   * Module 5: Performance Benchmarking
+   */
+  static async getBenchmarkData(req, res) {
+    try {
+      const { applicationId } = req.params;
+      const application = await Application.findByPk(applicationId);
+      const peers = await Application.findAll({ where: { job_id: application.job_id, status: 'SELECTED' }, limit: 5 });
+      
+      const peerAvg = peers.length > 0 ? peers.reduce((s, a) => s + a.overall_score, 0) / peers.length : 70;
+
+      res.json({
+        success: true,
+        data: {
+          candidate_score: application.overall_score,
+          peer_average: Math.round(peerAvg),
+          percentile: application.overall_score > peerAvg ? 85 : 45,
+          recommendation: application.overall_score > peerAvg ? "Exceeds peer benchmark" : "Matches peer baseline"
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   }
 }

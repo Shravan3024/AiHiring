@@ -14,11 +14,11 @@ const scoringService = require('../services/scoring.service');
 const logger = require("../utils/logger");
 
 const ASSESSMENT_CONFIG = {
-  DURATION_MINUTES: 60,
+  DURATION_MINUTES: 45,
   TOTAL_QUESTIONS: 25,
   TECH_QUESTIONS: 20,
   BEHAVIORAL_QUESTIONS: 5,
-  PASSING_SCORE: 60,
+  PASSING_SCORE: 40,
   TECH_WEIGHT: 0.8,
   BEHAVIOR_WEIGHT: 0.2
 };
@@ -177,7 +177,7 @@ exports.startAssessment = async (req, res) => {
   } catch (error) {
     if (transaction) await transaction.rollback();
     logger.error('Error starting assessment:', error);
-    res.status(500).json({ error: 'Failed to start assessment' });
+    res.status(500).json({ error: 'Failed to start assessment', details: error.message });
   }
 };
 
@@ -231,10 +231,17 @@ exports.submitAssessment = async (req, res) => {
       where: { questionId: attempt.metadata.question_ids || [] } 
     });
 
+    // Use unified AI evaluation logic
     let technicalScore = 0;
     let behavioralScore = 0;
     let techTotalWeight = 0;
     let behaviorTotalWeight = 0;
+    
+    let avgStructureScore = 0;
+    let avgConceptCoverage = 0;
+    
+    const allStrengths = [];
+    const allWeaknesses = [];
 
     for (const q of questions) {
       const qId = q.questionId;
@@ -252,19 +259,27 @@ exports.submitAssessment = async (req, res) => {
         qMLScore = Math.round(scoringService.calculateCosineSimilarity(answerText, reference) * 100);
       }
 
-      // 2. AI Scoring
+      // 2. Advanced AI Scoring (Module 1)
       const isBehavioral = q.section_type === 'BEHAVIORAL' || q.topic?.toLowerCase().includes('behavioral');
       
       try {
         if (q.evaluation_type === 'AI' || isBehavioral || !q.correct_answer) {
-          const aiRes = await aiService.analyzeAssessmentResponse({
-              question: q.question,
-              answer: answerText,
-              expectedAnswer: q.expected_answer,
-              keywords: q.keywords,
-              category: isBehavioral ? 'BEHAVIORAL' : 'TECHNICAL'
-          });
+          const aiRes = await aiService.evaluateTechnicalAnswer(
+            q.question,
+            answerText,
+            q.expected_answer,
+            q.keywords
+          );
+          
           qAIScore = aiRes.score || 0;
+          
+          if (!isBehavioral) {
+            avgStructureScore += (aiRes.structure_score || 0);
+            avgConceptCoverage += (aiRes.concept_coverage || 0);
+          }
+
+          if (aiRes.strengths) allStrengths.push(...aiRes.strengths);
+          if (aiRes.weaknesses) allWeaknesses.push(...aiRes.weaknesses);
         } else {
           qAIScore = qMLScore;
         }
@@ -289,19 +304,24 @@ exports.submitAssessment = async (req, res) => {
     const finalTechScore = techTotalWeight > 0 ? (technicalScore / techTotalWeight) * 100 : 0;
     const finalBehaviorScore = behaviorTotalWeight > 0 ? (behavioralScore / behaviorTotalWeight) * 100 : 0;
     
+    // Normalize additional metrics
+    avgStructureScore = techTotalWeight > 0 ? avgStructureScore / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
+    avgConceptCoverage = techTotalWeight > 0 ? avgConceptCoverage / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
+
     const aggregatedScore = (finalTechScore * ASSESSMENT_CONFIG.TECH_WEIGHT) + 
                              (finalBehaviorScore * ASSESSMENT_CONFIG.BEHAVIOR_WEIGHT);
 
     const malpracticePenalty = Math.min(attempt.malpractice_score || 0, 40);
     const finalScore = Math.max(0, Math.round(aggregatedScore - malpracticePenalty));
 
-
     await attempt.update({
       ai_score: Math.round(finalTechScore),
       ml_score: Math.round(finalBehaviorScore),
       final_score: finalScore,
       score: finalScore,
-      status: 'EVALUATED'
+      status: 'EVALUATED',
+      structure_score: avgStructureScore,
+      concept_coverage: avgConceptCoverage
     });
 
     const application = attempt.Application;
@@ -309,7 +329,8 @@ exports.submitAssessment = async (req, res) => {
 
     await application.update({
       technical_score: finalScore,
-      status: passed ? 'TECHNICAL_ROUND_COMPLETED' : 'REJECTED'
+      behavioral_score: finalBehaviorScore,
+      status: 'TECHNICAL_ROUND_COMPLETED' // Cancel auto-reject as requested
     });
 
     await AssessmentAnalysis.create({
@@ -317,9 +338,9 @@ exports.submitAssessment = async (req, res) => {
       overall_score: finalScore,
       assessment_type: 'TECHNICAL',
       test_name: `${application.Job?.title} Technical Assessment`,
-      strengths: [`Technical accuracy: ${Math.round(finalTechScore)}%`],
-      weaknesses: finalTechScore < 60 ? ["Domain concepts"] : [],
-      detailed_feedback: `Final Evaluation: ${finalScore}%. (AI: ${Math.round(finalTechScore)}%, Behavioral: ${Math.round(finalBehaviorScore)}%). Penalty: ${malpracticePenalty}.`
+      strengths: Array.from(new Set([...allStrengths, `Overall assessment completion: ${questions.length} questions`])),
+      weaknesses: Array.from(new Set(allWeaknesses)),
+      detailed_feedback: `Final Evaluation: ${finalScore}%. (AI Technical: ${Math.round(finalTechScore)}%, Behavioral: ${Math.round(finalBehaviorScore)}%). Penalty: ${malpracticePenalty}.`
     });
 
     res.json({ success: true, score: finalScore, passed });
