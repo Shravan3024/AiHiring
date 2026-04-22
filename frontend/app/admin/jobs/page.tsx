@@ -159,23 +159,23 @@ export default function AdminJobsPage() {
         {/* Header Action Layer */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
            <div className="space-y-1">
-              <h3 className="text-2xl font-bold text-white tracking-tight">Position Inventory</h3>
-              <p className="text-xs text-white/40 font-medium uppercase tracking-[0.2em]">Deployment & Lifecycle Governance</p>
+              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Position Inventory</h3>
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-[0.2em]">Deployment & Lifecycle Governance</p>
            </div>
            
            <div className="flex items-center gap-4">
               <div className="relative group">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-blue-500 transition-colors" />
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                  <Input 
                     placeholder="Filter positions..." 
-                    className="h-12 pl-10 pr-4 w-72 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-blue-500/50"
+                    className="h-12 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
                     value={search} 
                     onChange={(e) => setSearch(e.target.value)} 
                  />
               </div>
               <Button 
                 onClick={openCreate} 
-                className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/40 flex items-center gap-2 group transition-all"
+                className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 group transition-all"
               >
                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> 
                 Deploy Position
@@ -187,7 +187,7 @@ export default function AdminJobsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="h-64 bg-white/5 border border-white/5 rounded-[2rem] animate-pulse" />
+              <div key={i} className="h-64 bg-white shadow-sm border border-slate-200 rounded-[2rem] animate-pulse" />
             ))}
           </div>
         ) : (
@@ -195,14 +195,14 @@ export default function AdminJobsPage() {
             {filtered.map((job: Job) => (
               <div 
                 key={job._id} 
-                className="group relative bg-white/5 border border-white/5 rounded-[2.5rem] p-7 backdrop-blur-md hover:bg-white/[0.08] transition-all duration-500 hover:-translate-y-1"
+                className="group relative bg-white shadow-sm border border-slate-200 rounded-[2.5rem] p-7 backdrop-blur-md hover:bg-slate-100 transition-all duration-500 hover:-translate-y-1"
               >
                 {/* Status Indicator */}
                 <div className="absolute top-7 right-7">
                   <Badge className={cn(
                     "text-[9px] font-black tracking-widest uppercase border-0 px-3 py-1",
                     job.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400" :
-                    job.status === "CLOSED" ? "bg-rose-500/10 text-rose-400" : "bg-white/10 text-white/40"
+                    job.status === "CLOSED" ? "bg-rose-500/10 text-rose-400" : "bg-slate-100 text-slate-500"
                   )}>
                     {job.status}
                   </Badge>
@@ -210,29 +210,29 @@ export default function AdminJobsPage() {
 
                 <div className="space-y-6">
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center border border-white/10 shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center border border-slate-200 shrink-0">
                          <Briefcase className="w-5 h-5 text-blue-400" />
                       </div>
                       <div className="min-w-0 pr-16">
-                         <h4 className="text-lg font-bold text-white tracking-tight truncate group-hover:text-blue-400 transition-colors uppercase">{job.title}</h4>
-                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{job.department}</p>
+                         <h4 className="text-lg font-bold text-slate-900 tracking-tight truncate group-hover:text-blue-400 transition-colors uppercase">{job.title}</h4>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{job.department}</p>
                       </div>
                    </div>
 
                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-slate-500 truncate">
                          <MapPin className="w-3.5 h-3.5" />
                          <span className="text-xs font-medium tracking-tight truncate">{job.location}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-slate-500 truncate">
                          <Users className="w-3.5 h-3.5" />
                          <span className="text-xs font-medium tracking-tight">{job.applicationCount || 0} Inbound</span>
                       </div>
-                      <div className="flex items-center gap-2 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-slate-500 truncate">
                          <Target className="w-3.5 h-3.5" />
                          <span className="text-xs font-medium tracking-tight uppercase tracking-widest">{job.type?.split('_')[0]}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-slate-500 truncate">
                          <Zap className="w-3.5 h-3.5" />
                          <span className="text-xs font-medium tracking-tight">{job.minExperience}+ Yrs Exp</span>
                       </div>
@@ -241,35 +241,35 @@ export default function AdminJobsPage() {
                    {/* Micro skills preview */}
                    <div className="flex flex-wrap gap-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
                       {(job.requiredSkills || []).slice(0, 3).map(sk => (
-                        <span key={sk} className="text-[9px] font-black uppercase tracking-widest bg-white/5 border border-white/5 px-2 py-0.5 rounded-full text-white/60">{sk}</span>
+                        <span key={sk} className="text-[9px] font-black uppercase tracking-widest bg-white shadow-sm border border-slate-200 px-2 py-0.5 rounded-full text-slate-500">{sk}</span>
                       ))}
-                      {(job.requiredSkills?.length || 0) > 3 && <span className="text-[9px] font-black text-white/20">+{job.requiredSkills!.length - 3}</span>}
+                      {(job.requiredSkills?.length || 0) > 3 && <span className="text-[9px] font-black text-slate-400">+{job.requiredSkills!.length - 3}</span>}
                    </div>
 
-                   <div className="pt-4 border-t border-white/5 flex gap-2">
+                   <div className="pt-4 border-t border-slate-200 flex gap-2">
                       <button 
                         onClick={() => openEdit(job)}
-                        className="flex-1 h-11 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all border border-transparent hover:border-white/10"
+                        className="flex-1 h-11 bg-white shadow-sm hover:bg-slate-100 text-slate-900 font-bold text-xs uppercase tracking-widest rounded-xl transition-all border border-transparent hover:border-slate-200"
                       >
                          Configure
                       </button>
                       <button 
                          onClick={() => { if (confirm("Terminate position access?")) deleteMutation.mutate(job._id); }}
-                         className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-rose-500/10 text-white/20 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-500/20"
+                         className="w-11 h-11 flex items-center justify-center bg-white shadow-sm hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-500/20"
                       >
                          <Trash2 className="w-4 h-4" />
                       </button>
                       {job.status !== "ACTIVE" ? (
                         <button 
                            onClick={() => activateMutation.mutate(job._id)}
-                           className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-emerald-500/10 text-white/20 hover:text-emerald-400 rounded-xl transition-all border border-transparent hover:border-emerald-500/20"
+                           className="w-11 h-11 flex items-center justify-center bg-white shadow-sm hover:bg-emerald-500/10 text-slate-400 hover:text-emerald-400 rounded-xl transition-all border border-transparent hover:border-emerald-500/20"
                         >
                            <Power className="w-4 h-4" />
                         </button>
                       ) : (
                         <button 
                            onClick={() => closeMutation.mutate(job._id)}
-                           className="w-11 h-11 flex items-center justify-center bg-white/5 hover:bg-amber-500/10 text-white/20 hover:text-amber-400 rounded-xl transition-all border border-transparent hover:border-amber-500/20"
+                           className="w-11 h-11 flex items-center justify-center bg-white shadow-sm hover:bg-amber-500/10 text-slate-400 hover:text-amber-400 rounded-xl transition-all border border-transparent hover:border-amber-500/20"
                         >
                            <Clock className="w-4 h-4" />
                         </button>
@@ -289,13 +289,13 @@ export default function AdminJobsPage() {
 
         {/* DIALOG REDESIGN */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-[#0a0a0c] border-white/10 text-white rounded-[2.5rem] p-0 custom-scrollbar shadow-2xl">
-            <DialogHeader className="p-8 bg-white/[0.02] border-b border-white/5 space-y-2">
+          <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-white border-slate-200 text-slate-900 rounded-[2.5rem] p-0 custom-scrollbar shadow-2xl">
+            <DialogHeader className="p-8 bg-slate-50 border-b border-slate-200 space-y-2">
                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
                   <Plus className="w-6 h-6 text-blue-400" />
                </div>
                <DialogTitle className="text-2xl font-bold tracking-tight">{editing ? "Sync Position" : "Deploy Position"}</DialogTitle>
-               <DialogDescription className="text-white/40 font-medium">
+               <DialogDescription className="text-slate-500 font-medium">
                   {editing ? "Update algorithmic weights and position details." : "Initialize a new talent acquisition corridor."}
                </DialogDescription>
             </DialogHeader>
@@ -303,25 +303,25 @@ export default function AdminJobsPage() {
             <div className="p-8 space-y-8">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Job Identity</Label>
-                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Senior Systems Architect" className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-blue-500/50" />
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Job Identity</Label>
+                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Senior Systems Architect" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl focus:ring-blue-500/50" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Functional Group</Label>
-                  <Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} placeholder="Infrastructure" className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-blue-500/50" />
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Functional Group</Label>
+                  <Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} placeholder="Infrastructure" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl focus:ring-blue-500/50" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Geographical Node</Label>
-                  <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Hybrid / Remote" className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-blue-500/50" />
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Geographical Node</Label>
+                  <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Hybrid / Remote" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl focus:ring-blue-500/50" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Engagement Type</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Engagement Type</Label>
                   <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-                    <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/10 text-white">
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 text-slate-900">
                       <SelectItem value="FULL_TIME">Full Time Access</SelectItem>
                       <SelectItem value="PART_TIME">Part Time Access</SelectItem>
                       <SelectItem value="CONTRACT">Project Contract</SelectItem>
@@ -333,44 +333,44 @@ export default function AdminJobsPage() {
 
               <div className="grid grid-cols-2 gap-6">
                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Remuneration Bounds (Min-Max)</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Remuneration Bounds (Min-Max)</Label>
                     <div className="flex items-center gap-3">
-                       <Input type="number" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} placeholder="0" className="h-12 bg-white/5 border-white/10 rounded-xl" />
-                       <div className="h-px w-4 bg-white/10" />
-                       <Input type="number" value={form.salaryMax} onChange={e => setForm(f => ({ ...f, salaryMax: e.target.value }))} placeholder="0" className="h-12 bg-white/5 border-white/10 rounded-xl" />
+                       <Input type="number" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} placeholder="0" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl" />
+                       <div className="h-px w-4 bg-slate-100" />
+                       <Input type="number" value={form.salaryMax} onChange={e => setForm(f => ({ ...f, salaryMax: e.target.value }))} placeholder="0" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl" />
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Experience Lifecycle (Yrs)</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Experience Lifecycle (Yrs)</Label>
                     <div className="flex items-center gap-3">
-                       <Input type="number" value={form.minExperience} onChange={e => setForm(f => ({ ...f, minExperience: e.target.value }))} placeholder="Min" className="h-12 bg-white/5 border-white/10 rounded-xl" />
-                       <div className="h-px w-4 bg-white/10" />
-                       <Input type="number" value={form.maxExperience} onChange={e => setForm(f => ({ ...f, maxExperience: e.target.value }))} placeholder="Max" className="h-12 bg-white/5 border-white/10 rounded-xl" />
+                       <Input type="number" value={form.minExperience} onChange={e => setForm(f => ({ ...f, minExperience: e.target.value }))} placeholder="Min" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl" />
+                       <div className="h-px w-4 bg-slate-100" />
+                       <Input type="number" value={form.maxExperience} onChange={e => setForm(f => ({ ...f, maxExperience: e.target.value }))} placeholder="Max" className="h-12 bg-white shadow-sm border-slate-200 rounded-xl" />
                     </div>
                  </div>
               </div>
 
               <div className="space-y-4">
                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Algorithmic Skill Weights</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Algorithmic Skill Weights</Label>
                     <Button variant="ghost" className="h-8 text-[9px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-500/10" onClick={() => setForm(f => ({...f, skillsList: [...f.skillsList, {skill: "", weight: "MEDIUM"}]}))}>
                        + Append Skill
                     </Button>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
                     {form.skillsList.map((sk, i) => (
-                      <div key={i} className="flex items-center gap-2 bg-white/[0.03] border border-white/5 p-2 rounded-xl group hover:border-white/10 transition-colors">
+                      <div key={i} className="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2 rounded-xl group hover:border-slate-200 transition-colors">
                         <Input className="h-9 bg-transparent border-0 text-sm font-bold placeholder:opacity-20" value={sk.skill} onChange={e => {
                            const ns = [...form.skillsList]; ns[i].skill = e.target.value; setForm(f => ({...f, skillsList: ns}));
                         }} placeholder="e.g. Docker" />
                         <Select value={sk.weight} onValueChange={v => {
                            const ns = [...form.skillsList]; ns[i].weight = v; setForm(f => ({...f, skillsList: ns}));
                         }}>
-                          <SelectTrigger className="w-24 h-9 bg-white/5 border-0 text-[10px] font-black uppercase tracking-widest"><SelectValue /></SelectTrigger>
-                          <SelectContent className="bg-gray-900 border-white/10 text-white">
+                          <SelectTrigger className="w-24 h-9 bg-white shadow-sm border-0 text-[10px] font-black uppercase tracking-widest"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-white border-slate-200 text-slate-900">
                             <SelectItem value="HIGH" className="text-emerald-400">High</SelectItem>
                             <SelectItem value="MEDIUM" className="text-blue-400">Med</SelectItem>
-                            <SelectItem value="LOW" className="text-white/40">Low</SelectItem>
+                            <SelectItem value="LOW" className="text-slate-500">Low</SelectItem>
                           </SelectContent>
                         </Select>
                         <button className="p-2 opacity-0 group-hover:opacity-100 text-rose-500 transition-opacity" onClick={() => {
@@ -380,39 +380,39 @@ export default function AdminJobsPage() {
                         </button>
                       </div>
                     ))}
-                    {form.skillsList.length === 0 && <div className="col-span-2 py-10 border border-dashed border-white/5 rounded-2xl text-center opacity-20 italic text-xs uppercase tracking-widest font-black">Weight Matrix Empty</div>}
+                    {form.skillsList.length === 0 && <div className="col-span-2 py-10 border border-dashed border-slate-200 rounded-2xl text-center opacity-20 italic text-xs uppercase tracking-widest font-black">Weight Matrix Empty</div>}
                  </div>
               </div>
 
               <div className="space-y-4 pt-4">
                  <div className="flex items-center gap-3 mb-2">
                     <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Position Assessment Architecture</span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Position Assessment Architecture</span>
                  </div>
                  
                  <Accordion type="single" collapsible className="space-y-3">
-                    <AccordionItem value="technical" className="border-0 bg-white/5 rounded-2xl px-6">
+                    <AccordionItem value="technical" className="border-0 bg-white shadow-sm rounded-2xl px-6">
                        <AccordionTrigger className="hover:no-underline py-4">
-                          <span className="text-xs font-bold text-white tracking-tight">Technical Knowledge Evaluation ({form.technicalQuestions?.length || 0})</span>
+                          <span className="text-xs font-bold text-slate-900 tracking-tight">Technical Knowledge Evaluation ({form.technicalQuestions?.length || 0})</span>
                        </AccordionTrigger>
                        <AccordionContent className="pb-6 space-y-4">
                           {form.technicalQuestions?.map((q, i) => (
-                             <div key={i} className="p-5 bg-black/40 border border-white/5 rounded-xl space-y-4 relative group">
+                             <div key={i} className="p-5 bg-slate-50 border border-slate-200 rounded-xl space-y-4 relative group">
                                 <button className="absolute top-4 right-4 text-rose-500/20 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100" onClick={() => {
                                    const n = [...form.technicalQuestions]; n.splice(i, 1); setForm(f => ({...f, technicalQuestions: n}));
                                 }}><Trash2 className="w-4 h-4" /></button>
                                 <div className="grid grid-cols-2 gap-4">
-                                   <Input placeholder="Logic Topic" className="h-10 bg-white/5 border-white/5 rounded-lg text-xs" value={q.topic} onChange={e => {
+                                   <Input placeholder="Logic Topic" className="h-10 bg-white shadow-sm border-slate-200 rounded-lg text-xs" value={q.topic} onChange={e => {
                                       const n = [...form.technicalQuestions]; n[i].topic = e.target.value; setForm(f => ({...f, technicalQuestions: n}));
                                    }} />
                                    <Select value={q.difficulty} onValueChange={v => {
                                       const n = [...form.technicalQuestions]; n[i].difficulty = v; setForm(f => ({...f, technicalQuestions: n}));
                                    }}>
-                                      <SelectTrigger className="h-10 bg-white/5 border-white/5 rounded-lg text-[10px] uppercase font-black tracking-widest"><SelectValue /></SelectTrigger>
-                                      <SelectContent className="bg-gray-900 border-white/10 text-white"><SelectItem value="EASY">Easy</SelectItem><SelectItem value="MEDIUM">Med</SelectItem><SelectItem value="HARD">Hard</SelectItem></SelectContent>
+                                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 rounded-lg text-[10px] uppercase font-black tracking-widest"><SelectValue /></SelectTrigger>
+                                      <SelectContent className="bg-white border-slate-200 text-slate-900"><SelectItem value="EASY">Easy</SelectItem><SelectItem value="MEDIUM">Med</SelectItem><SelectItem value="HARD">Hard</SelectItem></SelectContent>
                                    </Select>
                                 </div>
-                                <Textarea placeholder="Question Text" className="bg-white/5 border-white/5 rounded-lg text-xs" rows={2} value={q.question} onChange={e => {
+                                <Textarea placeholder="Question Text" className="bg-white shadow-sm border-slate-200 rounded-lg text-xs" rows={2} value={q.question} onChange={e => {
                                    const n = [...form.technicalQuestions]; n[i].question = e.target.value; setForm(f => ({...f, technicalQuestions: n}));
                                 }} />
                                 <Input placeholder="Correct Answer Vector" className="h-10 bg-blue-500/5 border-blue-500/10 rounded-lg text-xs text-blue-400 font-bold" value={q.correct_answer} onChange={e => {
@@ -420,19 +420,19 @@ export default function AdminJobsPage() {
                                 }} />
                              </div>
                           ))}
-                          <Button variant="ghost" className="w-full h-12 border border-dashed border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white hover:bg-white/5 transition-all" onClick={() => setForm(f => ({...f, technicalQuestions: [...(f.technicalQuestions || []), {topic: "", difficulty: "MEDIUM", questionType: "THEORY", question: "", correct_answer: ""}]}))}>
+                          <Button variant="ghost" className="w-full h-12 border border-dashed border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:bg-white shadow-sm transition-all" onClick={() => setForm(f => ({...f, technicalQuestions: [...(f.technicalQuestions || []), {topic: "", difficulty: "MEDIUM", questionType: "THEORY", question: "", correct_answer: ""}]}))}>
                              + Insert Technical Node
                           </Button>
                        </AccordionContent>
                     </AccordionItem>
 
-                    <AccordionItem value="interview" className="border-0 bg-white/5 rounded-2xl px-6">
+                    <AccordionItem value="interview" className="border-0 bg-white shadow-sm rounded-2xl px-6">
                        <AccordionTrigger className="hover:no-underline py-4">
-                          <span className="text-xs font-bold text-white tracking-tight">AI Interview Prompt Engineering ({form.interviewQuestions?.length || 0})</span>
+                          <span className="text-xs font-bold text-slate-900 tracking-tight">AI Interview Prompt Engineering ({form.interviewQuestions?.length || 0})</span>
                        </AccordionTrigger>
                        <AccordionContent className="pb-6 space-y-4">
                           {form.interviewQuestions?.map((q, i) => (
-                             <div key={i} className="p-5 bg-black/40 border border-white/5 rounded-xl space-y-4 relative group">
+                             <div key={i} className="p-5 bg-slate-50 border border-slate-200 rounded-xl space-y-4 relative group">
                                 <button className="absolute top-4 right-4 text-rose-500/20 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100" onClick={() => {
                                    const n = [...form.interviewQuestions]; n.splice(i, 1); setForm(f => ({...f, interviewQuestions: n}));
                                 }}><Trash2 className="w-4 h-4" /></button>
@@ -440,8 +440,8 @@ export default function AdminJobsPage() {
                                    <Select value={q.category} onValueChange={v => {
                                       const n = [...form.interviewQuestions]; n[i].category = v; setForm(f => ({...f, interviewQuestions: n}));
                                    }}>
-                                      <SelectTrigger className="h-10 bg-white/5 border-white/5 rounded-lg text-[10px] uppercase font-black"><SelectValue /></SelectTrigger>
-                                      <SelectContent className="bg-gray-900 border-white/10 text-white">
+                                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 rounded-lg text-[10px] uppercase font-black"><SelectValue /></SelectTrigger>
+                                      <SelectContent className="bg-white border-slate-200 text-slate-900">
                                          <SelectItem value="TECHNICAL_DEEP_DIVE">Technical</SelectItem>
                                          <SelectItem value="BEHAVIORAL">Behavioral</SelectItem>
                                          <SelectItem value="SYSTEM_DESIGN">System Design</SelectItem>
@@ -450,16 +450,16 @@ export default function AdminJobsPage() {
                                    <Select value={q.difficulty} onValueChange={v => {
                                       const n = [...form.interviewQuestions]; n[i].difficulty = v; setForm(f => ({...f, interviewQuestions: n}));
                                    }}>
-                                      <SelectTrigger className="h-10 bg-white/5 border-white/5 rounded-lg text-[10px] uppercase font-black"><SelectValue /></SelectTrigger>
-                                      <SelectContent className="bg-gray-900 border-white/10 text-white"><SelectItem value="EASY">Easy</SelectItem><SelectItem value="MEDIUM">Med</SelectItem><SelectItem value="HARD">Hard</SelectItem></SelectContent>
+                                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 rounded-lg text-[10px] uppercase font-black"><SelectValue /></SelectTrigger>
+                                      <SelectContent className="bg-white border-slate-200 text-slate-900"><SelectItem value="EASY">Easy</SelectItem><SelectItem value="MEDIUM">Med</SelectItem><SelectItem value="HARD">Hard</SelectItem></SelectContent>
                                    </Select>
                                 </div>
-                                <Textarea placeholder="Video Analysis Prompt" className="bg-white/5 border-white/5 rounded-lg text-xs" rows={2} value={q.question} onChange={e => {
+                                <Textarea placeholder="Video Analysis Prompt" className="bg-white shadow-sm border-slate-200 rounded-lg text-xs" rows={2} value={q.question} onChange={e => {
                                    const n = [...form.interviewQuestions]; n[i].question = e.target.value; setForm(f => ({...f, interviewQuestions: n}));
                                 }} />
                              </div>
                           ))}
-                          <Button variant="ghost" className="w-full h-12 border border-dashed border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white hover:bg-white/5 transition-all" onClick={() => setForm(f => ({...f, interviewQuestions: [...f.interviewQuestions, {category: "TECHNICAL_DEEP_DIVE", difficulty: "MEDIUM", question: "", expectedAnswer: ""}]}))}>
+                          <Button variant="ghost" className="w-full h-12 border border-dashed border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:bg-white shadow-sm transition-all" onClick={() => setForm(f => ({...f, interviewQuestions: [...f.interviewQuestions, {category: "TECHNICAL_DEEP_DIVE", difficulty: "MEDIUM", question: "", expectedAnswer: ""}]}))}>
                              + Insert Video Analysis Node
                           </Button>
                        </AccordionContent>
@@ -468,11 +468,11 @@ export default function AdminJobsPage() {
               </div>
             </div>
 
-            <DialogFooter className="p-8 bg-white/[0.02] border-t border-white/5 h-24 flex items-center">
-              <Button variant="ghost" onClick={() => setOpen(false)} className="text-white/40 font-bold hover:bg-white/5">Cancel</Button>
+            <DialogFooter className="p-8 bg-slate-50 border-t border-slate-200 h-24 flex items-center">
+              <Button variant="ghost" onClick={() => setOpen(false)} className="text-slate-500 font-bold hover:bg-white shadow-sm">Cancel</Button>
               <Button 
                 onClick={handleSubmit} 
-                className="px-10 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl shadow-blue-900/40"
+                className="px-10 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl shadow-blue-500/20"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {editing ? "SYNC ARCHITECTURE" : "DEPLOY POSITION"}

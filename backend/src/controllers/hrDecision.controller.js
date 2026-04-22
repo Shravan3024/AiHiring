@@ -204,7 +204,7 @@ class HRDecisionController {
             reviewer:  'HR',
             decision:  application.hr_decision,
             reason:    application.hr_notes,
-            timestamp: application.updatedAt,
+            timestamp: application.updated_at,
             order:     1,
           }] : [],
         }

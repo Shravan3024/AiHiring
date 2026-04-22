@@ -232,22 +232,22 @@ export default function HRApplicationsPage() {
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={`font-semibold ${getScoreColor(app.overall_score)}`}>
-                            {app.overall_score ? `${app.overall_score.toFixed(1)}/100` : "—"}
+                            {app.overall_score ? `${Number(app.overall_score).toFixed(1)}/100` : "—"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={`font-semibold ${getScoreColor(app.resume_score)}`}>
-                            {app.resume_score ? `${app.resume_score.toFixed(0)}` : "—"}
+                            {app.resume_score ? `${Number(app.resume_score).toFixed(0)}` : "—"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={`font-semibold ${getScoreColor(app.technical_score)}`}>
-                            {app.technical_score ? `${app.technical_score.toFixed(0)}` : "—"}
+                            {app.technical_score ? `${Number(app.technical_score).toFixed(0)}` : "—"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={`font-semibold ${getScoreColor(app.interview_score)}`}>
-                            {app.interview_score ? `${app.interview_score.toFixed(0)}` : "—"}
+                            {app.interview_score ? `${Number(app.interview_score).toFixed(0)}` : "—"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center text-sm text-gray-600">

@@ -19,6 +19,8 @@ const CandidateProfileController = require("../controllers/candidateProfile.cont
 const HRDecisionController = require("../controllers/hrDecision.controller");
 const { getNotifications } = require("../controllers/notification.controller");
 const ReportController = require("../controllers/report.controller");
+const path = require("path");
+const fs = require("fs");
 
 
 // ===============================
@@ -119,6 +121,20 @@ router.get(
   auth,
   role(["HR", "ADMIN"]),
   HRDashboardController.getRejectionReasons
+);
+
+router.get(
+  "/dashboard/operational-core",
+  auth,
+  role(["HR", "ADMIN"]),
+  HRDashboardController.getOperationalCore
+);
+
+router.get(
+  "/dashboard/top-candidates",
+  auth,
+  role(["HR", "ADMIN"]),
+  HRDashboardController.getTopCandidates
 );
 
 
@@ -288,4 +304,42 @@ router.get(
 // HRDecisionController.updateApprovalRule was removed because HRApprovalRule
 // model doesn't exist yet. Re-add this route when you create that model.
 
-module.exports = router;
+// ===============================
+// RESUME VIEWER (HR/MD)
+// ===============================
+
+router.get(
+  "/resume/:applicationId",
+  auth,
+  role(["HR", "ADMIN", "MD"]),
+  async (req, res) => {
+    try {
+      const { applicationId } = req.params;
+      const { Application, Candidate } = require("../models");
+
+      const application = await Application.findByPk(applicationId, {
+        include: [{ model: Candidate, attributes: ["resume_path"] }]
+      });
+
+      if (!application || !application.Candidate?.resume_path) {
+        return res.status(404).json({ success: false, message: "Resume not found for this candidate." });
+      }
+
+      const resumeRelPath = application.Candidate.resume_path; // e.g. /uploads/resumes/xyz.pdf
+      const absolutePath = path.join(__dirname, "../../", resumeRelPath);
+
+      if (!fs.existsSync(absolutePath)) {
+        return res.status(404).json({ success: false, message: "Resume file missing on server." });
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="resume_${applicationId}.pdf"`);
+      fs.createReadStream(absolutePath).pipe(res);
+    } catch (error) {
+      console.error("[Resume View] Error:", error.message);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+);
+
+module.exports = router;

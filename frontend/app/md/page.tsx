@@ -21,6 +21,7 @@ export default function MDDashboard() {
   } = useQuery({
     queryKey: ["md-applications"],
     queryFn: async () => (await api.get("/md/applications")).data,
+    refetchInterval: 30000,
   });
 
   const {
@@ -29,6 +30,7 @@ export default function MDDashboard() {
   } = useQuery({
     queryKey: ["md-analytics"],
     queryFn: async () => (await api.get("/md/analytics")).data,
+    refetchInterval: 30000,
   });
 
   const {
@@ -37,6 +39,7 @@ export default function MDDashboard() {
   } = useQuery({
     queryKey: ["md-top-candidates"],
     queryFn: async () => (await api.get("/md/top-candidates")).data,
+    refetchInterval: 30000,
   });
 
   const isLoading = isAppsLoading || isAnalyticsLoading || isTopLoading;

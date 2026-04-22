@@ -156,8 +156,8 @@ Application.hasMany(MalpracticeEvent, { foreignKey: "application_id" });
 MalpracticeEvent.belongsTo(Application, { foreignKey: "application_id" });
 
 // Application ↔ Offer
-Application.hasOne(Offer, { foreignKey: "application_id" });
-Offer.belongsTo(Application, { foreignKey: "application_id" });
+Application.hasOne(Offer, { foreignKey: "application_id", as: "offer" });
+Offer.belongsTo(Application, { foreignKey: "application_id", as: "application" });
 
 // ===================== NEW ASSOCIATIONS (CANDIDATE PANEL) =====================
 

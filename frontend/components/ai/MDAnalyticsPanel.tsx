@@ -143,7 +143,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
               <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
               <p className="text-sm text-gray-600">Avg Final Score</p>
               <p className="text-3xl font-bold text-purple-600">
-                {stats.average_final_score?.toFixed(1) || 0}
+                {Number(stats.average_final_score || 0).toFixed(1)}
               </p>
               <p className="text-xs text-gray-500 mt-1">/100</p>
             </div>
@@ -337,7 +337,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
             <div className="space-y-3">
               {candidates
                 .filter((c: any) => c.ai_decision === "RECOMMENDED")
-                .sort((a: any, b: any) => (b.final_score || 0) - (a.final_score || 0))
+                .sort((a: any, b: any) => Number(b.final_score || 0) - Number(a.final_score || 0))
                 .slice(0, 10)
                 .map((candidate: any, idx: number) => (
                   <div key={candidate.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -353,7 +353,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
                       </div>
                     </div>
                     <Badge className="bg-blue-600">
-                      {candidate.final_score?.toFixed(1)}/100
+                      {Number(candidate.final_score || 0).toFixed(1)}/100
                     </Badge>
                   </div>
                 ))}

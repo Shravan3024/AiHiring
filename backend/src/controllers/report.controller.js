@@ -10,20 +10,20 @@ const {
 //  COLOUR PALETTE  (white-theme, no emojis)
 // ─────────────────────────────────────────────────────────────────
 const C = {
-  accent:  '#1d4ed8',   // primary blue
-  accentL: '#dbeafe',   // light blue bg
-  green:   '#15803d',
-  greenL:  '#dcfce7',
-  red:     '#b91c1c',
-  redL:    '#fee2e2',
-  amber:   '#b45309',
-  amberL:  '#fef3c7',
-  gray:    '#475569',
-  muted:   '#94a3b8',
-  border:  '#cbd5e1',
-  borderL: '#e2e8f0',
-  text:    '#0f172a',
-  subtext: '#334155',
+  accent:  '#1e293b',   // Professional dark slate/navy
+  accentL: '#f1f5f9',   // Very light slate for backgrounds
+  green:   '#166534',   // Deep green for success/positive
+  greenL:  '#f0fdf4',   // Light green
+  red:     '#991b1b',   // Deep red for flags/warnings
+  redL:    '#fef2f2',   // Light red
+  amber:   '#9a3412',   // Amber/burnt orange
+  amberL:  '#fff7ed',   // Light amber
+  gray:    '#475569',   // Slate gray
+  muted:   '#64748b',   // Lighter slate
+  border:  '#cbd5e1',   // Borders
+  borderL: '#e2e8f0',   // Light borders
+  text:    '#0f172a',   // Almost black
+  subtext: '#334155',   // Dark gray
   white:   '#ffffff',
   light:   '#f8fafc',
   divider: '#e2e8f0',
@@ -45,17 +45,17 @@ function drawHeader(doc, reportType, candidateName, appId) {
   doc.rect(0, 68, PAGE_W, 1).fill(C.border);
 
   // Company name
-  doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(8)
+  doc.fillColor(C.accent).font('Times-Bold').fontSize(8)
     .text('MASK POLYMERS INDUSTRIAL', MARGIN + 8, 14, { characterSpacing: 1.5 });
 
   // Report type
-  doc.fillColor(C.text).font('Helvetica-Bold').fontSize(17)
+  doc.fillColor(C.text).font('Times-Bold').fontSize(17)
     .text(reportType, MARGIN + 8, 26);
 
   // Right side — candidate + app id
-  doc.fillColor(C.gray).font('Helvetica').fontSize(8)
+  doc.fillColor(C.gray).font('Times-Roman').fontSize(8)
     .text(`Candidate: ${candidateName}`, 0, 18, { align: 'right', width: PAGE_W - MARGIN - 8 });
-  doc.fillColor(C.muted).font('Helvetica').fontSize(7)
+  doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
     .text(`Application #${appId}  |  CONFIDENTIAL`, 0, 30, { align: 'right', width: PAGE_W - MARGIN - 8 });
 
   doc.y = 78;
@@ -66,10 +66,10 @@ function drawFooter(doc) {
   const y = doc.page.height - 28;
   doc.rect(0, y - 4, PAGE_W, 1).fill(C.border);
   doc.rect(0, y - 5, 5, 33).fill(C.accent);
-  doc.fillColor(C.muted).font('Helvetica').fontSize(7)
+  doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
     .text('MASK POLYMERS INDUSTRIAL  |  AI Recruitment Platform  |  Strictly Confidential',
       MARGIN + 8, y + 2, { align: 'left', width: CONTENT - 80 });
-  doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7)
+  doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
     .text(`Page ${doc.bufferedPageRange ? doc.bufferedPageRange().start + doc.bufferedPageRange().count : ''}`,
       0, y + 2, { align: 'right', width: PAGE_W - MARGIN - 8 });
 }
@@ -80,7 +80,7 @@ function section(doc, label) {
   doc.moveDown(1);
   doc.rect(MARGIN, doc.y, CONTENT, 22).fill(C.accentL);
   doc.rect(MARGIN, doc.y, 3, 22).fill(C.accent);
-  doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(9)
+  doc.fillColor(C.accent).font('Times-Bold').fontSize(9)
     .text(label.toUpperCase(), MARGIN + 12, doc.y + 7, { characterSpacing: 0.8, width: CONTENT - 20 });
   doc.moveDown(1.8);
 }
@@ -102,12 +102,12 @@ function scoreCard(doc, x, y, w, label, value, total = 100) {
   // Coloured top strip
   doc.rect(x, y, w, 3).fill(col);
   // Label
-  doc.fillColor(C.muted).font('Helvetica').fontSize(7)
+  doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
     .text(label.toUpperCase(), x + 8, y + 10, { width: w - 16, characterSpacing: 0.5 });
   // Score value
-  doc.fillColor(col).font('Helvetica-Bold').fontSize(22)
+  doc.fillColor(col).font('Times-Bold').fontSize(22)
     .text(`${pct}`, x + 8, y + 22, { width: w - 30 });
-  doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(`/${total}`, x + 8 + 28, y + 30);
+  doc.fillColor(C.muted).font('Times-Roman').fontSize(8).text(`/${total}`, x + 8 + 28, y + 30);
   // Progress bar track
   const bW = w - 16;
   doc.rect(x + 8, y + 52, bW, 3).fill(C.borderL);
@@ -119,7 +119,7 @@ function pill(doc, text, x, y, bgColor, textColor) {
   text = String(text || '').toUpperCase();
   const tw = doc.widthOfString(text, { fontSize: 7 }) + 16;
   doc.rect(x, y, tw, 14).fill(bgColor);
-  doc.fillColor(textColor).font('Helvetica-Bold').fontSize(7)
+  doc.fillColor(textColor).font('Times-Bold').fontSize(7)
     .text(text, x + 8, y + 3.5, { width: tw - 16 });
   return x + tw + 6;
 }
@@ -127,9 +127,9 @@ function pill(doc, text, x, y, bgColor, textColor) {
 /** 2-column info row */
 function infoRow(doc, label, value) {
   const rowY = doc.y;
-  doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+  doc.fillColor(C.muted).font('Times-Roman').fontSize(8)
     .text(label, MARGIN, rowY, { width: 150 });
-  doc.fillColor(C.subtext).font('Helvetica-Bold').fontSize(8)
+  doc.fillColor(C.subtext).font('Times-Bold').fontSize(8)
     .text(String(value || 'N/A'), MARGIN + 155, rowY, { width: CONTENT - 155 });
   doc.moveDown(0.65);
 }
@@ -192,11 +192,11 @@ exports.generateCandidateReport = async (req, res) => {
     // ── Candidate Info Card ───────────────────────────
     doc.rect(MARGIN, doc.y, CONTENT, 78).fill(C.white).stroke(C.border);
     const cardY = doc.y + 12;
-    doc.fillColor(C.text).font('Helvetica-Bold').fontSize(15)
+    doc.fillColor(C.text).font('Times-Bold').fontSize(15)
       .text(candidateName.toUpperCase(), MARGIN + 14, cardY, { width: CONTENT - 150 });
-    doc.fillColor(C.gray).font('Helvetica').fontSize(8.5)
+    doc.fillColor(C.gray).font('Times-Roman').fontSize(8.5)
       .text(`${candidateEmail}`, MARGIN + 14, cardY + 22);
-    doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(8)
       .text(`${jobTitle}`, MARGIN + 14, cardY + 36);
 
     // Status pills
@@ -235,17 +235,17 @@ exports.generateCandidateReport = async (req, res) => {
       const metaY = doc.y;
       // Left col
       doc.rect(MARGIN, metaY, halfW, 72).fill(C.light).stroke(C.border);
-      doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('STARTED AT', MARGIN + 10, metaY + 10);
-      doc.fillColor(C.text).font('Helvetica-Bold').fontSize(8.5).text(started, MARGIN + 10, metaY + 22, { width: halfW - 20 });
-      doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('SUBMITTED AT', MARGIN + 10, metaY + 42);
-      doc.fillColor(C.text).font('Helvetica-Bold').fontSize(8.5).text(submitted, MARGIN + 10, metaY + 54, { width: halfW - 20 });
+      doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('STARTED AT', MARGIN + 10, metaY + 10);
+      doc.fillColor(C.text).font('Times-Bold').fontSize(8.5).text(started, MARGIN + 10, metaY + 22, { width: halfW - 20 });
+      doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('SUBMITTED AT', MARGIN + 10, metaY + 42);
+      doc.fillColor(C.text).font('Times-Bold').fontSize(8.5).text(submitted, MARGIN + 10, metaY + 54, { width: halfW - 20 });
       // Right col
       doc.rect(MARGIN + halfW + 10, metaY, halfW, 72).fill(C.light).stroke(C.border);
-      doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('QUESTIONS', MARGIN + halfW + 20, metaY + 10);
-      doc.fillColor(C.text).font('Helvetica-Bold').fontSize(18)
+      doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('QUESTIONS', MARGIN + halfW + 20, metaY + 10);
+      doc.fillColor(C.text).font('Times-Bold').fontSize(18)
         .text(`${answered} / ${qCount}`, MARGIN + halfW + 20, metaY + 20);
-      doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('answered out of assigned', MARGIN + halfW + 20, metaY + 42);
-      doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(8)
+      doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('answered out of assigned', MARGIN + halfW + 20, metaY + 42);
+      doc.fillColor(C.accent).font('Times-Bold').fontSize(8)
         .text(`Completion: ${qCount > 0 ? Math.round((answered / qCount) * 100) : 0}%`, MARGIN + halfW + 20, metaY + 55);
 
       doc.y = metaY + 80;
@@ -264,10 +264,10 @@ exports.generateCandidateReport = async (req, res) => {
 
         // Headers
         doc.rect(MARGIN, swY, colW, 20).fill(C.greenL).stroke(C.border);
-        doc.fillColor(C.green).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.green).font('Times-Bold').fontSize(8)
           .text('STRENGTHS', MARGIN + 10, swY + 6, { width: colW - 20 });
         doc.rect(MARGIN + colW + 10, swY, colW, 20).fill(C.redL).stroke(C.border);
-        doc.fillColor(C.red).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.red).font('Times-Bold').fontSize(8)
           .text('AREAS FOR IMPROVEMENT', MARGIN + colW + 20, swY + 6, { width: colW - 20 });
 
         let rowY = swY + 26;
@@ -280,8 +280,8 @@ exports.generateCandidateReport = async (req, res) => {
           const rowH = Math.max(sH, wH, 18);
           doc.rect(MARGIN, rowY, colW, rowH).fill(i % 2 ? C.white : C.light).stroke(C.border);
           doc.rect(MARGIN + colW + 10, rowY, colW, rowH).fill(i % 2 ? C.white : C.light).stroke(C.border);
-          if (s) doc.fillColor(C.green).font('Helvetica').fontSize(8).text(s, MARGIN + 10, rowY + 5, { width: colW - 20 });
-          if (w) doc.fillColor(C.red).font('Helvetica').fontSize(8).text(w, MARGIN + colW + 20, rowY + 5, { width: colW - 20 });
+          if (s) doc.fillColor(C.green).font('Times-Roman').fontSize(8).text(s, MARGIN + 10, rowY + 5, { width: colW - 20 });
+          if (w) doc.fillColor(C.red).font('Times-Roman').fontSize(8).text(w, MARGIN + colW + 20, rowY + 5, { width: colW - 20 });
           rowY += rowH;
         }
         doc.y = rowY + 8;
@@ -292,8 +292,8 @@ exports.generateCandidateReport = async (req, res) => {
         const rat = assmAnalysis.detailed_feedback || assmAnalysis.ai_rationale;
         doc.rect(MARGIN, doc.y, CONTENT, doc.heightOfString(rat, { fontSize: 8, width: CONTENT - 20 }) + 16)
           .fill(C.accentL).stroke(C.border);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7).text('AI RATIONALE', MARGIN + 10, doc.y + 6);
-        doc.fillColor(C.subtext).font('Helvetica-Oblique').fontSize(8).text(rat, MARGIN + 10, doc.y + 4, { width: CONTENT - 20 });
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(7).text('AI RATIONALE', MARGIN + 10, doc.y + 6);
+        doc.fillColor(C.subtext).font('Times-Italic').fontSize(8).text(rat, MARGIN + 10, doc.y + 4, { width: CONTENT - 20 });
         doc.moveDown(2);
       }
     }
@@ -307,7 +307,7 @@ exports.generateCandidateReport = async (req, res) => {
 
       // Sub-header info bar
       doc.rect(MARGIN, doc.y, CONTENT, 22).fill(C.light).stroke(C.border);
-      doc.fillColor(C.subtext).font('Helvetica').fontSize(8)
+      doc.fillColor(C.subtext).font('Times-Roman').fontSize(8)
         .text(`${questions.length} Questions  |  Role: ${jobTitle}  |  Assessment Type: TECHNICAL`,
           MARGIN + 10, doc.y + 7);
       doc.moveDown(2);
@@ -340,9 +340,9 @@ exports.generateCandidateReport = async (req, res) => {
 
         // Q number + type row
         doc.rect(MARGIN, qStartY, CONTENT, 20).fill(q.section_type === 'BEHAVIORAL' ? '#f0f9ff' : C.light).stroke(C.border);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(8.5)
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(8.5)
           .text(`Q${idx + 1}`, MARGIN + 10, qStartY + 6);
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(`${qType}  |  ${diff}  |  Weight: ${q.weight || 1}`, MARGIN + 35, qStartY + 7);
 
         // Correct / Incorrect badge (right side)
@@ -352,28 +352,28 @@ exports.generateCandidateReport = async (req, res) => {
           const bColL = isCorrect ? C.greenL   : C.redL;
           const bW    = doc.widthOfString(badge, { fontSize: 7 }) + 18;
           doc.rect(MARGIN + CONTENT - bW, qStartY + 4, bW, 13).fill(bColL).stroke(bCol);
-          doc.fillColor(bCol).font('Helvetica-Bold').fontSize(7)
+          doc.fillColor(bCol).font('Times-Bold').fontSize(7)
             .text(badge, MARGIN + CONTENT - bW + 5, qStartY + 7, { width: bW - 10 });
         }
 
         doc.y = qStartY + 26;
 
         // Question text
-        doc.fillColor(C.text).font('Helvetica-Bold').fontSize(9)
+        doc.fillColor(C.text).font('Times-Bold').fontSize(9)
           .text(q.question, MARGIN + 10, doc.y, { width: CONTENT - 20 });
         doc.moveDown(0.7);
 
         // Candidate answer block
         doc.rect(MARGIN, doc.y, CONTENT, 14).fill(hasAnswer ? C.amberL : C.redL).stroke(C.border);
-        doc.fillColor(hasAnswer ? C.amber : C.red).font('Helvetica-Bold').fontSize(7)
+        doc.fillColor(hasAnswer ? C.amber : C.red).font('Times-Bold').fontSize(7)
           .text('CANDIDATE ANSWER', MARGIN + 10, doc.y + 4, { characterSpacing: 0.5 });
         doc.moveDown(1.1);
         doc.rect(MARGIN, doc.y, CONTENT, 0).stroke();
         if (hasAnswer) {
-          doc.fillColor(C.subtext).font('Helvetica').fontSize(8.5)
+          doc.fillColor(C.subtext).font('Times-Roman').fontSize(8.5)
             .text(candidateAns, MARGIN + 10, doc.y, { width: CONTENT - 20 });
         } else {
-          doc.fillColor(C.muted).font('Helvetica-Oblique').fontSize(8.5)
+          doc.fillColor(C.muted).font('Times-Italic').fontSize(8.5)
             .text('No response recorded — candidate did not attempt this question.', MARGIN + 10, doc.y, { width: CONTENT - 20 });
         }
         doc.moveDown(0.8);
@@ -381,17 +381,17 @@ exports.generateCandidateReport = async (req, res) => {
         // Reference answer block
         if (referenceAns) {
           doc.rect(MARGIN, doc.y, CONTENT, 14).fill(C.greenL).stroke(C.border);
-          doc.fillColor(C.green).font('Helvetica-Bold').fontSize(7)
+          doc.fillColor(C.green).font('Times-Bold').fontSize(7)
             .text('REFERENCE ANSWER', MARGIN + 10, doc.y + 4, { characterSpacing: 0.5 });
           doc.moveDown(1.1);
-          doc.fillColor('#166534').font('Helvetica').fontSize(8.5)
+          doc.fillColor('#166534').font('Times-Roman').fontSize(8.5)
             .text(referenceAns, MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.8);
         }
 
         // Keywords line
         if (Array.isArray(q.keywords) && q.keywords.length > 0) {
-          doc.fillColor(C.muted).font('Helvetica').fontSize(7)
+          doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
             .text(`Keywords: ${q.keywords.join('  |  ')}`, MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.4);
         }
@@ -421,15 +421,15 @@ exports.generateCandidateReport = async (req, res) => {
     const riskColL  = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
     doc.rect(MARGIN + (iW+6)*2, iY, iW, 64).fill(riskColL).stroke(riskCol);
     doc.rect(MARGIN + (iW+6)*2, iY, iW, 3).fill(riskCol);
-    doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10, { characterSpacing: 0.5 });
-    doc.fillColor(riskCol).font('Helvetica-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10, { characterSpacing: 0.5 });
+    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
 
     doc.y = iY + 74;
 
     section(doc, 'Malpractice Event Log');
     if (malpractice.length === 0) {
       doc.rect(MARGIN, doc.y, CONTENT, 34).fill(C.greenL).stroke(C.border);
-      doc.fillColor(C.green).font('Helvetica-Bold').fontSize(10)
+      doc.fillColor(C.green).font('Times-Bold').fontSize(10)
         .text('No malpractice events detected  —  Integrity Verified', MARGIN, doc.y + 12, { align: 'center', width: CONTENT });
       doc.moveDown(3.5);
     } else {
@@ -437,7 +437,7 @@ exports.generateCandidateReport = async (req, res) => {
       const cols = { num: 30, type: 200, sev: 70, time: 120, det: CONTENT - 420 };
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
-      doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7)
+      doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
         .text('#',      MARGIN + 6,   hY + 5)
         .text('EVENT TYPE', MARGIN + 36,  hY + 5)
         .text('SEVERITY',   MARGIN + 236, hY + 5)
@@ -451,13 +451,13 @@ exports.generateCandidateReport = async (req, res) => {
         const sev = evt.severity || 1;
         const col = sev >= 7 ? C.red : sev >= 4 ? C.amber : C.gray;
         doc.rect(MARGIN, eY, CONTENT, 18).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.subtext).font('Helvetica').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
-        doc.fillColor(col).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
+        doc.fillColor(col).font('Times-Bold').fontSize(8)
           .text((evt.type || 'UNKNOWN').replace(/_/g, ' '), MARGIN + 36, eY + 5, { width: 190 });
-        doc.fillColor(col).font('Helvetica-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(col).font('Times-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(new Date(evt.created_at).toLocaleTimeString(), MARGIN + 310, eY + 6);
-        doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.muted).font('Times-Roman').fontSize(7.5)
           .text(evt.meta?.detector || 'Proctoring Engine', MARGIN + 430, eY + 6, { width: 100 });
         doc.y = eY + 20;
       });
@@ -466,12 +466,12 @@ exports.generateCandidateReport = async (req, res) => {
     // ── Audit Trail ────────────────────────────────
     section(doc, 'Application Status Audit Trail');
     if (auditLogs.length === 0) {
-      doc.fillColor(C.muted).font('Helvetica-Oblique').fontSize(8).text('No audit entries found.', MARGIN + 10, doc.y);
+      doc.fillColor(C.muted).font('Times-Italic').fontSize(8).text('No audit entries found.', MARGIN + 10, doc.y);
       doc.moveDown(1);
     } else {
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
-      doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7)
+      doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
         .text('STATUS CHANGE',  MARGIN + 10,  hY + 5)
         .text('FROM',           MARGIN + 200, hY + 5)
         .text('DATE & TIME',    MARGIN + 340, hY + 5)
@@ -484,14 +484,14 @@ exports.generateCandidateReport = async (req, res) => {
         const h  = Math.max(18, log.reason
           ? doc.heightOfString(log.reason, { fontSize: 7, width: 110 }) + 8 : 18);
         doc.rect(MARGIN, lY, CONTENT, h).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7.5)
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(7.5)
           .text(log.new_status || '-', MARGIN + 10, lY + 5, { width: 185 });
-        doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.muted).font('Times-Roman').fontSize(7.5)
           .text(log.previous_status || 'START', MARGIN + 200, lY + 5, { width: 135 });
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(new Date(log.created_at).toLocaleString(), MARGIN + 340, lY + 5, { width: 95 });
         if (log.reason) {
-          doc.fillColor(C.subtext).font('Helvetica-Oblique').fontSize(7)
+          doc.fillColor(C.subtext).font('Times-Italic').fontSize(7)
             .text(log.reason, MARGIN + 440, lY + 5, { width: 110 });
         }
         doc.y = lY + h;
@@ -552,10 +552,10 @@ exports.generateInterviewReport = async (req, res) => {
     // Candidate card
     doc.rect(MARGIN, doc.y, CONTENT, 78).fill(C.white).stroke(C.border);
     const cardY = doc.y + 12;
-    doc.fillColor(C.text).font('Helvetica-Bold').fontSize(15)
+    doc.fillColor(C.text).font('Times-Bold').fontSize(15)
       .text(candidateName.toUpperCase(), MARGIN + 14, cardY, { width: CONTENT - 150 });
-    doc.fillColor(C.gray).font('Helvetica').fontSize(8.5).text(candidateEmail, MARGIN + 14, cardY + 22);
-    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(jobTitle, MARGIN + 14, cardY + 36);
+    doc.fillColor(C.gray).font('Times-Roman').fontSize(8.5).text(candidateEmail, MARGIN + 14, cardY + 22);
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(8).text(jobTitle, MARGIN + 14, cardY + 36);
 
     let px = MARGIN + 14;
     const py = cardY + 52;
@@ -593,10 +593,10 @@ exports.generateInterviewReport = async (req, res) => {
         const colW = (CONTENT - 10) / 2;
         const swY = doc.y;
         doc.rect(MARGIN, swY, colW, 20).fill(C.greenL).stroke(C.border);
-        doc.fillColor(C.green).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.green).font('Times-Bold').fontSize(8)
           .text('STRENGTHS', MARGIN + 10, swY + 6);
         doc.rect(MARGIN + colW + 10, swY, colW, 20).fill(C.redL).stroke(C.border);
-        doc.fillColor(C.red).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.red).font('Times-Bold').fontSize(8)
           .text('AREAS FOR IMPROVEMENT', MARGIN + colW + 20, swY + 6);
 
         let rowY = swY + 26;
@@ -609,8 +609,8 @@ exports.generateInterviewReport = async (req, res) => {
           const rH = Math.max(sH, wH, 18);
           doc.rect(MARGIN, rowY, colW, rH).fill(i % 2 ? C.white : C.light).stroke(C.border);
           doc.rect(MARGIN + colW + 10, rowY, colW, rH).fill(i % 2 ? C.white : C.light).stroke(C.border);
-          if (s) doc.fillColor(C.green).font('Helvetica').fontSize(8).text(s, MARGIN + 10, rowY + 5, { width: colW - 20 });
-          if (w) doc.fillColor(C.red).font('Helvetica').fontSize(8).text(w, MARGIN + colW + 20, rowY + 5, { width: colW - 20 });
+          if (s) doc.fillColor(C.green).font('Times-Roman').fontSize(8).text(s, MARGIN + 10, rowY + 5, { width: colW - 20 });
+          if (w) doc.fillColor(C.red).font('Times-Roman').fontSize(8).text(w, MARGIN + colW + 20, rowY + 5, { width: colW - 20 });
           rowY += rH;
         }
         doc.y = rowY + 8;
@@ -622,12 +622,12 @@ exports.generateInterviewReport = async (req, res) => {
       if (greenFlags.length > 0 || redFlags.length > 0) {
         section(doc, 'Behavioral Flag Analysis');
         greenFlags.forEach(f => {
-          doc.fillColor(C.green).font('Helvetica').fontSize(8)
+          doc.fillColor(C.green).font('Times-Roman').fontSize(8)
             .text(`  [POSITIVE]  ${f}`, MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.5);
         });
         redFlags.forEach(f => {
-          doc.fillColor(C.red).font('Helvetica').fontSize(8)
+          doc.fillColor(C.red).font('Times-Roman').fontSize(8)
             .text(`  [CONCERN]   ${f}`, MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.5);
         });
@@ -638,8 +638,8 @@ exports.generateInterviewReport = async (req, res) => {
         doc.rect(MARGIN, doc.y, CONTENT,
           doc.heightOfString(analysis.detailed_evaluation, { fontSize: 8, width: CONTENT - 20 }) + 16)
           .fill(C.accentL).stroke(C.border);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7).text('AI RATIONALE', MARGIN + 10, doc.y + 6);
-        doc.fillColor(C.subtext).font('Helvetica-Oblique').fontSize(8)
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(7).text('AI RATIONALE', MARGIN + 10, doc.y + 6);
+        doc.fillColor(C.subtext).font('Times-Italic').fontSize(8)
           .text(analysis.detailed_evaluation, MARGIN + 10, doc.y + 4, { width: CONTENT - 20 });
         doc.moveDown(2);
       }
@@ -652,7 +652,7 @@ exports.generateInterviewReport = async (req, res) => {
       doc.addPage();
       drawHeader(doc, 'INTERVIEW TRANSCRIPT & RESPONSE ANALYSIS', candidateName, applicationId);
       doc.rect(MARGIN, doc.y, CONTENT, 22).fill(C.light).stroke(C.border);
-      doc.fillColor(C.subtext).font('Helvetica').fontSize(8)
+      doc.fillColor(C.subtext).font('Times-Roman').fontSize(8)
         .text(`${questions.length} Questions  |  Role: ${jobTitle}  |  AI Video Interview`, MARGIN + 10, doc.y + 7);
       doc.moveDown(2);
 
@@ -677,26 +677,26 @@ exports.generateInterviewReport = async (req, res) => {
 
         const qStartY = doc.y;
         doc.rect(MARGIN, qStartY, CONTENT, 20).fill(C.light).stroke(C.border);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(8.5).text(`Q${idx + 1}`, MARGIN + 10, qStartY + 6);
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(8.5).text(`Q${idx + 1}`, MARGIN + 10, qStartY + 6);
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(`${(qa.category || 'INTERVIEW').toUpperCase()}  |  ${respTime}s  |  ${wordCount} words`,
             MARGIN + 35, qStartY + 7);
         doc.y = qStartY + 26;
 
-        doc.fillColor(C.text).font('Helvetica-Bold').fontSize(9)
+        doc.fillColor(C.text).font('Times-Bold').fontSize(9)
           .text(questionText, MARGIN + 10, doc.y, { width: CONTENT - 20 });
         doc.moveDown(0.7);
 
         // Response block
         doc.rect(MARGIN, doc.y, CONTENT, 14).fill(hasResponse ? C.amberL : C.redL).stroke(C.border);
-        doc.fillColor(hasResponse ? C.amber : C.red).font('Helvetica-Bold').fontSize(7)
+        doc.fillColor(hasResponse ? C.amber : C.red).font('Times-Bold').fontSize(7)
           .text('CANDIDATE RESPONSE', MARGIN + 10, doc.y + 4);
         doc.moveDown(1.1);
         if (hasResponse) {
-          doc.fillColor(C.subtext).font('Helvetica').fontSize(8.5)
+          doc.fillColor(C.subtext).font('Times-Roman').fontSize(8.5)
             .text(responseText, MARGIN + 10, doc.y, { width: CONTENT - 20 });
         } else {
-          doc.fillColor(C.muted).font('Helvetica-Oblique').fontSize(8.5)
+          doc.fillColor(C.muted).font('Times-Italic').fontSize(8.5)
             .text('No response recorded.', MARGIN + 10, doc.y);
         }
         doc.moveDown(0.8);
@@ -704,9 +704,9 @@ exports.generateInterviewReport = async (req, res) => {
         // Reference answer
         if (qa.expectedAnswer) {
           doc.rect(MARGIN, doc.y, CONTENT, 14).fill(C.greenL).stroke(C.border);
-          doc.fillColor(C.green).font('Helvetica-Bold').fontSize(7).text('REFERENCE ANSWER', MARGIN + 10, doc.y + 4);
+          doc.fillColor(C.green).font('Times-Bold').fontSize(7).text('REFERENCE ANSWER', MARGIN + 10, doc.y + 4);
           doc.moveDown(1.1);
-          doc.fillColor('#166534').font('Helvetica').fontSize(8.5)
+          doc.fillColor('#166534').font('Times-Roman').fontSize(8.5)
             .text(qa.expectedAnswer, MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.8);
         }
@@ -718,7 +718,7 @@ exports.generateInterviewReport = async (req, res) => {
           `Filler Words: ${fillerCount}`,
         ].filter(Boolean);
         if (metrics.length) {
-          doc.fillColor(C.muted).font('Helvetica').fontSize(7)
+          doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
             .text(metrics.join('   |   '), MARGIN + 10, doc.y, { width: CONTENT - 20 });
           doc.moveDown(0.5);
         }
@@ -744,20 +744,20 @@ exports.generateInterviewReport = async (req, res) => {
     const riskColL  = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
     doc.rect(MARGIN + (iW+6)*2, iY, iW, 64).fill(riskColL).stroke(riskCol);
     doc.rect(MARGIN + (iW+6)*2, iY, iW, 3).fill(riskCol);
-    doc.fillColor(C.muted).font('Helvetica').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10);
-    doc.fillColor(riskCol).font('Helvetica-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10);
+    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
     doc.y = iY + 74;
 
     section(doc, 'Malpractice Event Log');
     if (malpractice.length === 0) {
       doc.rect(MARGIN, doc.y, CONTENT, 34).fill(C.greenL).stroke(C.border);
-      doc.fillColor(C.green).font('Helvetica-Bold').fontSize(10)
+      doc.fillColor(C.green).font('Times-Bold').fontSize(10)
         .text('No malpractice events detected  —  Integrity Verified', MARGIN, doc.y + 12, { align: 'center', width: CONTENT });
       doc.moveDown(3.5);
     } else {
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
-      doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7)
+      doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
         .text('#', MARGIN + 6, hY + 5).text('EVENT TYPE', MARGIN + 36, hY + 5)
         .text('SEVERITY', MARGIN + 236, hY + 5).text('TIMESTAMP', MARGIN + 310, hY + 5)
         .text('DETECTOR', MARGIN + 430, hY + 5);
@@ -768,13 +768,13 @@ exports.generateInterviewReport = async (req, res) => {
         const sev = evt.severity || 1;
         const col = sev >= 7 ? C.red : sev >= 4 ? C.amber : C.gray;
         doc.rect(MARGIN, eY, CONTENT, 18).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.subtext).font('Helvetica').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
-        doc.fillColor(col).font('Helvetica-Bold').fontSize(8)
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
+        doc.fillColor(col).font('Times-Bold').fontSize(8)
           .text((evt.type || 'UNKNOWN').replace(/_/g, ' '), MARGIN + 36, eY + 5, { width: 190 });
-        doc.fillColor(col).font('Helvetica-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(col).font('Times-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(new Date(evt.created_at).toLocaleTimeString(), MARGIN + 310, eY + 6);
-        doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.muted).font('Times-Roman').fontSize(7.5)
           .text(evt.meta?.detector || 'Proctoring Engine', MARGIN + 430, eY + 6, { width: 100 });
         doc.y = eY + 20;
       });
@@ -782,11 +782,11 @@ exports.generateInterviewReport = async (req, res) => {
 
     section(doc, 'Application Status Audit Trail');
     if (auditLogs.length === 0) {
-      doc.fillColor(C.muted).font('Helvetica-Oblique').fontSize(8).text('No audit entries found.', MARGIN + 10, doc.y);
+      doc.fillColor(C.muted).font('Times-Italic').fontSize(8).text('No audit entries found.', MARGIN + 10, doc.y);
     } else {
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
-      doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7)
+      doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
         .text('STATUS CHANGE', MARGIN + 10, hY + 5).text('FROM', MARGIN + 200, hY + 5)
         .text('DATE & TIME', MARGIN + 340, hY + 5).text('NOTE', MARGIN + 440, hY + 5);
       doc.y = hY + 18;
@@ -795,14 +795,14 @@ exports.generateInterviewReport = async (req, res) => {
         const lY = doc.y;
         const h  = Math.max(18, log.reason ? doc.heightOfString(log.reason, { fontSize: 7, width: 110 }) + 8 : 18);
         doc.rect(MARGIN, lY, CONTENT, h).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.accent).font('Helvetica-Bold').fontSize(7.5)
+        doc.fillColor(C.accent).font('Times-Bold').fontSize(7.5)
           .text(log.new_status || '-', MARGIN + 10, lY + 5, { width: 185 });
-        doc.fillColor(C.muted).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.muted).font('Times-Roman').fontSize(7.5)
           .text(log.previous_status || 'START', MARGIN + 200, lY + 5, { width: 135 });
-        doc.fillColor(C.gray).font('Helvetica').fontSize(7.5)
+        doc.fillColor(C.gray).font('Times-Roman').fontSize(7.5)
           .text(new Date(log.created_at).toLocaleString(), MARGIN + 340, lY + 5, { width: 95 });
         if (log.reason) {
-          doc.fillColor(C.subtext).font('Helvetica-Oblique').fontSize(7)
+          doc.fillColor(C.subtext).font('Times-Italic').fontSize(7)
             .text(log.reason, MARGIN + 440, lY + 5, { width: 110 });
         }
         doc.y = lY + h;
@@ -845,7 +845,7 @@ exports.generateExecutiveReport = async (req, res) => {
       doc.rect(MARGIN, doc.y, CONTENT,
         doc.heightOfString(application.ai_rationale, { fontSize: 8.5, width: CONTENT - 20 }) + 16)
         .fill(C.accentL).stroke(C.border);
-      doc.fillColor(C.subtext).font('Helvetica').fontSize(8.5)
+      doc.fillColor(C.subtext).font('Times-Roman').fontSize(8.5)
         .text(application.ai_rationale, MARGIN + 10, doc.y + 8, { width: CONTENT - 20 });
       doc.moveDown(2.5);
     }

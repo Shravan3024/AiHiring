@@ -85,7 +85,7 @@ export default function HRApplicationDetailsPage() {
 
   if (isLoading) {
     return (
-      <PanelLayout title="Application Review" allowedRoles={["HR", "MD"]}>
+      <PanelLayout title="Application Review" allowedRoles={["HR", "MD", "ADMIN"]}>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
           <span className="ml-2 text-gray-600">Loading application...</span>
@@ -96,7 +96,7 @@ export default function HRApplicationDetailsPage() {
 
   if (error || !appData) {
     return (
-      <PanelLayout title="Application Review" allowedRoles={["HR", "MD"]}>
+      <PanelLayout title="Application Review" allowedRoles={["HR", "MD", "ADMIN"]}>
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-600" />
@@ -111,7 +111,7 @@ export default function HRApplicationDetailsPage() {
   }
 
   return (
-    <PanelLayout title="Application Review" allowedRoles={["HR", "MD"]}>
+    <PanelLayout title="Application Review" allowedRoles={["HR", "MD", "ADMIN"]}>
       <div className="space-y-6 p-6">
         {/* Header Section */}
         <div className="space-y-4">
@@ -170,7 +170,7 @@ export default function HRApplicationDetailsPage() {
               </Badge>
               {appData.aiScore && (
                 <div className="text-3xl font-black text-blue-600 drop-shadow-sm">
-                  {appData.aiScore.toFixed(1)}<span className="text-sm text-gray-400">/100</span>
+                  {Number(appData.aiScore || 0).toFixed(1)}<span className="text-sm text-gray-400">/100</span>
                 </div>
               )}
             </div>
@@ -224,7 +224,7 @@ export default function HRApplicationDetailsPage() {
               <CardContent className="p-4 text-center">
                 <p className="text-sm text-gray-600">Final Score</p>
                 <p className="text-3xl font-bold text-blue-600">
-                  {appData.aiScore?.toFixed(1) || "—"}
+                  {Number(appData.aiScore || 0).toFixed(1)}
                 </p>
                 <p className="text-xs text-gray-500">/100</p>
               </CardContent>
@@ -234,7 +234,7 @@ export default function HRApplicationDetailsPage() {
                 <FileText className="w-4 h-4 mx-auto mb-2 text-green-600" />
                 <p className="text-sm text-gray-600">Resume Score</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {appData.scores?.resume?.toFixed(0) || "—"}
+                  {Number(appData.scores?.resume || 0).toFixed(0)}
                 </p>
               </CardContent>
             </Card>
@@ -243,7 +243,7 @@ export default function HRApplicationDetailsPage() {
                 <BookOpen className="w-4 h-4 mx-auto mb-2 text-purple-600" />
                 <p className="text-sm text-gray-600">Assessment Score</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {appData.scores?.technical?.toFixed(0) || "—"}
+                  {Number(appData.scores?.technical || 0).toFixed(0)}
                 </p>
               </CardContent>
             </Card>
@@ -252,7 +252,7 @@ export default function HRApplicationDetailsPage() {
                 <Mic className="w-4 h-4 mx-auto mb-2 text-orange-600" />
                 <p className="text-sm text-gray-600">Interview Score</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {appData.scores?.interview?.toFixed(0) || "—"}
+                  {Number(appData.scores?.interview || 0).toFixed(0)}
                 </p>
               </CardContent>
             </Card>

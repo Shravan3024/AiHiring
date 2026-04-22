@@ -71,9 +71,9 @@ exports.getInterviewConfig = (req, res) => {
 // Interview Configuration
 const INTERVIEW_CONFIG = {
   DURATION_MINUTES: 60,
-  TOTAL_QUESTIONS: 3,
-  TECH_QUESTIONS: 2,
-  BEHAVIORAL_QUESTIONS: 1,
+  TOTAL_QUESTIONS: 10,
+  TECH_QUESTIONS: 7,
+  BEHAVIORAL_QUESTIONS: 3,
   VIDEO_RECORDING: true,
   AUDIO_ONLY_FALLBACK: true,
   SENTIMENT_ANALYSIS: true,
@@ -433,7 +433,18 @@ exports.submitResponsePhase5 = async (req, res) => {
       answered_at: new Date()
     };
 
-    storedQuestions.push(questionResponse);
+    // Update the specific question with response
+    const qIndex = storedQuestions.findIndex(q => q.id === question_id);
+    if (qIndex !== -1) {
+      storedQuestions[qIndex] = {
+        ...storedQuestions[qIndex],
+        ...questionResponse
+      };
+    } else {
+      // Fallback if ID doesn't match, though it should
+      storedQuestions.push(questionResponse);
+    }
+    
     const questionsAsked = storedQuestions;
 
     const isLastQuestion = question_number >= INTERVIEW_CONFIG.TOTAL_QUESTIONS;

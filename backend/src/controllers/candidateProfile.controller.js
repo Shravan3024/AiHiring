@@ -55,7 +55,7 @@ class CandidateProfileController {
           },
           { model: TechnicalRound, required: false, attributes: ['id', 'score', 'status', 'ai_feedback'] },
           { model: Interview,      required: false, attributes: ['id', 'ai_score', 'ai_summary', 'hire_recommendation', 'status'] },
-          { model: Offer,          required: false, attributes: ['id', 'salary', 'joining_date', 'status'] },
+          { model: Offer,          as: "offer", required: false, attributes: ['id', 'salary', 'joining_date', 'status'] },
           { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary'] },
           { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score'] },
           { model: InterviewAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'qa_pairs', 'detailed_evaluation', 'interview_session_id'] },
@@ -177,7 +177,7 @@ class CandidateProfileController {
             detailed_evaluation: application.InterviewAnalysis.detailed_evaluation,
             ai_model_used: application.InterviewAnalysis.ai_model_used
           } : null,
-          offerData: application.Offer ? { salary: application.Offer.salary, joiningDate: application.Offer.joining_date, status: application.Offer.status } : null,
+          offerData: application.offer ? { salary: application.offer.salary, joiningDate: application.offer.joining_date, status: application.offer.status } : null,
           
           interviewHighlights: application.InterviewSession ? (() => {
             const firstWithVideo = (application.InterviewSession.questions_asked || []).find(q => q.recording_path);
@@ -445,23 +445,36 @@ function buildProsCons({ resumeScore, technicalScore, interviewScore, malpractic
     ['Final decision pending HR panel review', 'Cross-stage performance consistency to verify', 'Role-specific training may be required', 'Peer benchmark comparison recommended', 'Reference verification suggested before final offer']
   );
 
-  return [
+  // Only include stages that the candidate has actually attempted
+  const hasAssessment = (technicalScore > 0) || !!assessmentAnalysis;
+  const hasInterview  = (interviewScore  > 0) || !!interviewAnalysis;
+
+  const result = [
     { stage: 'RESUME_PARSING', overallScore: resumeScore, ...resume },
-    { stage: 'TECHNICAL_ASSESSMENT', overallScore: technicalScore, ...assessment },
-    { stage: 'AI_INTERVIEW', overallScore: interviewScore, ...interviewRes },
-    {
-      stage: 'FINAL_RECOMMENDATION',
-      overallScore: aggregatedScore,
-      decision: finalRecommendation,
-      pros: finalStrengths,
-      cons: finalWeaknesses,
-      summary: reasoning,
-      whyToHireReasoning: reasoning,
-      confidence: prediction.confidence,
-      method: prediction.methodUsed,
-      isManual: resume.isManual || assessment.isManual || interviewRes.isManual
-    },
   ];
+
+  if (hasAssessment) {
+    result.push({ stage: 'TECHNICAL_ASSESSMENT', overallScore: technicalScore, ...assessment });
+  }
+
+  if (hasInterview) {
+    result.push({ stage: 'AI_INTERVIEW', overallScore: interviewScore, ...interviewRes });
+  }
+
+  result.push({
+    stage: 'FINAL_RECOMMENDATION',
+    overallScore: aggregatedScore,
+    decision: finalRecommendation,
+    pros: finalStrengths,
+    cons: finalWeaknesses,
+    summary: reasoning,
+    whyToHireReasoning: reasoning,
+    confidence: prediction.confidence,
+    method: prediction.methodUsed,
+    isManual: resume.isManual || assessment.isManual || interviewRes.isManual
+  });
+
+  return result;
 }
 
 module.exports = CandidateProfileController;

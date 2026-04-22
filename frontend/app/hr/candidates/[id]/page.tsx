@@ -13,7 +13,7 @@ import {
   ShieldAlert, Sparkles, ThumbsUp, ThumbsDown, Lock, FileSignature, CheckCircle2, 
   Eye, CalendarClock, Building, Server, AlertOctagon, Timer, ShieldCheck, 
   MousePointer2, Loader2, Play, Video, Users, AlertTriangle, Clock, 
-  Trophy, ExternalLink, ChevronRight, AlertCircle
+  Trophy, ExternalLink, ChevronRight, AlertCircle, FileSearch
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -80,6 +80,23 @@ export default function CandidateProfilePage() {
   const [selectedHighlight, setSelectedHighlight] = useState<any>(null);
   const [downloadingAssessment, setDownloadingAssessment] = useState(false);
   const [downloadingInterview, setDownloadingInterview] = useState(false);
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
+  const [viewingResume, setViewingResume] = useState(false);
+
+  const openResumePDF = async () => {
+    setViewingResume(true);
+    try {
+      const response = await hrApi.viewResume(id);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch {
+      toast.error('Unable to load resume. The file may not be uploaded yet.');
+    } finally {
+      setViewingResume(false);
+    }
+  };
+
 
   const downloadBlob = async (
     fetchFn: () => Promise<any>,
@@ -213,63 +230,128 @@ export default function CandidateProfilePage() {
 
   return (
     <PanelLayout title="Candidate Evaluation Profile" allowedRoles={["HR", "ADMIN"]}>
-      <div className="mb-4 flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>← Back to Pipeline</Button>
+      {/* Back Navigation */}
+      <div className="mb-5 flex items-center justify-between">
+        <Button variant="outline" size="sm" className="gap-2 text-slate-600 hover:text-slate-900" onClick={() => router.back()}>
+          ← Back to Pipeline
+        </Button>
       </div>
 
-      <Card className="mb-8 border-slate-200 shadow-xl rounded-[3rem] relative overflow-hidden bg-white">
-        <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
-          <Sparkles className="w-48 h-48 text-blue-600" />
+      {/* ─── PROFILE HERO CARD ─── */}
+      <Card className="mb-6 border-slate-200 shadow-lg rounded-2xl relative overflow-hidden bg-white">
+        <div className="absolute top-0 right-0 p-6 opacity-[0.025] pointer-events-none select-none">
+          <Sparkles className="w-56 h-56 text-blue-600" />
         </div>
-        <CardContent className="p-10 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-slate-900 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl relative overflow-hidden group">
-                {candidate.profile_image_path ? (
-                  <img 
-                    src={`http://localhost:5000${candidate.profile_image_path}`} 
-                    alt={candidate.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
-                  />
-                ) : (
-                  <User className="w-10 h-10 group-hover:scale-110 transition-transform" />
-                )}
-                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-black text-[#0f172a] tracking-tight leading-none uppercase flex items-center gap-4">
-                  {candidate.name || "Unknown Candidate"}
-                  <Badge variant="outline" className="text-[10px] font-black tracking-widest text-slate-400 bg-slate-50 border-slate-100">ID: {profileData._id || id}</Badge>
-                </h2>
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="flex items-center gap-2">
-                     <Briefcase className="w-4 h-4 text-blue-600" />
-                     <span className="text-sm font-black text-slate-600 uppercase tracking-tighter">{job.title || "Applied Role"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <Mail className="w-4 h-4 text-slate-400" />
-                     <span className="text-sm font-bold text-slate-400">{candidate.email}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 mt-5">
-                  <Badge className="bg-blue-600 text-white border-0 text-[10px] font-black tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg shadow-blue-100 uppercase">{stage}</Badge>
-                  {profileData.integrityScore !== undefined && (
-                    <Badge className={cn(
-                      "text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full border-0 uppercase",
-                      profileData.integrityScore >= 60 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                    )}>
-                      <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Integrity: {profileData.integrityScore}%
-                    </Badge>
-                  )}
-                </div>
-              </div>
+
+        <CardContent className="p-8 relative z-10">
+          {/* ── ROW 1: Avatar + Identity ── */}
+          <div className="flex items-start gap-6 mb-6">
+            <div className="w-20 h-20 shrink-0 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl relative overflow-hidden">
+              {candidate.profile_image_path ? (
+                <img
+                  src={`http://localhost:5000${candidate.profile_image_path}`}
+                  alt={candidate.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-10 h-10" />
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-600" />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-full border-blue-100 text-blue-600 hover:bg-blue-50 font-bold text-[10px] uppercase tracking-widest gap-2"
+            <div className="flex-1 min-w-0">
+              {/* Name + ID */}
+              <div className="flex flex-wrap items-center gap-3 mb-1">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">
+                  {candidate.name || "Unknown Candidate"}
+                </h2>
+                <Badge variant="outline" className="text-[10px] font-bold tracking-widest text-slate-400 bg-slate-50 border-slate-200">
+                  ID: {profileData._id || id}
+                </Badge>
+              </div>
+
+              {/* Role + Email */}
+              <div className="flex flex-wrap items-center gap-5 mt-2 text-sm">
+                <span className="flex items-center gap-1.5 font-semibold text-blue-700">
+                  <Briefcase className="w-4 h-4" />
+                  {job.title || "Applied Role"}
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <Mail className="w-4 h-4" />
+                  {candidate.email}
+                </span>
+              </div>
+
+              {/* Status Badges */}
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                <Badge className="bg-blue-600 text-white border-0 text-[10px] font-bold tracking-[0.15em] px-3 py-1 rounded-full uppercase">
+                  {stage}
+                </Badge>
+                {profileData.integrityScore !== undefined && (
+                  <Badge className={cn(
+                    "text-[10px] font-bold tracking-wide px-3 py-1 rounded-full border-0 uppercase flex items-center gap-1",
+                    profileData.integrityScore >= 60 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                  )}>
+                    <ShieldAlert className="w-3 h-3" /> Integrity: {profileData.integrityScore}%
+                  </Badge>
+                )}
+                {profileData.aiFitBand && (
+                  <Badge className={cn(
+                    "text-[10px] font-bold tracking-wide px-3 py-1 rounded-full border-0 uppercase",
+                    profileData.aiFitBand === 'GOOD' ? 'bg-emerald-100 text-emerald-700'
+                    : profileData.aiFitBand === 'AVERAGE' ? 'bg-amber-100 text-amber-700'
+                    : 'bg-rose-100 text-rose-700'
+                  )}>
+                    Fit: {profileData.aiFitBand}
+                  </Badge>
+                )}
+                {profileData?.aiScore !== undefined && (
+                  <Badge className="bg-blue-50 text-blue-700 border-0 text-[10px] font-bold tracking-wide px-3 py-1 rounded-full uppercase">
+                    Score: {profileData.aiScore}%
+                  </Badge>
+                )}
+                {profileData.proctoringSummary && profileData.proctoringSummary.malpracticeWarnings > 0 && (
+                  <Badge className="bg-rose-50 text-rose-700 border-0 text-[10px] font-bold tracking-wide px-3 py-1 rounded-full uppercase flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> {profileData.proctoringSummary.malpracticeWarnings} Flags
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── ROW 2: Action Buttons ── */}
+          <div className="border-t border-slate-100 pt-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Quick Actions</p>
+            <div className="flex flex-wrap gap-2">
+              {/* View Resume */}
+              {profileData.resumeUrl ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-xs gap-2 h-9"
+                  onClick={openResumePDF}
+                  disabled={viewingResume}
+                >
+                  {viewingResume ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSearch className="w-3.5 h-3.5 text-slate-500" />}
+                  {viewingResume ? 'Loading...' : 'View Resume'}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-slate-200 text-slate-400 font-semibold text-xs gap-2 h-9 cursor-not-allowed"
+                  disabled
+                >
+                  <FileSearch className="w-3.5 h-3.5" />
+                  No Resume
+                </Button>
+              )}
+
+              {/* Reparse */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-blue-100 text-blue-700 hover:bg-blue-50 font-semibold text-xs gap-2 h-9"
                 onClick={() => reparseMutation.mutate()}
                 disabled={reparseMutation.isPending}
               >
@@ -277,10 +359,11 @@ export default function CandidateProfilePage() {
                 {reparseMutation.isPending ? "Parsing..." : "Reparse Profile"}
               </Button>
 
+              {/* Assessment PDF */}
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-bold text-[10px] uppercase tracking-widest gap-2"
+                className="rounded-lg border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-semibold text-xs gap-2 h-9"
                 onClick={() => downloadBlob(
                   () => hrApi.getAssessmentReport(id),
                   `Assessment_Report_${id}.pdf`,
@@ -292,10 +375,11 @@ export default function CandidateProfilePage() {
                 {downloadingAssessment ? 'Generating...' : 'Assessment PDF'}
               </Button>
 
+              {/* Interview PDF */}
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full border-purple-100 text-purple-700 hover:bg-purple-50 font-bold text-[10px] uppercase tracking-widest gap-2"
+                className="rounded-lg border-purple-100 text-purple-700 hover:bg-purple-50 font-semibold text-xs gap-2 h-9"
                 onClick={() => downloadBlob(
                   () => hrApi.getInterviewReport(id),
                   `Interview_Report_${id}.pdf`,
@@ -306,29 +390,6 @@ export default function CandidateProfilePage() {
                 {downloadingInterview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 {downloadingInterview ? 'Generating...' : 'Interview PDF'}
               </Button>
-
-              {profileData.aiFitBand && (
-                <div className="text-center px-6 py-4 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mb-2">Operational Fit</p>
-                  <p className={`text-2xl font-black tracking-tighter ${profileData.aiFitBand === 'GOOD' ? 'text-emerald-500' : profileData.aiFitBand === 'AVERAGE' ? 'text-amber-500' : 'text-rose-500'}`}>
-                    {profileData.aiFitBand}
-                  </p>
-                </div>
-              )}
-              {profileData?.aiScore !== undefined && (
-                <div className="text-center group">
-                  <p className="text-6xl font-black text-blue-600 tracking-tighter tabular-nums drop-shadow-sm group-hover:scale-110 transition-transform">{profileData.aiScore}%</p>
-                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.3em] mt-1">Matrix Score</p>
-                </div>
-              )}
-              {profileData.proctoringSummary && (
-                <div className="text-center bg-rose-50 px-6 py-4 rounded-[2rem] border border-rose-100 shadow-sm">
-                  <p className="text-[10px] text-rose-400 font-black uppercase tracking-[0.25em] mb-2">Integrity Risk</p>
-                  <p className="text-2xl font-black tracking-tighter text-rose-600">
-                    {profileData.proctoringSummary.violationsCount} Flags
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </CardContent>
@@ -337,13 +398,15 @@ export default function CandidateProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="ai" className="w-full">
-          <TabsList className="bg-slate-100/50 p-1.5 rounded-[1.5rem] border border-slate-200 mb-6 flex overflow-x-auto">
-            <TabsTrigger value="ai" className="rounded-xl px-6 font-bold uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">AI Analysis</TabsTrigger>
-            <TabsTrigger value="highlights" className="rounded-xl px-6 font-bold uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Interview Highlights</TabsTrigger>
-            <TabsTrigger value="integrity" className="rounded-xl px-6 font-bold uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Integrity Risk</TabsTrigger>
-            <TabsTrigger value="overview" className="rounded-xl px-6 font-bold uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
-            <TabsTrigger value="evaluation" className="rounded-xl px-6 font-bold uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Evaluation Traces</TabsTrigger>
-          </TabsList>
+            <div className="overflow-x-auto pb-1 mb-5">
+              <TabsList className="bg-slate-100 p-1 rounded-xl border border-slate-200 inline-flex min-w-max w-full">
+                <TabsTrigger value="ai" className="rounded-lg px-4 py-2 font-semibold text-xs tracking-wide data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">AI Analysis</TabsTrigger>
+                <TabsTrigger value="highlights" className="rounded-lg px-4 py-2 font-semibold text-xs tracking-wide data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">Interview Highlights</TabsTrigger>
+                <TabsTrigger value="integrity" className="rounded-lg px-4 py-2 font-semibold text-xs tracking-wide data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">Integrity Risk</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-lg px-4 py-2 font-semibold text-xs tracking-wide data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">Overview</TabsTrigger>
+                <TabsTrigger value="evaluation" className="rounded-lg px-4 py-2 font-semibold text-xs tracking-wide data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">Evaluation Traces</TabsTrigger>
+              </TabsList>
+            </div>
             <TabsContent value="ai">
               <Card className="border-slate-100 shadow-sm rounded-2xl overflow-hidden bg-white">
                 <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">

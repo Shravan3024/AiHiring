@@ -79,6 +79,8 @@ const {
   updateSystemHealth,
 } = require("../controllers/admin.audit.controller");
 
+const { getNotifications } = require("../controllers/notification.controller");
+
 const router = express.Router();
 
 // Apply authentication middleware
@@ -146,6 +148,9 @@ router.post("/hrs/:id/logout", forceLogoutHR);
 // ===================== APPROVAL RULES =====================
 router.get("/approval-rules", getApprovalRules);
 router.post("/approval-rules", createApprovalRule);
+
+// ===================== NOTIFICATIONS =====================
+router.get("/notifications", getNotifications);
 
 // ===================== QUESTION BANK =====================
 router.post("/questions/technical", createTechnicalQuestion);

@@ -38,15 +38,15 @@ export default function CandidateTable({ apps = [], refresh }: any) {
   }
 
   return (
-    <div className="w-full">
-      <table className="w-full border-collapse">
+    <div className="w-full overflow-x-auto">
+      <table className="w-full border-collapse min-w-[700px]">
         <thead>
           <tr className="bg-slate-50/50 border-b border-slate-100/60">
-            <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Operational Identity</th>
-            <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Authority Link</th>
-            <th className="px-10 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Intelligence Matrix</th>
-            <th className="px-10 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Status Protocol</th>
-            <th className="px-10 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Control Plane</th>
+            <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Candidate</th>
+            <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Position</th>
+            <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">AI Score</th>
+            <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+            <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
@@ -73,7 +73,7 @@ export default function CandidateTable({ apps = [], refresh }: any) {
             return (
               <React.Fragment key={app.id}>
                 <tr className="group hover:bg-slate-50/50 transition-all duration-500">
-                  <td className="px-10 py-8">
+                  <td className="px-6 py-5">
                     <div className="flex items-center gap-6">
                       <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-2xl group-hover:scale-110 transition-transform relative overflow-hidden">
                         <User className="w-6 h-6" />
@@ -87,7 +87,7 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-10 py-8">
+                  <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
                        <div className="p-2 bg-blue-50 rounded-lg">
                           <Briefcase className="w-4 h-4 text-blue-600" />
@@ -98,7 +98,7 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                        </div>
                     </div>
                   </td>
-                  <td className="px-10 py-8">
+                  <td className="px-6 py-5">
                     <div className="flex flex-col items-center gap-3">
                        <div className="flex items-center gap-4">
                           <span className="text-lg font-black text-[#0f172a] tabular-nums tracking-tighter">{score}%</span>
@@ -108,12 +108,12 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                        </div>
                     </div>
                   </td>
-                  <td className="px-10 py-8 text-center">
+                  <td className="px-6 py-5 text-center">
                     <Badge variant="outline" className={cn("px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full", statusStyle)}>
                       {status}
                     </Badge>
                   </td>
-                  <td className="px-10 py-8">
+                  <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-4">
                       <Button
                         className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-xl shadow-slate-200/50 active:scale-90"

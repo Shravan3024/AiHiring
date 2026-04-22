@@ -30,7 +30,10 @@ exports.getDashboardOverview = async (req, res) => {
 
     const applications = await Application.findAll({
       where: { candidate_id: candidate.id },
-      include: [{ model: Job }],
+      include: [
+        { model: Job },
+        { model: Offer, as: "offer" }
+      ],
       order: [["created_at", "DESC"]],
       limit: 5
     });
@@ -80,6 +83,17 @@ exports.getDashboardOverview = async (req, res) => {
           stage: app.status,
           appliedAt: app.applied_at,
           applied_at: app.applied_at,
+          offer: app.offer ? {
+            _id: String(app.offer.id),
+            id: app.offer.id,
+            salary: app.offer.salary,
+            position: app.offer.position_title,
+            startDate: app.offer.joining_date,
+            expiresAt: app.offer.expires_at,
+            benefits: app.offer.benefits,
+            details: app.offer.offer_letter_content,
+            status: app.offer.status
+          } : null
         })),
         dashboard: {
           total_applications: stats.length,
@@ -90,7 +104,8 @@ exports.getDashboardOverview = async (req, res) => {
       });
 
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Dashboard overview error:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 

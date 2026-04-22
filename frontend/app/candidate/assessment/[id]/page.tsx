@@ -138,25 +138,43 @@ export default function IntegratedAssessmentPage() {
   const startCamera = async () => {
     try {
       console.log("Initializing camera Subnet...");
-      // Using more standard constraints for wider compatibility
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 },
-          frameRate: { ideal: 15, max: 24 } 
-        }, 
-        audio: false 
-      });
+      
+      let stream;
+      try {
+        // Try ideal constraints first
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 },
+            frameRate: { ideal: 15 } 
+          }, 
+          audio: false 
+        });
+      } catch (e) {
+        console.warn("Ideal camera constraints failed, trying fallback...", e);
+        // Fallback to basic video
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: false 
+        });
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(e => console.error("Play failed:", e));
+        // Directly try to play
+        try {
+          await videoRef.current.play();
           console.log("Camera Stream Active");
-        };
+        } catch (playErr) {
+          console.error("Auto-play failed, waiting for metadata:", playErr);
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(pe => console.error("Final play attempt failed:", pe));
+          };
+        }
       }
     } catch (err) {
       console.error("Camera fail:", err);
-      toast.error("Camera access is mandatory. Please check browser permissions and hardware.");
+      toast.error("Camera access is mandatory. Please ensure your camera is connected and permissions are granted.");
     }
   };
 

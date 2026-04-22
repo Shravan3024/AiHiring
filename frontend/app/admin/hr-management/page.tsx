@@ -112,24 +112,24 @@ export default function HRManagementPage() {
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
            <div className="space-y-1">
-              <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic opacity-20 selection:bg-none pointer-events-none absolute -top-4 -left-2 transform -rotate-1 select-none">HR AUTHORITY</h2>
-              <h3 className="text-2xl font-bold text-white tracking-tight">Identity & Role Management</h3>
-              <p className="text-xs text-white/40 font-medium uppercase tracking-widest">Global HR User Directory & Concurrence Controls</p>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic opacity-20 selection:bg-none pointer-events-none absolute -top-4 -left-2 transform -rotate-1 select-none">HR AUTHORITY</h2>
+              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Identity & Role Management</h3>
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Global HR User Directory & Concurrence Controls</p>
            </div>
            
            <div className="flex items-center gap-4">
               <div className="relative group">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-blue-500 transition-colors" />
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                  <Input 
                    placeholder="Filter identities..." 
-                   className="h-11 pl-10 pr-4 w-72 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-blue-500/50"
+                   className="h-11 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
                    value={search} 
                    onChange={e => setSearch(e.target.value)} 
                  />
               </div>
               <Button 
                 onClick={() => setOpen(true)} 
-                className="h-11 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/40 flex items-center gap-2"
+                className="h-11 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" /> Provision Account
               </Button>
@@ -137,28 +137,28 @@ export default function HRManagementPage() {
         </div>
 
         <Tabs defaultValue="team" className="space-y-8">
-          <TabsList className="bg-white/5 border border-white/10 w-fit h-14 p-1.5 rounded-[1.25rem] gap-2 backdrop-blur-md">
+          <TabsList className="bg-white shadow-sm border border-slate-200 w-fit h-14 p-1.5 rounded-[1.25rem] gap-2 backdrop-blur-md">
              <TabsTrigger value="team" className="h-full px-8 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold transition-all">Identity Registry</TabsTrigger>
              <TabsTrigger value="rules" className="h-full px-8 rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold transition-all">Approval Rules Engine</TabsTrigger>
           </TabsList>
           
           <TabsContent value="team" className="mt-0">
-            <div className="bg-white/5 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+            <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
                {isLoading ? (
                  <div className="p-20 flex flex-col items-center justify-center space-y-4">
                    <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                   <p className="text-xs font-black uppercase text-white/20 tracking-[0.4em]">Decrypting Registry...</p>
+                   <p className="text-xs font-black uppercase text-slate-400 tracking-[0.4em]">Decrypting Registry...</p>
                  </div>
                ) : (
                  <div className="overflow-x-auto custom-scrollbar">
                    <Table>
-                     <TableHeader className="bg-white/[0.02] border-b border-white/5">
+                     <TableHeader className="bg-slate-50 border-b border-slate-200">
                        <TableRow className="hover:bg-transparent border-0">
-                         <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">User Identity</TableHead>
-                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Access Credentials</TableHead>
-                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Role Assignment</TableHead>
-                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">System Status</TableHead>
-                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 text-right">Governance</TableHead>
+                         <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">User Identity</TableHead>
+                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Access Credentials</TableHead>
+                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Role Assignment</TableHead>
+                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">System Status</TableHead>
+                         <TableHead className="py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">Governance</TableHead>
                        </TableRow>
                      </TableHeader>
                      <TableBody>
@@ -172,17 +172,17 @@ export default function HRManagementPage() {
                            </TableCell>
                          </TableRow>
                        ) : filtered.map((u: HRUser) => (
-                         <TableRow key={u._id} className="group hover:bg-white/[0.03] transition-all border-b border-white/[0.03] last:border-0 relative">
+                         <TableRow key={u._id} className="group hover:bg-slate-50 transition-all border-b border-slate-200 last:border-0 relative">
                            <TableCell className="px-8 py-6">
                               <div className="flex items-center gap-4">
-                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center font-bold text-blue-400 border border-white/10 shrink-0">
+                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center font-bold text-blue-400 border border-slate-200 shrink-0">
                                    {u.name?.charAt(0)}
                                  </div>
-                                 <span className="text-white font-bold tracking-tight">{u.name}</span>
+                                 <span className="text-slate-900 font-bold tracking-tight">{u.name}</span>
                               </div>
                            </TableCell>
                            <TableCell>
-                             <div className="flex items-center gap-2 text-white/50 text-xs font-medium tracking-tight">
+                             <div className="flex items-center gap-2 text-slate-500 text-xs font-medium tracking-tight">
                                <Mail className="w-3 h-3 text-blue-400/50" /> {u.email}
                              </div>
                            </TableCell>
@@ -207,19 +207,19 @@ export default function HRManagementPage() {
                               <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                   onClick={() => handleEditOpen(u)}
-                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30"
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white shadow-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-transparent hover:border-blue-500/30"
                                 >
                                   <Shield className="w-4 h-4" />
                                 </button>
                                 <button 
                                   onClick={() => { if(confirm(`Terminate sessions for ${u.name}?`)) forceLogoutMutation.mutate(u._id); }}
-                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-amber-500/40 hover:text-amber-400 hover:bg-amber-400/10 transition-all border border-transparent hover:border-amber-500/30"
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white shadow-sm text-amber-500/40 hover:text-amber-400 hover:bg-amber-400/10 transition-all border border-transparent hover:border-amber-500/30"
                                 >
                                   <PowerOff className="w-4 h-4" />
                                 </button>
                                 <button 
                                   onClick={() => { if(confirm(`Revoke access for ${u.name}?`)) deleteHRMutation.mutate(u._id); }}
-                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-rose-500/40 hover:text-rose-400 hover:bg-rose-400/10 transition-all border border-transparent hover:border-rose-500/30"
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white shadow-sm text-rose-500/40 hover:text-rose-400 hover:bg-rose-400/10 transition-all border border-transparent hover:border-rose-500/30"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -235,7 +235,7 @@ export default function HRManagementPage() {
           </TabsContent>
           
           <TabsContent value="rules" className="mt-0">
-            <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-10 min-h-[400px] backdrop-blur-xl relative overflow-hidden group">
+            <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] p-10 min-h-[400px] backdrop-blur-xl relative overflow-hidden group">
                <div className="absolute top-0 left-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-1000">
                   <Fingerprint className="w-32 h-32 text-blue-500" />
                </div>
@@ -246,8 +246,8 @@ export default function HRManagementPage() {
                         <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
                            <Settings2 className="w-6 h-6 text-indigo-400" />
                         </div>
-                        <h3 className="text-2xl font-bold text-white tracking-tight">Validation Matrix</h3>
-                        <p className="text-sm text-white/40 font-medium max-w-lg leading-relaxed">
+                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Validation Matrix</h3>
+                        <p className="text-sm text-slate-500 font-medium max-w-lg leading-relaxed">
                           Define multi-factor concurrence requirements. The ecosystem enforces exact threshold bounds, auto-escalation SLAs, and mandatory review matrices per role stage.
                         </p>
                      </div>
@@ -263,22 +263,22 @@ export default function HRManagementPage() {
                       { icon: Clock, label: "SLA Timeout", val: "48H", color: "text-rose-400" },
                       { icon: Users, label: "Escalation", val: "SR. HR", color: "text-purple-400" },
                     ].map((stat, i) => (
-                      <div key={i} className="p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-4 hover:border-white/10 transition-all">
-                         <div className={cn("p-3 rounded-xl bg-white/5 w-fit", stat.color)}>
+                      <div key={i} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-200 space-y-4 hover:border-slate-200 transition-all">
+                         <div className={cn("p-3 rounded-xl bg-white shadow-sm w-fit", stat.color)}>
                             <stat.icon className="w-5 h-5" />
                          </div>
                          <div className="space-y-1">
-                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{stat.label}</p>
-                            <p className="text-2xl font-black text-white">{stat.val}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
+                            <p className="text-2xl font-black text-slate-900">{stat.val}</p>
                          </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="p-8 rounded-[2.5rem] border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center text-center space-y-4 py-20">
-                     <Lock className="w-12 h-12 text-white/5 animate-pulse" />
-                     <p className="text-xs font-black uppercase tracking-[0.4em] text-white/20 uppercase tracking-widest">Active Rule Registry Encrypted</p>
-                     <p className="text-[10px] text-white/10 max-w-sm font-medium">Policy orchestration is handled via <code>hrApprovalRule.js</code> secure middleware layer for real-time compliance enforcement.</p>
+                  <div className="p-8 rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-center space-y-4 py-20">
+                     <Lock className="w-12 h-12 text-slate-900/5 animate-pulse" />
+                     <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 uppercase tracking-widest">Active Rule Registry Encrypted</p>
+                     <p className="text-[10px] text-slate-400 max-w-sm font-medium">Policy orchestration is handled via <code>hrApprovalRule.js</code> secure middleware layer for real-time compliance enforcement.</p>
                   </div>
                </div>
             </div>
@@ -288,57 +288,57 @@ export default function HRManagementPage() {
 
       {/* DIALOGS - Redesigned to match dark theme */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md bg-[#0a0a0c] border-white/10 text-white p-0 overflow-hidden rounded-[2.5rem]">
-          <DialogHeader className="p-8 bg-white/[0.02] border-b border-white/5 relative">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 p-0 overflow-hidden rounded-[2.5rem]">
+          <DialogHeader className="p-8 bg-slate-50 border-b border-slate-200 relative">
             <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-4">
                <UserPlus className="w-6 h-6 text-blue-400" />
             </div>
             <DialogTitle className="text-2xl font-bold tracking-tight">Identity Provisioning</DialogTitle>
-            <DialogDescription className="text-white/40 font-medium">
+            <DialogDescription className="text-slate-500 font-medium">
               Create a new secure access corridor for an HR Manager.
             </DialogDescription>
           </DialogHeader>
           <div className="p-8 space-y-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Identity Name</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Identity Name</Label>
               <Input 
                 value={form.name} 
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
                 placeholder="Manager Name" 
-                className="h-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/10"
+                className="h-12 bg-white shadow-sm border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Secure Email</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Secure Email</Label>
               <Input 
                 type="email" 
                 value={form.email} 
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))} 
                 placeholder="address@ecosystem.com" 
-                className="h-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/10"
+                className="h-12 bg-white shadow-sm border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Access Key</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Access Key</Label>
               <Input 
                 type="password" 
                 value={form.password} 
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))} 
                 placeholder="Min 8 characters" 
-                className="h-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/10"
+                className="h-12 bg-white shadow-sm border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400"
               />
             </div>
           </div>
-          <DialogFooter className="p-8 bg-white/[0.02] border-t border-white/5">
+          <DialogFooter className="p-8 bg-slate-50 border-t border-slate-200">
             <Button 
                variant="ghost" 
                onClick={() => setOpen(false)} 
-               className="text-white/40 hover:text-white hover:bg-white/5 font-bold"
+               className="text-slate-500 hover:text-slate-900 hover:bg-white shadow-sm font-bold"
             >
               Cancel
             </Button>
             <Button
-              className="px-8 bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-900/40 active:scale-95 transition-all"
+              className="px-8 bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
               onClick={() => createHRMutation.mutate(form)}
               disabled={createHRMutation.isPending || !form.name || !form.email || !form.password}
             >
@@ -349,22 +349,22 @@ export default function HRManagementPage() {
       </Dialog>
 
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="max-w-md bg-[#0a0a0c] border-white/10 text-white rounded-[2.5rem]">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-[2.5rem]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Policy Configuration</DialogTitle>
-            <DialogDescription className="text-white/40">
+            <DialogDescription className="text-slate-500">
               Modify governance bounds for {editUser?.name}.
             </DialogDescription>
           </DialogHeader>
           {editUser && (
             <div className="space-y-6 pt-6">
                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Authority Level</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Authority Level</Label>
                   <Select value={editForm.hr_role} onValueChange={v => setEditForm({ ...editForm, hr_role: v })}>
-                    <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 rounded-xl">
                        <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/10 text-white">
+                    <SelectContent className="bg-white border-slate-200 text-slate-900">
                        <SelectItem value="VIEWER">HR Viewer (Read Only)</SelectItem>
                        <SelectItem value="REVIEWER">HR Reviewer (Standard)</SelectItem>
                        <SelectItem value="APPROVER">HR Approver (Executive)</SelectItem>
@@ -373,12 +373,12 @@ export default function HRManagementPage() {
                   </Select>
                </div>
                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Kill-Switch Controller</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Kill-Switch Controller</Label>
                   <Select value={editForm.status} onValueChange={v => setEditForm({ ...editForm, status: v })}>
-                    <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl text-rose-400">
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 rounded-xl text-rose-400">
                        <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/10 text-white">
+                    <SelectContent className="bg-white border-slate-200 text-slate-900">
                        <SelectItem value="ACTIVE" className="text-emerald-400 uppercase font-black tracking-widest text-[10px]">Active Protocol</SelectItem>
                        <SelectItem value="DISABLED" className="text-rose-400 uppercase font-black tracking-widest text-[10px]">Revocation (Locked)</SelectItem>
                     </SelectContent>
@@ -389,7 +389,7 @@ export default function HRManagementPage() {
           <DialogFooter className="mt-8 gap-3">
              <Button 
                variant="secondary" 
-               className="bg-white/5 text-white/60 hover:bg-white/10 border-0"
+               className="bg-white shadow-sm text-slate-500 hover:bg-slate-100 border-0"
                onClick={() => setEditUser(null)}
               >Cancel</Button>
              <Button 
@@ -404,19 +404,19 @@ export default function HRManagementPage() {
       </Dialog>
 
       <Dialog open={rulesOpen} onOpenChange={setRulesOpen}>
-        <DialogContent className="max-w-md bg-[#0a0a0c] border-white/10 text-white rounded-[2.5rem]">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-[2.5rem]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Deploy Governance Rule</DialogTitle>
-            <DialogDescription className="text-white/40">
+            <DialogDescription className="text-slate-500">
               Sync concurrence bounds to the global rules engine.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 pt-6">
              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Pipeline Stage Context</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Pipeline Stage Context</Label>
                 <Select value={ruleForm.stage} onValueChange={v => setRuleForm({ ...ruleForm, stage: v })}>
-                   <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl"><SelectValue /></SelectTrigger>
-                   <SelectContent className="bg-gray-900 border-white/10 text-white">
+                   <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 rounded-xl"><SelectValue /></SelectTrigger>
+                   <SelectContent className="bg-white border-slate-200 text-slate-900">
                       <SelectItem value="Screening">Global Screening</SelectItem>
                       <SelectItem value="Assessment">Technical Assessment</SelectItem>
                       <SelectItem value="Interview">Video Analysis</SelectItem>
@@ -426,29 +426,29 @@ export default function HRManagementPage() {
              </div>
              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                   <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Quorum (%)</Label>
+                   <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Quorum (%)</Label>
                    <Input 
                       type="number" 
                       value={ruleForm.threshold} 
                       onChange={e => setRuleForm({ ...ruleForm, threshold: parseInt(e.target.value) })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white shadow-sm border-slate-200 rounded-xl"
                     />
                 </div>
                 <div className="space-y-2">
-                   <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">SLA Latency (H)</Label>
+                   <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">SLA Latency (H)</Label>
                    <Input 
                       type="number" 
                       value={ruleForm.timeoutHours} 
                       onChange={e => setRuleForm({ ...ruleForm, timeoutHours: parseInt(e.target.value) })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl" 
+                      className="h-12 bg-white shadow-sm border-slate-200 rounded-xl" 
                     />
                 </div>
              </div>
              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest ml-1">Minimum Auth Role</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Minimum Auth Role</Label>
                 <Select value={ruleForm.role} onValueChange={v => setRuleForm({ ...ruleForm, role: v })}>
-                   <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl"><SelectValue /></SelectTrigger>
-                   <SelectContent className="bg-gray-900 border-white/10 text-white">
+                   <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 rounded-xl"><SelectValue /></SelectTrigger>
+                   <SelectContent className="bg-white border-slate-200 text-slate-900">
                       <SelectItem value="REVIEWER">HR REVIEWER</SelectItem>
                       <SelectItem value="APPROVER">HR APPROVER</SelectItem>
                       <SelectItem value="SENIOR_HR">SENIOR HR</SelectItem>
@@ -457,7 +457,7 @@ export default function HRManagementPage() {
              </div>
           </div>
           <DialogFooter className="mt-8">
-             <Button variant="ghost" onClick={() => setRulesOpen(false)} className="text-white/40">Cancel</Button>
+             <Button variant="ghost" onClick={() => setRulesOpen(false)} className="text-slate-500">Cancel</Button>
              <Button 
                 className="bg-indigo-600 hover:bg-indigo-500 font-bold"
                 onClick={() => createRuleMutation.mutate(ruleForm)} 

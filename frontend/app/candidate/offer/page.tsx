@@ -21,13 +21,14 @@ export default function CandidateOffer() {
 
   const apps = overview?.applications || overview?.dashboard?.applications || [];
   const offerApp = apps.find((a: any) =>
-    ["Offer", "OFFER", "offer", "SELECTED"].includes(a.stage || a.status)
+    ["Offer", "OFFER", "offer", "SELECTED", "OFFERED", "OFFER_SENT"].includes(a.stage || a.status)
   );
   const offer = offerApp?.offer || offerApp?.offerDetails;
 
   const respondMutation = useMutation({
     mutationFn: (vars: any) => candidateApi.respondOffer({
       offer_id: vars.offerId,
+      application_id: vars.applicationId,
       decision: vars.response,
       candidate_notes: vars.reason,
     }),
@@ -40,10 +41,10 @@ export default function CandidateOffer() {
   });
 
   const handleRespond = (resp: "ACCEPTED" | "REJECTED") => {
-    if (!offerApp?._id && !offer?._id) return;
+    if (!offerApp?._id && !offer?._id && !offerApp?.id) return;
     respondMutation.mutate({
-      applicationId: offerApp?._id,
-      offerId: offer?._id,
+      applicationId: offerApp?._id || offerApp?.id,
+      offerId: offer?._id || offer?.id,
       response: resp,
       reason: resp === "REJECTED" ? reason : undefined,
     });

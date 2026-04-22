@@ -89,3 +89,8 @@
     @apply bg-background text-foreground;
   }
 }
+@layer utilities {
+  .mirror-x {
+    transform: scaleX(-1);
+  }
+}

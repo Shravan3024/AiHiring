@@ -336,9 +336,28 @@ export default function CandidateInterview() {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      let stream;
+      try {
+        // Try standard constraints first
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
+          audio: true 
+        });
+      } catch (e) {
+        console.warn("Standard constraints failed, trying basic video/audio", e);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      }
+
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.error("Auto-play failed, using metadata fallback", playErr);
+          videoRef.current.onloadedmetadata = () => videoRef.current?.play().catch(console.error);
+        }
+      }
       startRecording();
       if (faceApiLoaded.current && (window as any).faceapi) {
         const API = (window as any).faceapi;

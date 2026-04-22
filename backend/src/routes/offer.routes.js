@@ -30,7 +30,7 @@ router.post(
 
 /* Candidate responds to offer */
 router.post(
-  "/application/:applicationId/respond",
+  "/respond-to-offer",
   authMiddleware,
   roleMiddleware(["CANDIDATE"]),
   respondOffer

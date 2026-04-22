@@ -26,7 +26,7 @@ function normalize(job) {
     urgency: j.urgency || "NORMAL",
     requiredSkills: j.required_skills || [],
     skillWeights: j.skill_weights || {},
-    createdAt: j.createdAt,
+    createdAt: j.created_at || j.createdAt,
     applicationCount: j.applicationCount || 0,
     technicalQuestions: tqArr,
     interviewQuestions: iqArr,
@@ -38,7 +38,7 @@ function normalize(job) {
 const getJobs = async (req, res) => {
   try {
     const jobs = await Job.findAll({ 
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
       include: [
         { model: TechnicalQuestionBank },
         { model: InterviewQuestionBank }

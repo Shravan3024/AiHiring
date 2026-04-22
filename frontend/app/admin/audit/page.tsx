@@ -340,7 +340,7 @@ export default function AuditPage() {
                     <div className="bg-blue-600 rounded-lg p-6 text-white flex flex-col justify-between">
                        <h4 className="font-bold text-lg mb-2">Technical Health Summary</h4>
                        <p className="text-xs text-blue-100 leading-relaxed mb-4">Total Approval Latency: <b>{health.averageApprovalTime || "4.2"} hours</b>. All systems performing within SLA thresholds.</p>
-                       <Button variant="outline" className="text-white border-white bg-white/10 hover:bg-white/20">View Detailed Reports</Button>
+                       <Button variant="outline" className="text-slate-900 border-white bg-slate-100 hover:bg-slate-100">View Detailed Reports</Button>
                     </div>
                  </div>
               </CardContent>

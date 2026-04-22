@@ -209,7 +209,8 @@ const getAuditStats = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("getAuditStats error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 

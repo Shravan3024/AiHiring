@@ -62,7 +62,7 @@ exports.startAssessment = async (req, res) => {
 
     // 1. Fetch Master Pool of potential questions for this role
     // Exclude used questions to ensure uniqueness for this candidate
-    const masterPool = await TechnicalQuestionBank.findAll({
+    let masterPool = await TechnicalQuestionBank.findAll({
       where: { 
         [Op.or]: [
           { jobRole: mappedRole }, 
@@ -76,21 +76,34 @@ exports.startAssessment = async (req, res) => {
       transaction
     });
 
+    // Deduplicate by questionId
+    const uniquePoolMap = new Map();
+    masterPool.forEach(q => {
+      if (!uniquePoolMap.has(q.questionId)) {
+        uniquePoolMap.set(q.questionId, q);
+      }
+    });
+    masterPool = Array.from(uniquePoolMap.values());
+
     // Fallback: If pool is too small because candidate saw everything, relax the constraint slightly or reset
     if (masterPool.length < ASSESSMENT_CONFIG.TOTAL_QUESTIONS) {
         logger.warn(`Pool exhausted for candidate ${candidateId}. Relaxing uniqueness constraint.`);
-        // Note: In production you might want to fetch from general pool more or reuse oldest ones.
-        // For now, we fetch again without NOT IN to ensure they can at least start.
         const refillPool = await TechnicalQuestionBank.findAll({
             where: { 
               [Op.or]: [{ jobRole: mappedRole }, { jobRole: 'GENERAL' }],
               isActive: true
             },
             order: sequelize.random(),
-            limit: ASSESSMENT_CONFIG.TOTAL_QUESTIONS,
+            limit: ASSESSMENT_CONFIG.TOTAL_QUESTIONS * 2, // Fetch more to ensure enough unique ones
             transaction
         });
-        masterPool.push(...refillPool);
+        
+        refillPool.forEach(q => {
+            if (!uniquePoolMap.has(q.questionId)) {
+                uniquePoolMap.set(q.questionId, q);
+                masterPool.push(q);
+            }
+        });
     }
 
     // 2. Separate and deduplicate
@@ -320,6 +333,7 @@ exports.submitAssessment = async (req, res) => {
       final_score: finalScore,
       score: finalScore,
       status: 'EVALUATED',
+      submitted_at: new Date(),
       structure_score: avgStructureScore,
       concept_coverage: avgConceptCoverage
     });

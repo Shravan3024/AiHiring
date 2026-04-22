@@ -178,12 +178,23 @@ export const hrApi = {
 
   getBenchmark: (applicationId: string) =>
     api.get(`/hr/applications/${applicationId}/benchmark`),
+
+  viewResume: (applicationId: string) =>
+    api.get(`/hr/resume/${applicationId}`, { responseType: 'blob' }),
+
+  getOperationalCore: () =>
+    api.get('/hr/dashboard/operational-core'),
+
+  getTopCandidates: () =>
+    api.get('/hr/dashboard/top-candidates'),
 };
 
 // ==================== MD ====================
 export const mdApi = {
   getDashboard: () => api.get("/dashboard/md/overview"),
   getNotifications: () => api.get("/md/notifications"),
+  viewResume: (applicationId: string) =>
+    api.get(`/hr/resume/${applicationId}`, { responseType: 'blob' }),
 };
 
 // ==================== CANDIDATE ====================
@@ -245,8 +256,8 @@ getInterviewStatusPhase5: (sessionId: string) =>
   api.get(`/interview/${sessionId}/status`),
 
   // Offer
-  respondOffer: (data: { offer_id: string; decision: string; candidate_notes?: string }) => 
-    api.post("/offer/respond", data),
+  respondOffer: (data: { offer_id?: string; application_id?: string; decision: string; candidate_notes?: string }) => 
+    api.post("/offer/respond-to-offer", data),
 
   getNotifications: () => api.get("/notifications/candidate/my"),
 

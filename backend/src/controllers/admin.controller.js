@@ -6,7 +6,7 @@ exports.getHRs = async (req, res) => {
   try {
     const hrs = await User.findAll({
       where: { role: "HR" },
-      attributes: ["id", "name", "email", "status", "hr_role", "createdAt"]
+      attributes: ["id", "name", "email", "status", "hr_role", "created_at"]
     });
     const mapped = hrs.map(u => ({ ...u.toJSON(), _id: String(u.id) }));
     res.json(mapped);
@@ -184,27 +184,29 @@ exports.getApprovalRules = async (req, res) => {
 
 exports.createApprovalRule = async (req, res) => {
   try {
-    const { stage, threshold, timeoutHours, role } = req.body;
+    const { stage, threshold, slaHours, role } = req.body;
 
     const rule = await HRApprovalRule.create({
+      ruleId: `rule_${Date.now()}`,
       stage,
-      approvalsRequired: threshold ? Math.ceil(threshold / 100 * 3) : 1, // Example conversion
-      timeoutHours,
-      minRole: role,
+      approvalsRequired: threshold ? Math.ceil(threshold / 100 * 3) : 1,
+      approvalThreshold: threshold ? threshold / 100 : 1.0,
+      slaHours: slaHours || 24,
+      role: role || null,
       isActive: true,
-      createdBy: String(req.user.id),
-      description: `Rule for ${stage} stage with ${threshold}% threshold`,
+      createdBy: req.user.id
     });
 
     await auditLogger.logRuleChange(req, {
       entityType: "HR_APPROVAL_RULE",
-      entityId: String(rule.ruleId),
+      entityId: String(rule.id),
       newValue: rule,
       description: `New approval rule created for stage ${stage}`,
     });
 
     res.status(201).json({ success: true, data: rule });
   } catch (error) {
+    console.error("createApprovalRule error:", error);
     res.status(500).json({ error: error.message });
   }
 };

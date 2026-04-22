@@ -21,7 +21,7 @@ class DocumentController {
         include: [
           { model: User, as: 'candidate' },
           { model: User, as: 'hr' },
-          { model: Offer }
+          { model: Offer, as: 'offer' }
         ]
       });
 
@@ -528,7 +528,7 @@ class DocumentController {
 
       const documents = await Document.findAll({
         where: { applicationId },
-        order: [['createdAt', 'DESC']]
+        order: [['created_at', 'DESC']]
       });
 
       return res.status(200).json({

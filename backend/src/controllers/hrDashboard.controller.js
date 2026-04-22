@@ -1,4 +1,4 @@
-const { Application, Candidate, User, Job } = require('../models');
+const { Application, Candidate, User, Job, HRInternalNote } = require('../models');
 const { Op } = require('sequelize');
 const { STATUS_GROUPS } = require('../utils/applicationStatus.utils');
 
@@ -184,24 +184,30 @@ class HRDashboardController {
       const days  = { week: 7, month: 30, quarter: 90 }[timeframe] || 30;
       const since = new Date(Date.now() - days * 86400000);
 
+      // Fetch ALL recent applications regardless of hr_decision
       const applications = await Application.findAll({
-        where: { created_at: { [Op.gte]: since }, hr_decision: { [Op.ne]: null } },
-        attributes: ['hr_decision', 'overall_score', 'created_at'],
+        where: { created_at: { [Op.gte]: since } },
+        attributes: ['hr_decision', 'overall_score', 'created_at', 'status'],
       });
 
       const byMonth = {};
       applications.forEach(app => {
         const month = new Date(app.created_at).toLocaleString('default', { month: 'short' });
         if (!byMonth[month]) byMonth[month] = { month, aiDecisions: 0, hrDecisions: 0 };
-        const aiPositive = (app.overall_score || 0) >= 60;
+        // AI = score >= 60 or status recommended by AI
+        const aiPositive = (app.overall_score || 0) >= 60 || 
+          ['RECOMMENDED_BY_AI', 'SELECTED', 'HR_REVIEW'].includes(app.status);
         if (aiPositive) byMonth[month].aiDecisions++;
-        if (app.hr_decision === 'APPROVED') byMonth[month].hrDecisions++;
+        // HR = explicit decision made
+        if (app.hr_decision && ['APPROVED', 'SELECTED', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW'].includes(app.hr_decision)) {
+          byMonth[month].hrDecisions++;
+        }
       });
 
       const total   = applications.length;
       const aligned = applications.filter(app => {
         const aiPos = (app.overall_score || 0) >= 60;
-        const hrPos = app.hr_decision === 'APPROVED';
+        const hrPos = !!app.hr_decision && app.hr_decision !== 'REJECTED';
         return aiPos === hrPos;
       }).length;
 
@@ -341,6 +347,89 @@ class HRDashboardController {
        console.error('Error fetching rejection reasons:', error);
        return res.status(500).json({ success: false, message: 'Error fetching reasons' });
      }
+  }
+
+  /**
+   * GET /hr/dashboard/operational-core
+   * Returns real-time internal discussion count + SLA efficiency
+   */
+  static async getOperationalCore(req, res) {
+    try {
+      // Internal Discussions = total HR internal notes
+      let internalDiscussions = 0;
+      try {
+        internalDiscussions = await HRInternalNote.count();
+      } catch (_) { internalDiscussions = 0; }
+
+      // SLA Efficiency = % of applications that got an HR action within 3 days of last status change
+      const recentApps = await Application.findAll({
+        where: { updated_at: { [Op.gte]: new Date(Date.now() - 30 * 86400000) } },
+        attributes: ['hr_decision', 'updated_at', 'created_at', 'status']
+      });
+
+      const actionedWithinSLA = recentApps.filter(app => {
+        const daysSinceUpdate = (Date.now() - new Date(app.updated_at).getTime()) / 86400000;
+        return app.hr_decision || daysSinceUpdate <= 3;
+      }).length;
+
+      const slaEfficiency = recentApps.length > 0
+        ? Math.round((actionedWithinSLA / recentApps.length) * 100)
+        : 100;
+
+      return res.status(200).json({
+        success: true,
+        data: { internalDiscussions, slaEfficiency }
+      });
+    } catch (error) {
+      console.error('Error fetching operational core:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching operational core' });
+    }
+  }
+
+  /**
+   * GET /hr/dashboard/top-candidates
+   * Returns top 5 candidates by overall score with real-time data
+   */
+  static async getTopCandidates(req, res) {
+    try {
+      const applications = await Application.findAll({
+        where: {
+          overall_score: { [Op.gt]: 0 },
+          status: { [Op.notIn]: STATUS_GROUPS.rejected }
+        },
+        attributes: ['id', 'overall_score', 'status', 'resume_score', 'technical_score', 'interview_score'],
+        include: [
+          {
+            model: Candidate,
+            attributes: ['id', 'integrity_score'],
+            include: [{ model: User, attributes: ['name', 'email'] }]
+          },
+          { model: Job, attributes: ['title', 'department'] }
+        ],
+        order: [['overall_score', 'DESC']],
+        limit: 5
+      });
+
+      const ranked = applications.map((app, i) => ({
+        rank: i + 1,
+        applicationId: app.id,
+        name: app.Candidate?.User?.name || 'Unknown',
+        email: app.Candidate?.User?.email || '',
+        job: app.Job?.title || 'N/A',
+        department: app.Job?.department || '',
+        score: app.overall_score || 0,
+        resumeScore: app.resume_score || 0,
+        technicalScore: app.technical_score || 0,
+        interviewScore: app.interview_score || 0,
+        integrityScore: app.Candidate?.integrity_score || 100,
+        status: app.status
+      }));
+
+      return res.status(200).json({ success: true, data: ranked });
+    } catch (error) {
+      console.error('Error fetching top candidates:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching top candidates' });
+    }
   }
 }
 

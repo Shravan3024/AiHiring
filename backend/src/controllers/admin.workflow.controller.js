@@ -16,10 +16,11 @@ function _serialize(wf) {
 
 const createWorkflow = async (req, res) => {
   try {
-    const { name, description, jobId, stages, approvalRequired } = req.body;
+    const { name, workflowName, description, jobId, stages, approvalRequired } = req.body;
+    const finalName = workflowName || name;
 
     const workflow = await AdminWorkflow.create({
-      workflowName: name,
+      workflowName: finalName,
       description,
       jobId: jobId || null,
       stages: stages || [],
@@ -38,7 +39,8 @@ const createWorkflow = async (req, res) => {
 
     res.json({ success: true, data: _serialize(workflow) });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("createWorkflow error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -55,9 +57,11 @@ const updateWorkflow = async (req, res) => {
       approvalRequired: workflow.approvalRequired,
     };
 
-    const { name, description, jobId, stages, approvalRequired } = req.body;
+    const { name, workflowName, description, jobId, stages, approvalRequired } = req.body;
+    const finalName = workflowName || name;
+    
     await workflow.update({
-      workflowName: name || workflow.workflowName,
+      workflowName: finalName || workflow.workflowName,
       description: description !== undefined ? description : workflow.description,
       jobId: jobId !== undefined ? (jobId || null) : workflow.jobId,
       stages: stages || workflow.stages,
@@ -75,7 +79,8 @@ const updateWorkflow = async (req, res) => {
 
     res.json({ success: true, data: _serialize(workflow) });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("updateWorkflow error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 

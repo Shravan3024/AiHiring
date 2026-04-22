@@ -801,7 +801,7 @@ exports.getAIAnalytics = async (req, res) => {
           include: [{ model: Candidate }]
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     // Filter by skill level if provided
@@ -983,7 +983,7 @@ exports.reEvaluateAssessment = async (req, res) => {
     // Try to find raw responses from the last attempt (usually stored in AssessmentAnalysis or a separate model)
     const analysis = await AssessmentAnalysis.findOne({ 
       where: { application_id: applicationId },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     if (!analysis || !analysis.candidate_response) {

@@ -10,6 +10,7 @@ import {
   RefreshCw, Brain, Zap, Flag, Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import api from "@/lib/api";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer,
@@ -30,40 +31,27 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
   // Analyze interview mutation
   const { mutate: analyzeInterview, isPending } = useMutation({
     mutationFn: async (transcript: string) => {
-      const response = await fetch("/api/ai/interview/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          applicationId,
-          transcript,
-          interviewType: "technical",
-        }),
+      const response = await api.post('/ai/interview/analyze', {
+        applicationId,
+        transcript,
+        interviewType: 'technical',
       });
-
-      if (!response.ok) throw new Error("Interview analysis failed");
-      return response.json();
+      return response.data;
     },
     onSuccess: (data) => {
       onAnalysisComplete?.(data.data);
-      setTranscript("");
+      setTranscript('');
     },
   });
 
   // Fetch interview analysis
   const { data: analysis, isLoading } = useQuery({
-    queryKey: ["interview-analysis", applicationId],
+    queryKey: ['interview-analysis', applicationId],
     queryFn: async () => {
-      const response = await fetch(`/api/ai/analysis/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch analysis");
-      return response.json();
+      const response = await api.get(`/ai/analysis/${applicationId}`);
+      return response.data;
     },
+    refetchInterval: 30000,
   });
 
   const interviewData = analysis?.data?.interview_analysis;
@@ -145,7 +133,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                     interviewData.overall_score >= 50 ? "bg-yellow-600" :
                     "bg-red-600"
                   )}>
-                    {interviewData.overall_score?.toFixed(1)}/100
+                    {Number(interviewData.overall_score || 0).toFixed(1)}/100
                   </Badge>
                   <Badge className={cn(
                     "text-white",
@@ -180,31 +168,31 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <p className="text-xs text-gray-600">Technical</p>
                   <p className="text-lg font-bold text-blue-600">
-                    {interviewData.technical_knowledge_score?.toFixed(0)}
+                    {Number(interviewData.technical_knowledge_score || 0).toFixed(0)}
                   </p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg">
                   <p className="text-xs text-gray-600">Communication</p>
                   <p className="text-lg font-bold text-green-600">
-                    {interviewData.communication_score?.toFixed(0)}
+                    {Number(interviewData.communication_score || 0).toFixed(0)}
                   </p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <p className="text-xs text-gray-600">Problem Solving</p>
                   <p className="text-lg font-bold text-purple-600">
-                    {interviewData.problem_solving_score?.toFixed(0)}
+                    {Number(interviewData.problem_solving_score || 0).toFixed(0)}
                   </p>
                 </div>
                 <div className="p-3 bg-indigo-50 rounded-lg">
                   <p className="text-xs text-gray-600">Soft Skills</p>
                   <p className="text-lg font-bold text-indigo-600">
-                    {interviewData.soft_skills_score?.toFixed(0)}
+                    {Number(interviewData.soft_skills_score || 0).toFixed(0)}
                   </p>
                 </div>
                 <div className="p-3 bg-orange-50 rounded-lg">
                   <p className="text-xs text-gray-600">Cultural Fit</p>
                   <p className="text-lg font-bold text-orange-600">
-                    {interviewData.cultural_fit_score?.toFixed(0)}
+                    {Number(interviewData.cultural_fit_score || 0).toFixed(0)}
                   </p>
                 </div>
               </div>
@@ -322,7 +310,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                     {interviewData.retention_probability_percentage && (
                       <p>
                         <strong>Retention Probability:</strong>{" "}
-                        {interviewData.retention_probability_percentage.toFixed(0)}%
+                        {Number(interviewData.retention_probability_percentage || 0).toFixed(0)}%
                       </p>
                     )}
                   </div>

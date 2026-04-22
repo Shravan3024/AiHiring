@@ -9,12 +9,12 @@ const getDashboardStats = async (req, res) => {
     const totalActiveJobs = await Job.count({ where: { status: "ACTIVE" } });
     const totalCandidates = await Candidate.count();
       const pendingApprovals = await Application.count({ where: { status: "HR_REVIEW" } });
-      const aiEvaluationsToday = await Application.count({
-        where: {
-          updatedAt: { [Op.gte]: today },
-          status: ["RESUME_EVALUATED", "TECHNICAL_ROUND_COMPLETED", "INTERVIEW_COMPLETED"],
-        },
-      });
+    const aiEvaluationsToday = await Application.count({
+      where: {
+        updated_at: { [Op.gte]: today },
+        status: ["RESUME_EVALUATED", "TECHNICAL_ROUND_COMPLETED", "INTERVIEW_COMPLETED"],
+      },
+    });
 
     res.json({
       success: true,
@@ -43,8 +43,8 @@ const getHiringVolumeTrend = async (req, res) => {
       months.map(async ({ year, month }) => {
         const start = new Date(year, month, 1);
         const end = new Date(year, month + 1, 1);
-        const applications = await Application.count({ where: { createdAt: { [Op.gte]: start, [Op.lt]: end } } });
-        const hired = await Application.count({ where: { status: "SELECTED", updatedAt: { [Op.gte]: start, [Op.lt]: end } } });
+        const applications = await Application.count({ where: { created_at: { [Op.gte]: start, [Op.lt]: end } } });
+        const hired = await Application.count({ where: { status: "SELECTED", updated_at: { [Op.gte]: start, [Op.lt]: end } } });
         return {
           month: start.toLocaleString("default", { month: "short", year: "2-digit" }),
           applications,

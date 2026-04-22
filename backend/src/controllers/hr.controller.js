@@ -209,18 +209,24 @@ exports.sendOfferLetter = async (req, res) => {
       });
     }
 
-    // Create offer record (assuming Offer model exists)
+    // Create offer record
     try {
       const { Offer } = require("../models");
+      // Delete existing offer if any to avoid duplicates
+      await Offer.destroy({ where: { application_id: applicationId } });
+      
       await Offer.create({
         application_id: applicationId,
         salary: salary || 1000000,
         joining_date: joining_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        designation: designation || application.Job?.title,
+        position_title: designation || application.Job?.title,
         status: "PENDING"
       });
+      console.log("✅ Offer record created for application:", applicationId);
     } catch (e) {
-      console.log("Offer creation skipped - model may not exist");
+      console.error("❌ Offer creation failed:", e.message);
+      // Don't swallow the error if it's important
+      throw new Error("Failed to create offer record in database: " + e.message);
     }
 
     // Update application status

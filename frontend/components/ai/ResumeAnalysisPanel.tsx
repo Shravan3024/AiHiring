@@ -125,7 +125,7 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
                   resumeData.overall_score >= 50 ? "bg-yellow-600" :
                   "bg-red-600"
                 )}>
-                  {resumeData.overall_score?.toFixed(1)}/100
+                  {Number(resumeData.overall_score || 0).toFixed(1)}/100
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -135,14 +135,14 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <p className="text-xs text-gray-600">Overall Score</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {resumeData.overall_score?.toFixed(0)}
+                    {Number(resumeData.overall_score || 0).toFixed(0)}
                   </p>
                 </div>
                 {jobId && (
                   <div className="p-3 bg-purple-50 rounded-lg">
                     <p className="text-xs text-gray-600">JD Match</p>
                     <p className="text-2xl font-bold text-purple-600">
-                      {resumeData.jd_match_score?.toFixed(0)}%
+                      {Number(resumeData.jd_match_score || 0).toFixed(0)}%
                     </p>
                   </div>
                 )}

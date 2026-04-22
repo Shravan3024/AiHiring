@@ -128,7 +128,7 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
                         candidate.resume_score >= 50 ? "text-yellow-600" :
                         "text-red-600"
                       )}>
-                        {candidate.resume_score?.toFixed(1) || "—"}
+                        {candidate.resume_score ? Number(candidate.resume_score).toFixed(1) : "—"}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
@@ -138,7 +138,7 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
                         candidate.technical_score >= 50 ? "text-yellow-600" :
                         "text-red-600"
                       )}>
-                        {candidate.technical_score?.toFixed(1) || "—"}
+                        {candidate.technical_score ? Number(candidate.technical_score).toFixed(1) : "—"}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
@@ -148,12 +148,12 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
                         candidate.interview_score >= 50 ? "text-yellow-600" :
                         "text-red-600"
                       )}>
-                        {candidate.interview_score?.toFixed(1) || "—"}
+                        {candidate.interview_score ? Number(candidate.interview_score).toFixed(1) : "—"}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
                       <span className="font-bold text-lg text-blue-600">
-                        {candidate.final_score?.toFixed(1) || "—"}
+                        {candidate.final_score ? Number(candidate.final_score).toFixed(1) : "—"}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
@@ -259,7 +259,7 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
                     candidate.final_score >= 50 ? "bg-yellow-600" :
                     "bg-red-600"
                   )}>
-                    {candidate.final_score?.toFixed(1)}/100
+                    {Number(candidate.final_score || 0).toFixed(1)}/100
                   </Badge>
                   {getStatusBadge(candidate.ai_decision)}
                 </div>
