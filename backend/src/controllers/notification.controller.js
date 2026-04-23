@@ -1,14 +1,6 @@
 const { NotificationQueue, Notification, Candidate } = require("../models");
-const nodemailer = require("nodemailer");
+const { sendNotificationEmail } = require("../services/email.service");
 
-// Email configuration
-const emailTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER || "your-email@gmail.com",
-    pass: process.env.EMAIL_PASSWORD || "your-app-password"
-  }
-});
 
 /**
  * GET HR NOTIFICATIONS (Old system)
@@ -269,34 +261,7 @@ exports.sendBulkNotifications = async (req, res) => {
   }
 };
 
-/**
- * Helper function to send notification email
- */
-async function sendNotificationEmail(email, title, message, actionUrl) {
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER || "noreply@maskpolymers.com",
-      to: email,
-      subject: `Mask Polymers: ${title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2196F3;">${title}</h2>
-          <p>${message}</p>
-          ${actionUrl ? `<p><a href="${actionUrl}" style="display: inline-block; padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px;">View Details</a></p>` : ''}
-          <hr style="border: 1px solid #ddd;">
-          <p><small>You received this notification because of your application with Mask Polymers.</small></p>
-        </div>
-      `
-    };
 
-    await emailTransporter.sendMail(mailOptions);
-    console.log(`Notification email sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error("Email send error:", error);
-    return false;
-  }
-}
 
 /**
  * NOTIFICATION TEMPLATES

@@ -1,4 +1,5 @@
-const { Offer, Application, Notification, Job } = require("../models");
+const { Offer, Application, Notification, Job, Candidate, User } = require("../models");
+const { sendOfferLetterEmail } = require("../services/email.service");
 
 /* =============================
    HR CREATES OFFER
@@ -7,18 +8,51 @@ exports.createOffer = async (req, res) => {
   try {
     const { application_id, salary, joining_date, position_title, offer_letter_content, expires_at, benefits } = req.body;
 
-    const application = await Application.findByPk(application_id);
+    const application = await Application.findByPk(application_id, {
+      include: [{ model: Candidate, include: [User] }, Job]
+    });
 
     if (!application) {
       return res.status(404).json({ message: "Application not found" });
+    }
+
+    let finalContent = offer_letter_content;
+    let finalPositionTitle = position_title || application.Job?.title || "Position";
+    if (!finalContent) {
+      const { OfferTemplate } = require("../models");
+      let templateStr = `Dear {{candidateName}},\n\nWe are pleased to offer you the position of {{jobTitle}}.\n\nSalary: {{salary}}\nStart Date: {{startDate}}\n\nPlease confirm your acceptance by {{deadline}}.\n\nBest regards,\nHR Department`;
+      if (OfferTemplate) {
+        const t = await OfferTemplate.findOne({ order: [["createdAt", "DESC"]] });
+        if (t && t.templateContent) {
+           try {
+              const parsed = JSON.parse(t.templateContent);
+              if (parsed.body) templateStr = parsed.body;
+           } catch(e){}
+        }
+      }
+      
+      const cName = application.Candidate?.User?.name || "Candidate";
+      const sDate = joining_date ? new Date(joining_date).toLocaleDateString() : "TBD";
+      const dLine = expires_at ? new Date(expires_at).toLocaleDateString() : new Date(Date.now() + 7*24*60*60*1000).toLocaleDateString();
+      const hrName = req.user?.name || "HR Manager";
+
+      finalContent = templateStr
+         .replace(/{{candidateName}}/g, cName)
+         .replace(/{{jobTitle}}/g, finalPositionTitle)
+         .replace(/{{salary}}/g, salary || "TBD")
+         .replace(/{{startDate}}/g, sDate)
+         .replace(/{{deadline}}/g, dLine)
+         .replace(/{{hrName}}/g, hrName)
+         .replace(/{{HR Name}}/g, hrName)
+         .replace(/\n/g, '<br/>');
     }
 
     const offer = await Offer.create({
       application_id,
       salary,
       joining_date,
-      position_title,
-      offer_letter_content,
+      position_title: finalPositionTitle,
+      offer_letter_content: finalContent,
       expires_at,
       benefits,
       status: "PENDING"
@@ -27,12 +61,24 @@ exports.createOffer = async (req, res) => {
     application.status = "OFFERED";
     await application.save();
 
+    // Send Real-time Email
+    if (application.Candidate?.User?.email) {
+      await sendOfferLetterEmail(
+        application.Candidate.User.email,
+        application.Candidate.User.name,
+        position_title || application.Job?.title || "Position",
+        salary,
+        joining_date
+      );
+    }
+
     await Notification.create({
       role: "CANDIDATE",
       message: "You have received a job offer 🎉"
     });
 
-    res.json({ message: "Offer created", offer });
+    res.json({ message: "Offer created and email sent", offer });
+
 
   } catch (err) {
     res.status(500).json({ error: err.message });

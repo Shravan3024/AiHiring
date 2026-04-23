@@ -1,45 +1,9 @@
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
+const { sendOTPEmail } = require("../services/email.service");
 const { User, Candidate, CandidateSession } = require("../models");
 const { generateToken, generateRefreshToken } = require("../utils/jwt");
 const crypto = require("crypto");
 
-// Email configuration (use environment variables in production)
-const emailTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER || "your-email@gmail.com",
-    pass: process.env.EMAIL_PASSWORD || "your-app-password"
-  }
-});
-
-/**
- * Send OTP via email
- */
-const sendOTPEmail = async (email, otp) => {
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER || "noreply@maskpolymers.com",
-      to: email,
-      subject: "Your Mask Polymers OTP - Email Verification",
-      html: `
-        <h2>Email Verification</h2>
-        <p>Your One-Time Password (OTP) is:</p>
-        <h1 style="color: #2196F3; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-        <p>This OTP will expire in 10 minutes.</p>
-        <p>Do not share this OTP with anyone.</p>
-        <hr>
-        <p><small>If you didn't request this OTP, please ignore this email.</small></p>
-      `
-    };
-    await emailTransporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error("Email send error:", error);
-    return false;
-  }
-};
 
 /**
  * Generate device fingerprint from user agent

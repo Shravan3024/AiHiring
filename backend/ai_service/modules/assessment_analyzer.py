@@ -41,7 +41,7 @@ class AssessmentAnalyzer:
             raise ValueError("GOOGLE_API_KEY not configured in environment")
         
         self.client = genai.Client(api_key=api_key)
-        self.model = Config.GENAI_MODEL or "gemini-1.5-flash"
+        self.model = Config.GENAI_MODEL or "gemini-2.5-flash"
         logger.info(f"AssessmentAnalyzer initialized with model: {self.model}")
     
     def analyze_coding_solution(self, code: str, problem_description: str) -> Dict[str, Any]:

@@ -25,7 +25,7 @@ class SummaryGenerator:
             raise ValueError("GOOGLE_API_KEY not configured in environment")
         
         self.client = genai.Client(api_key=api_key)
-        self.model = Config.GENAI_MODEL or "gemini-1.5-flash"
+        self.model = Config.GENAI_MODEL or "gemini-2.5-flash"
         logger.info(f"SummaryGenerator initialized with model: {self.model}")
     
     def generate_resume_summary(self, parsed_resume: Dict[str, Any]) -> Dict[str, Any]:

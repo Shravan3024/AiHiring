@@ -15,7 +15,7 @@ class Config:
     
     # Google Generative AI Configuration
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
-    GENAI_MODEL = os.getenv('GENAI_MODEL', 'gemini-1.5-flash')
+    GENAI_MODEL = os.getenv('GENAI_MODEL', 'gemini-2.5-flash')
     
     # Flask Configuration
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')

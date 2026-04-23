@@ -132,7 +132,7 @@ module.exports = (sequelize) => {
       },
       ai_model_used: {
         type: DataTypes.STRING,
-        defaultValue: "gemini-1.5-flash-latest",
+        defaultValue: "gemini-2.5-flash-latest",
       },
       analysis_timestamp: {
         type: DataTypes.DATE,

@@ -346,7 +346,12 @@ exports.startInterviewPhase5 = async (req, res) => {
       success: true,
       interview_session_id: interviewSession.id,
       status: 'IN_PROGRESS',
-      current_question: finalQuestions[0],
+      current_question: {
+        id: finalQuestions[0].questionId,
+        question: finalQuestions[0].question,
+        category: finalQuestions[0].category,
+        difficulty: finalQuestions[0].difficulty
+      },
       question_number: 1,
       started_at: interviewSession.started_at,
       expires_at: new Date(interviewSession.started_at.getTime() + INTERVIEW_CONFIG.DURATION_MINUTES * 60 * 1000)
@@ -415,7 +420,7 @@ exports.submitResponsePhase5 = async (req, res) => {
       );
     }
 
-    const storedQuestions = interviewSession.questions_asked || [];
+    const storedQuestions = [...(interviewSession.questions_asked || [])];
     const currentStoredQ = storedQuestions.find(q => q.id === question_id) || {};
     const expectedAnswer = currentStoredQ.expectedAnswer || "";
 
@@ -446,6 +451,7 @@ exports.submitResponsePhase5 = async (req, res) => {
     }
     
     const questionsAsked = storedQuestions;
+    interviewSession.changed('questions_asked', true);
 
     const isLastQuestion = question_number >= INTERVIEW_CONFIG.TOTAL_QUESTIONS;
 
@@ -814,7 +820,7 @@ const scoringService = require('../services/scoring.service');
  */
 async function runGeminiInterviewAnalysis(questionsAsked) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || 'gemini-2.5-flash' });
 
   // 1. Calculate ML Validation Score (Cosine Similarity)
   let totalCosine = 0;

@@ -1,17 +1,24 @@
 const nodemailer = require("nodemailer");
 
+// Use EMAIL_PASS as per .env and trim to avoid whitespace issues
+const emailUser = (process.env.EMAIL_USER || "").trim();
+const emailPass = (process.env.EMAIL_PASS || "").trim();
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // use SSL
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: emailUser,
+    pass: emailPass,
   },
 });
+
 
 exports.sendOTPEmail = async (to, otp) => {
   try {
     await transporter.sendMail({
-      from: `"Mask Polymers" <${process.env.EMAIL_USER}>`,
+      from: `"Mask Polymers" <${emailUser}>`,
       to,
       subject: "Your Mask Polymers verification code",
       html: `
@@ -34,19 +41,67 @@ exports.sendOTPEmail = async (to, otp) => {
         </div>
       `,
     });
-
     console.log("✅ OTP email sent to:", to);
-
+    return true;
   } catch (error) {
     console.error("❌ Email sending failed:", error.message);
-    throw new Error("Email service failed. Check Gmail app password.");
+    return false;
+  }
+};
+
+exports.sendOfferLetterEmail = async (to, name, position, salary, joiningDate) => {
+  try {
+    await transporter.sendMail({
+      from: `"Mask Polymers HR" <${emailUser}>`,
+      to,
+      subject: `Job Offer: ${position} at Mask Polymers`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+          <div style="background:#10b981;padding:40px;text-align:center;color:#fff;">
+            <h1 style="margin:0;font-size:28px;">Congratulations!</h1>
+            <p style="margin:8px 0 0;opacity:0.9;">We are excited to offer you a position</p>
+          </div>
+          <div style="padding:40px;">
+            <h2 style="color:#111827;margin:0 0 20px;">Hello ${name},</h2>
+            <p style="color:#374151;font-size:16px;line-height:1.6;">We are thrilled to formally offer you the position of <strong>${position}</strong> at Mask Polymers.</p>
+            
+            <div style="background:#f9fafb;padding:24px;border-radius:8px;margin:24px 0;">
+              <h3 style="margin:0 0 16px;font-size:14px;text-transform:uppercase;color:#6b7280;letter-spacing:1px;">Offer Details</h3>
+              <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                  <td style="padding:8px 0;color:#6b7280;">Position:</td>
+                  <td style="padding:8px 0;color:#111827;font-weight:600;text-align:right;">${position}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;color:#6b7280;">Joining Date:</td>
+                  <td style="padding:8px 0;color:#111827;font-weight:600;text-align:right;">${new Date(joiningDate).toLocaleDateString()}</td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="color:#374151;font-size:16px;line-height:1.6;">Please log in to our candidate portal to review the full offer letter and benefits package.</p>
+            
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/candidate/offers" style="background:#10b981;color:#fff;padding:14px 28px;text-decoration:none;border-radius:6px;font-weight:600;display:inline-block;">View Full Offer</a>
+            </div>
+
+            <p style="color:#6b7280;font-size:14px;margin-top:40px;">Best regards,<br/>The Mask Polymers HR Team</p>
+          </div>
+        </div>
+      `,
+    });
+    console.log("✅ Offer email sent to:", to);
+    return true;
+  } catch (error) {
+    console.error("❌ Offer email failed:", error.message);
+    return false;
   }
 };
 
 exports.sendRejectionEmail = async (to, name, jobTitle) => {
   try {
     await transporter.sendMail({
-      from: `"Mask Polymers HR" <${process.env.EMAIL_USER}>`,
+      from: `"Mask Polymers HR" <${emailUser}>`,
       to,
       subject: `Application Update - ${jobTitle} - Mask Polymers`,
       html: `
@@ -61,15 +116,17 @@ exports.sendRejectionEmail = async (to, name, jobTitle) => {
       `,
     });
     console.log("✅ Rejection email sent to:", to);
+    return true;
   } catch (error) {
     console.error("❌ Rejection email failed:", error.message);
+    return false;
   }
 };
 
 exports.sendRecommendationEmail = async (to, name, jobTitle, score) => {
   try {
     await transporter.sendMail({
-      from: `"Mask Polymers AI" <${process.env.EMAIL_USER}>`,
+      from: `"Mask Polymers AI" <${emailUser}>`,
       to,
       subject: `Excellent News! Next Steps for ${jobTitle}`,
       html: `
@@ -82,7 +139,33 @@ exports.sendRecommendationEmail = async (to, name, jobTitle, score) => {
       `,
     });
     console.log("✅ Recommendation email sent to:", to);
+    return true;
   } catch (error) {
     console.error("❌ Recommendation email failed:", error.message);
+    return false;
+  }
+};
+
+exports.sendNotificationEmail = async (to, title, message, actionUrl) => {
+  try {
+    await transporter.sendMail({
+      from: `"Mask Polymers" <${emailUser}>`,
+      to,
+      subject: `Mask Polymers: ${title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">${title}</h2>
+          <p>${message}</p>
+          ${actionUrl ? `<p><a href="${actionUrl}" style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 5px;">View Details</a></p>` : ''}
+          <hr style="border: 1px solid #ddd;">
+          <p><small>You received this notification because of your application with Mask Polymers.</small></p>
+        </div>
+      `
+    });
+    console.log("✅ Notification email sent to:", to);
+    return true;
+  } catch (error) {
+    console.error("❌ Notification email failed:", error.message);
+    return false;
   }
 };

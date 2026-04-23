@@ -76,7 +76,7 @@ exports.parseResumeWithAI = async (req, res) => {
       jd_match_score: 0, 
       total_years_experience: parsedData.total_years_experience,
       highest_qualification: parsedData.highest_qualification,
-      ai_model_used: 'gemini-1.5-flash-hybrid'
+      ai_model_used: 'gemini-2.5-flash-hybrid'
     });
 
     // JD matching if jobId provided
@@ -212,7 +212,7 @@ exports.analyzeCodingAssessment = async (req, res) => {
       estimated_years_experience: analysis.estimated_experience_years,
       detailed_feedback: JSON.stringify(analysis),
       follow_up_questions: analysis.recommendations,
-      ai_model_used: 'gemini-1.5-flash-hybrid'
+      ai_model_used: 'gemini-2.5-flash-hybrid'
     });
 
     // Update application with hybrid technical score
@@ -307,7 +307,7 @@ exports.analyzeMCQAssessment = async (req, res) => {
       improvement_areas: analysis.learning_recommendations || [],
       estimated_skill_level: analysis.estimated_skill_level,
       detailed_feedback: JSON.stringify(analysis),
-      ai_model_used: 'gemini-1.5-flash-hybrid'
+      ai_model_used: 'gemini-2.5-flash-hybrid'
     });
 
     // Update application with technical score
@@ -419,7 +419,7 @@ exports.analyzeInterview = async (req, res) => {
       hire_recommendation: analysis.recommendation || 'maybe',
       next_round_ready: analysis.overall_assessment?.next_round_readiness || false,
       detailed_evaluation: JSON.stringify(analysis),
-      ai_model_used: 'gemini-1.5-flash-hybrid'
+      ai_model_used: 'gemini-2.5-flash-hybrid'
     });
 
     // Update application and core interview record
@@ -563,7 +563,7 @@ exports.makeFinalAIDecision = async (req, res) => {
       decision_reason: decisionReason,
       confidence_percentage: Math.round(scoringResult.confidence * 100),
       summary: `Score: ${finalScore}% | Method: ${scoringResult.methodUsed}. ${scoringResult.insights.reasoning}`,
-      ai_model_used: isAiAvailable ? 'gemini-1.5-flash-hybrid' : 'ml-regression-fallback'
+      ai_model_used: isAiAvailable ? 'gemini-2.5-flash-hybrid' : 'ml-regression-fallback'
     });
 
     // Update application status based on decision

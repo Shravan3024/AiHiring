@@ -6,7 +6,8 @@ const scoringService = require('./scoring.service');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5000';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || "gemini-2.5-flash" });
+
 
 const aiServiceClient = axios.create({
   baseURL: AI_SERVICE_URL,

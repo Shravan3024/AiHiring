@@ -320,7 +320,12 @@ export default function CandidateInterview() {
     };
     recognition.onerror = (e: any) => {
       if (e.error === 'no-speech') return;
-      console.error("Audio Processing Error:", e.error);
+      console.warn("Audio Processing Warning:", e.error);
+      if (e.error === 'network') {
+         toast.warning("Network instability detected. Audio capture paused. Please click the microphone again to resume.");
+      } else if (e.error === 'not-allowed') {
+         toast.error("Microphone access denied.");
+      }
       setListening(false);
     };
     recognition.onend = () => { if (listening) { try { recognition.start(); } catch (_) { setListening(false); } } };
