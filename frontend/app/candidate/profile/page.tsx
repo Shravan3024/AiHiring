@@ -65,12 +65,12 @@ export default function CandidateProfilePage() {
         return {
           education: isDefault(prev.education) ? (c.education === "Not Provided" ? "" : c.education) : prev.education,
           specialization: isDefault(prev.specialization) ? (c.specialization === "Not Provided" ? "" : c.specialization) : prev.specialization,
-          experience_years: isDefault(prev.experience_years) ? (c.experience_years || 0) : prev.experience_years,
+          experience_years: isDefault(prev.experience_years) ? (Number(c.experience_years) || 0) : prev.experience_years,
           phone: isDefault(prev.phone) ? (c.phone || "") : prev.phone,
           location: isDefault(prev.location) ? (c.location || "") : prev.location,
           skills: isDefault(prev.skills) ? (c.skills || []) : prev.skills,
-          cgpa: isDefault(prev.cgpa) ? (c.cgpa || 0) : prev.cgpa,
-          year_of_passout: isDefault(prev.year_of_passout) ? (c.year_of_passout || 0) : prev.year_of_passout,
+          cgpa: isDefault(prev.cgpa) ? (Number(c.cgpa) || 0) : prev.cgpa,
+          year_of_passout: isDefault(prev.year_of_passout) ? (Number(c.year_of_passout) || 0) : prev.year_of_passout,
           summary: isDefault(prev.summary) ? (c.summary || "") : prev.summary
         };
       });
@@ -86,8 +86,8 @@ export default function CandidateProfilePage() {
       education: c.education !== "Not Provided" ? c.education : f.education,
       specialization: c.specialization !== "Not Provided" ? c.specialization : f.specialization,
       skills: c.skills?.length > 0 ? c.skills : f.skills,
-      cgpa: c.cgpa || f.cgpa,
-      year_of_passout: c.year_of_passout || f.year_of_passout,
+      cgpa: c.cgpa ? Number(c.cgpa) : f.cgpa,
+      year_of_passout: c.year_of_passout ? Number(c.year_of_passout) : f.year_of_passout,
       summary: c.summary || f.summary
     }));
     toast.success("Applied suggestions from resume", {
@@ -250,8 +250,9 @@ export default function CandidateProfilePage() {
                     <Input 
                       type="number" 
                       step="0.01"
-                      value={form.cgpa} 
+                      value={form.cgpa === 0 ? "" : form.cgpa} 
                       onChange={e => setForm(f => ({ ...f, cgpa: parseFloat(e.target.value) || 0 }))}
+                      placeholder="e.g. 8.5"
                       className="h-11 pr-10"
                     />
                     <Trophy className="absolute right-3 top-3 w-4 h-4 text-gray-300" />
@@ -262,8 +263,9 @@ export default function CandidateProfilePage() {
                   <div className="relative">
                     <Input 
                       type="number" 
-                      value={form.year_of_passout} 
+                      value={form.year_of_passout === 0 ? "" : form.year_of_passout} 
                       onChange={e => setForm(f => ({ ...f, year_of_passout: parseInt(e.target.value) || 0 }))}
+                      placeholder="YYYY"
                       className="h-11 pr-10"
                     />
                     <Calendar className="absolute right-3 top-3 w-4 h-4 text-gray-300" />
@@ -286,8 +288,9 @@ export default function CandidateProfilePage() {
                 <div className="relative">
                   <Input 
                     type="number" 
-                    value={form.experience_years} 
+                    value={form.experience_years === 0 ? "" : form.experience_years} 
                     onChange={e => setForm(f => ({ ...f, experience_years: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
                     className="h-11 pr-10"
                   />
                   <Briefcase className="absolute right-3 top-3 w-4 h-4 text-gray-300" />
@@ -311,7 +314,7 @@ export default function CandidateProfilePage() {
                   <Input 
                     value={form.phone} 
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="Enter Your Phone Number"
                     className="h-11 pl-10"
                   />
                   <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-300" />

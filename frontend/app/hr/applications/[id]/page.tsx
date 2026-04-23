@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import api, { hrApi } from "@/lib/api";
 import { generateDossierPDF } from "@/lib/utils/generateDossierPDF";
-import { Download, FileText, BookOpen, Mic, CheckCircle, Loader2, AlertCircle, MessageSquare, Mail, Phone, MapPin, ShieldAlert, MousePointer2 } from "lucide-react";
+import { Download, FileText, BookOpen, Mic, CheckCircle, Loader2, AlertCircle, MessageSquare, Mail, Phone, MapPin, ShieldAlert, MousePointer2, Clock, XCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface ApplicationDetails {
@@ -71,6 +71,18 @@ export default function HRApplicationDetailsPage() {
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Parsing failed");
+    }
+  });
+
+  const makeDecisionMutation = useMutation({
+    mutationFn: async ({ decision, reason }: { decision: string; reason: string }) => 
+      (await hrApi.makeDecision(String(applicationId), { decision, reason, comments: "" })).data,
+    onSuccess: (res) => {
+      toast.success(res.message || "Decision recorded successfully");
+      queryClient.invalidateQueries({ queryKey: ["hr-application", applicationId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Decision failed");
     }
   });
 
@@ -321,39 +333,112 @@ export default function HRApplicationDetailsPage() {
         </Card>
 
         {/* HR Actions */}
-        <Card className="bg-gray-50">
+        <Card className="bg-gray-50 border-t-4 border-t-blue-600">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              HR Actions
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+              HR Operational Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-gray-600">Send communication to candidate based on AI recommendation</p>
-            <div className="flex gap-3 flex-wrap">
-              {appData.status === "RECOMMENDED_BY_AI" && (
-                <Button className="bg-green-600 hover:bg-green-700">
-                  Send Offer Letter
-                </Button>
-              )}
-              {appData.status === "PROCEED_TO_HR" && (
-                <>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    Schedule Interview
+          <CardContent className="space-y-6">
+            
+            {/* Manual Decision Logic for Initial Stages */}
+            {['APPLIED', 'SCREENING', 'HR_REVIEW', 'INTERVIEW_UNLOCKED', 'ASSESSMENT_UNLOCKED'].includes(appData.status) && (
+              <div className="p-6 bg-white rounded-2xl border border-blue-100 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-800">Manual Review & Pipeline Movement</h4>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Awaiting HR Decision</Badge>
+                </div>
+                <p className="text-xs text-slate-500">Select an action to move this candidate to the next stage of the recruitment funnel.</p>
+                
+                <div className="flex gap-3 flex-wrap pt-2">
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'SEND_TO_ASSESSMENT', reason: 'Approved for technical screening' })}
+                    disabled={makeDecisionMutation.isPending}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-xs font-bold gap-2"
+                  >
+                    <BookOpen className="w-4 h-4" /> Approve for Assessment
                   </Button>
-                  <Button variant="outline">
-                    Request Additional Info
+                  
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'APPROVE_FOR_INTERVIEW', reason: 'Approved for AI Video Interview' })}
+                    disabled={makeDecisionMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 text-xs font-bold gap-2"
+                  >
+                    <Mic className="w-4 h-4" /> Approve for Interview
                   </Button>
-                </>
-              )}
-              {appData.status === "AUTO_REJECTED" && (
-                <Button variant="outline" className="text-gray-600">
-                  Send Rejection Notice
+
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'REQUEST_RE_ASSESSMENT', reason: 'HR requested a technical re-assessment.' })}
+                    disabled={makeDecisionMutation.isPending}
+                    variant="outline"
+                    className="border-purple-500 text-purple-700 hover:bg-purple-50 text-xs font-bold gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Request Re-assessment
+                  </Button>
+
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'REQUEST_RE_INTERVIEW', reason: 'HR requested a follow-up AI interview.' })}
+                    disabled={makeDecisionMutation.isPending}
+                    variant="outline"
+                    className="border-orange-500 text-orange-700 hover:bg-orange-50 text-xs font-bold gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Request Re-interview
+                  </Button>
+
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'FINAL_SELECTION', reason: 'Candidate selected after full evaluation.' })}
+                    disabled={makeDecisionMutation.isPending}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Final Selection
+                  </Button>
+
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'SEND_OFFER', reason: 'Offer letter dispatched.' })}
+                    disabled={makeDecisionMutation.isPending}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-xs font-bold gap-2"
+                  >
+                    <Mail className="w-4 h-4" /> Send Offer Letter
+                  </Button>
+
+                  <Button 
+                    onClick={() => makeDecisionMutation.mutate({ decision: 'ON_HOLD', reason: 'Placed on hold for further review' })}
+                    disabled={makeDecisionMutation.isPending}
+                    variant="outline"
+                    className="border-amber-500 text-amber-700 hover:bg-amber-50 text-xs font-bold gap-2"
+                  >
+                    <Clock className="w-4 h-4" /> Put on Hold
+                  </Button>
+
+                  <Button 
+                    onClick={() => {
+                      const reason = window.prompt("Reason for rejection:");
+                      if (reason) makeDecisionMutation.mutate({ decision: 'REJECTED', reason });
+                    }}
+                    disabled={makeDecisionMutation.isPending}
+                    variant="outline"
+                    className="border-red-500 text-red-700 hover:bg-red-50 text-xs font-bold gap-2"
+                  >
+                    <XCircle className="w-4 h-4" /> Reject Candidate
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Post-Intelligence Actions */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Intelligence-Based Communication</p>
+              <div className="flex gap-3 flex-wrap">
+                {appData.status === "RECOMMENDED_BY_AI" && (
+                  <Button className="bg-green-600 hover:bg-green-700 text-xs font-bold">
+                    <CheckCircle className="w-4 h-4 mr-2" /> Send Offer Letter
+                  </Button>
+                )}
+                <Button variant="outline" className="text-slate-600 text-xs font-bold">
+                  <MessageSquare className="w-4 h-4 mr-2" /> Add Internal Note
                 </Button>
-              )}
-              <Button variant="outline" className="text-gray-600">
-                Add Internal Note
-              </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -363,13 +448,13 @@ export default function HRApplicationDetailsPage() {
 }
 
 function ProctoringDataWrapper({ applicationId }: { applicationId: number }) {
-  const { data: raw, isLoading } = useQuery({
-    queryKey: ["proctoring-data", applicationId],
-    queryFn: async () => (await api.get(`/ai/analysis/${applicationId}`)).data,
+  const { data: appDetails, isLoading } = useQuery({
+    queryKey: ["hr-application", applicationId],
+    queryFn: async () => (await api.get(`/hr/applications/${applicationId}`)).data,
   });
 
   if (isLoading) return <div className="p-10 text-center text-gray-400">Loading security logs...</div>;
-  const attempts = raw?.data?.assessment_attempts || [];
+  const attempts = appDetails?.data?.assessment_attempts || [];
 
   return <ProctoringReviewPanel attempts={attempts} />;
 }

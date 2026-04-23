@@ -77,6 +77,9 @@ const {
   updateDataRetentionPolicy,
   getSystemHealth: getSystemHealthAudit,
   updateSystemHealth,
+  exportAuditLogs,
+  getAuditStats,
+  triggerAiRetry,
 } = require("../controllers/admin.audit.controller");
 
 const { getNotifications } = require("../controllers/notification.controller");
@@ -132,7 +135,10 @@ router.put("/offer-templates/:templateId", updateOfferTemplate);
 
 // ===================== AUDIT & COMPLIANCE =====================
 router.get("/audit-logs", getAuditLogs);
+router.get("/audit-logs/export", exportAuditLogs);
 router.get("/audit-logs/search", searchAuditLogs);
+router.get("/audit-logs/stats", getAuditStats);
+router.post("/audit-logs/retry-ai", triggerAiRetry);
 router.get("/data-retention-policy", getDataRetentionPolicy);
 router.put("/data-retention-policy", updateDataRetentionPolicy);
 router.get("/system-health", getSystemHealthAudit);

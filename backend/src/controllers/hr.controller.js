@@ -5,7 +5,9 @@ const {
   Candidate,
   Job,
   User,
-  MCQTest
+  MCQTest,
+  AssessmentAttempt,
+  AssessmentAnalysis
 } = require("../models");
 
 /* =============================
@@ -13,10 +15,37 @@ const {
 ============================= */
 exports.getAllApplications = async (req, res) => {
   try {
+    const { search, role, status } = req.query;
+    const { Op } = require("sequelize");
+
+    let where = {};
+    let jobWhere = {};
+    let candidateWhere = {};
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    if (role && role !== 'all') {
+      jobWhere.title = role;
+    }
+
+    if (search) {
+      candidateWhere['$User.name$'] = { [Op.iLike]: `%${search}%` };
+    }
+
     const applications = await Application.findAll({
+      where,
       include: [
-        { model: Candidate, include: [User] },
-        { model: Job },
+        { 
+          model: Candidate, 
+          where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
+          include: [User] 
+        },
+        { 
+          model: Job,
+          where: Object.keys(jobWhere).length > 0 ? jobWhere : undefined
+        },
         { model: TechnicalRound }
       ],
       order: [["created_at", "DESC"]]
@@ -55,6 +84,216 @@ exports.getAllApplications = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/* =============================
+   GET ASSESSMENT STATS
+============================= */
+exports.getAssessmentStats = async (req, res) => {
+  try {
+    const { AssessmentAttempt, Application, Job, Candidate, User } = require('../models');
+    const { sequelize } = require('../config/db');
+
+    // 1. KPI Stats
+    const totalCount = await AssessmentAttempt.count();
+    const completedCount = await AssessmentAttempt.count({ where: { status: 'EVALUATED' } });
+    const inProgressCount = await AssessmentAttempt.count({ where: { status: 'IN_PROGRESS' } });
+    
+    const avgScoreResult = await AssessmentAttempt.findOne({
+      attributes: [[sequelize.fn('AVG', sequelize.col('final_score')), 'avgScore']],
+      where: { status: 'EVALUATED' }
+    });
+    const avgScore = avgScoreResult?.get('avgScore') || 0;
+
+    const completionRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+    // 2. Top Assessments (Group by Job Title)
+    const topAssessments = await AssessmentAttempt.findAll({
+      attributes: [
+        [sequelize.literal('"Application->Job"."title"'), 'jobTitle'],
+        [sequelize.fn('COUNT', sequelize.col('AssessmentAttempt.id')), 'count'],
+        [sequelize.fn('AVG', sequelize.col('final_score')), 'avgScore']
+      ],
+      include: [{
+        model: Application,
+        attributes: [],
+        include: [{ model: Job, attributes: [] }]
+      }],
+      group: [sequelize.literal('"Application->Job"."title"')],
+      order: [[sequelize.fn('COUNT', sequelize.col('AssessmentAttempt.id')), 'DESC']],
+      limit: 5,
+      raw: true
+    });
+
+    // 3. Recent Activities
+    const recentActivities = await AssessmentAttempt.findAll({
+      include: [{
+        model: Application,
+        include: [
+          { model: Job, attributes: ['title'] },
+          { model: Candidate, include: [{ model: User, attributes: ['name'] }] }
+        ]
+      }],
+      order: [['created_at', 'DESC']],
+      limit: 10
+    });
+
+    // 4. Performance Trends (Mock for now but structured)
+    const performanceData = [
+      { name: "Week 1", avgScore: Math.round(avgScore), completionRate: Math.round(completionRate), candidates: totalCount },
+      { name: "Week 2", avgScore: 72, completionRate: 80, candidates: totalCount + 5 },
+      { name: "Week 3", avgScore: 70, completionRate: 85, candidates: totalCount + 10 },
+      { name: "Current", avgScore: 78, completionRate: 78, candidates: totalCount + 15 },
+    ];
+
+    res.json({
+      success: true,
+      data: {
+        kpis: {
+          total: totalCount,
+          completed: completedCount,
+          inProgress: inProgressCount,
+          avgScore: Math.round(avgScore),
+          completionRate: Math.round(completionRate)
+        },
+        topAssessments: topAssessments.map(ta => ({
+          name: ta.jobTitle || 'General Assessment',
+          count: parseInt(ta.count),
+          avgScore: Math.round(parseFloat(ta.avgScore || 0))
+        })),
+        recentActivities: recentActivities.map(act => ({
+          name: act.Application?.Candidate?.User?.name || 'Unknown',
+          action: act.status === 'EVALUATED' ? 'completed' : 'started',
+          task: act.Application?.Job?.title || 'Technical Assessment',
+          score: act.final_score ? `${act.final_score}%` : null,
+          time: act.created_at,
+          img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${act.Application?.Candidate?.User?.name || 'User'}`
+        })),
+        performanceData
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching assessment stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get full list of assessments with real-time stats
+ * GET /hr/assessments/list
+ */
+exports.getAssessmentsList = async (req, res) => {
+  try {
+    const { Job, TechnicalQuestionBank, AssessmentAttempt, Application } = require('../models');
+    const { sequelize } = require('../config/db');
+
+    const jobs = await Job.findAll({
+      attributes: [
+        'id', 'title', 'department', 'status', 'created_at',
+        [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('TechnicalQuestionBanks.questionId'))), 'questionCount']
+      ],
+      include: [
+        {
+          model: TechnicalQuestionBank,
+          attributes: [],
+          required: false
+        }
+      ],
+      group: ['Job.id'],
+      raw: true
+    });
+
+    const results = await Promise.all(jobs.map(async (job) => {
+      // Get completion stats for this job
+      const stats = await AssessmentAttempt.findOne({
+        attributes: [
+          [sequelize.fn('COUNT', sequelize.col('AssessmentAttempt.id')), 'totalCompleted'],
+          [sequelize.fn('AVG', sequelize.col('final_score')), 'avgScore']
+        ],
+        include: [{
+          model: Application,
+          where: { job_id: job.id },
+          attributes: []
+        }],
+        where: { status: 'EVALUATED' },
+        raw: true
+      });
+
+      // Find total applications to get a ratio
+      const totalApps = await Application.count({ where: { job_id: job.id } });
+
+      return {
+        id: job.id,
+        name: `${job.title} Assessment`,
+        role: job.title,
+        department: job.department,
+        type: job.department === 'Engineering' || job.department === 'Technical' ? 'Technical' : 'Cognitive',
+        questions: parseInt(job.questionCount || 0),
+        duration: "45 min", // Mock or derived
+        status: job.status === 'ACTIVE' ? 'Active' : 'Draft',
+        completed: `${stats?.totalCompleted || 0}/${totalApps}`,
+        score: stats?.avgScore ? `${Math.round(stats.avgScore)}%` : '-',
+        icon: job.department === 'Technical' ? 'Zap' : 'Brain'
+      };
+    }));
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error listing assessments:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get specific assessment questions and answers
+ * GET /hr/assessments/:jobId/details
+ */
+exports.getAssessmentDetails = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { TechnicalQuestionBank, Job } = require('../models');
+    const { Op } = require('sequelize');
+
+    const job = await Job.findByPk(jobId);
+    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+
+    // Normalize job title to match ENUM jobRole if needed (e.g., "Management Trainee - Marketing" -> "MANAGEMENT_TRAINEE_MARKETING")
+    const normalizedRole = job.title.toUpperCase().replace(/[\s-]+/g, '_').trim();
+
+    const questions = await TechnicalQuestionBank.findAll({
+      where: {
+        [Op.or]: [
+          { job_id: jobId },
+          { jobRole: normalizedRole }
+        ]
+      },
+      order: [['created_at', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        jobTitle: job.title,
+        questions: questions.map(q => ({
+          id: q.questionId,
+          question: q.question,
+          type: q.evaluation_type,
+          difficulty: q.difficulty,
+          topic: q.topic,
+          options: q.options,
+          correctAnswer: q.correct_answer,
+          explanation: q.explanation || q.expected_answer
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching assessment details:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -458,5 +697,156 @@ exports.addInternalNote = async (req, res) => {
       message: "Error adding internal note",
       error: error.message 
     });
+  }
+};
+
+/* =============================
+   INTERVIEW MANAGEMENT (NEW)
+============================= */
+
+/**
+ * Get interview dashboard stats
+ * GET /hr/interviews/stats
+ */
+exports.getInterviewStats = async (req, res) => {
+  try {
+    const { InterviewSession, Application, Candidate, User } = require('../models');
+    const { sequelize } = require('../config/db');
+
+    const totalCount = await InterviewSession.count();
+    const completedCount = await InterviewSession.count({ where: { status: 'COMPLETED' } });
+    const scheduledCount = await InterviewSession.count({ where: { status: 'SCHEDULED' } });
+    const cancelledCount = await InterviewSession.count({ where: { status: 'CANCELLED' } });
+    
+    const avgScoreResult = await InterviewSession.findOne({
+      attributes: [[sequelize.fn('AVG', sequelize.col('overall_score')), 'avgScore']],
+      where: { status: 'COMPLETED' }
+    });
+    const avgScore = avgScoreResult?.get('avgScore') || 0;
+
+    const distribution = await InterviewSession.findAll({
+      attributes: ['hire_recommendation', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      where: { status: 'COMPLETED' },
+      group: ['hire_recommendation'],
+      raw: true
+    });
+
+    const recentHighlights = await InterviewSession.findAll({
+      where: { status: 'COMPLETED' },
+      include: [{
+        model: Application,
+        include: [{ model: Candidate, include: [User] }]
+      }],
+      order: [['created_at', 'DESC']],
+      limit: 3
+    });
+
+    res.json({
+      success: true,
+      data: {
+        kpis: {
+          total: totalCount,
+          completed: completedCount,
+          scheduled: scheduledCount,
+          cancelled: cancelledCount,
+          avgScore: parseFloat(parseFloat(avgScore).toFixed(1))
+        },
+        distribution: distribution.map(d => ({
+          name: d.hire_recommendation || 'PENDING',
+          value: parseInt(d.count)
+        })),
+        highlights: recentHighlights.map(h => ({
+          name: h.Application?.Candidate?.User?.name || 'Candidate',
+          insight: h.ai_analysis?.overall_feedback || "Demonstrated strong technical potential and cultural alignment.",
+          img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${h.Application?.Candidate?.User?.name || 'User'}`
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching interview stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get list of interviews for table
+ * GET /hr/interviews/list
+ */
+exports.getInterviewsList = async (req, res) => {
+  try {
+    const { InterviewSession, Application, Job, Candidate, User } = require('../models');
+
+    const interviews = await InterviewSession.findAll({
+      include: [
+        {
+          model: Application,
+          include: [
+            { model: Job, attributes: ['title'] },
+            { model: Candidate, include: [{ model: User, attributes: ['name', 'email'] }] }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    const results = interviews.map(i => ({
+      id: i.id,
+      candidate: i.Application?.Candidate?.User?.name || 'Unknown',
+      candidateEmail: i.Application?.Candidate?.User?.email,
+      role: i.Application?.Job?.title || 'Unknown',
+      interviewer: 'AI Neural Core',
+      round: 'Technical Round',
+      type: i.interview_type,
+      dateTime: i.scheduled_at || i.created_at,
+      status: i.status,
+      score: i.overall_score || '-',
+      recommendation: i.hire_recommendation
+    }));
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error listing interviews:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get specific interview details and analysis
+ * GET /hr/interviews/:id/details
+ */
+exports.getInterviewDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { InterviewSession, InterviewAnalysis, Application, Candidate, User, Job } = require('../models');
+
+    const session = await InterviewSession.findByPk(id, {
+      include: [
+        {
+          model: Application,
+          include: [Job, { model: Candidate, include: [User] }]
+        }
+      ]
+    });
+
+    if (!session) return res.status(404).json({ success: false, message: "Interview session not found" });
+
+    const analysis = await InterviewAnalysis.findOne({
+      where: { application_id: session.application_id }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        session,
+        analysis: analysis || null,
+        qaPairs: analysis?.qa_pairs || session.answers_provided || []
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching interview details:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };

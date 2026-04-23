@@ -7,8 +7,9 @@ import logging
 import json
 import re
 from typing import Dict, List, Any, Optional
-from google import genai
+import google.genai as genai
 from google.genai import types
+from utils import strip_markdown
 from dotenv import load_dotenv
 from config import Config
 
@@ -64,7 +65,7 @@ Problem:
 Code:
 {code[:2000]}
 
-Provide detailed analysis in JSON format:
+Provide detailed analysis in JSON format. DO NOT use markdown like asterisks (**). Return plain text only.
 {{
     "correctness_score": 0-100,
     "code_quality_score": 0-100,
@@ -96,7 +97,7 @@ Provide detailed analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_coding_analysis()
             
@@ -162,7 +163,7 @@ Provide analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_mcq_analysis(score_percentage, correct_count, len(questions))
             
@@ -221,7 +222,7 @@ Provide analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_design_analysis()
             
@@ -280,7 +281,7 @@ Provide analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_case_analysis()
             
@@ -304,7 +305,7 @@ Provide analysis in JSON format:
 Assessment Results:
 {json.dumps(assessment_results, indent=2)[:2000]}
 
-Provide report in JSON format:
+Provide report in JSON format. DO NOT use markdown like asterisks (**). Return plain text only.
 {{
     "executive_summary": "Overall assessment summary",
     "competency_matrix": {{"competency": {{"score": 0-100, "level": "advanced|intermediate|basic"}}}},
@@ -331,7 +332,7 @@ Provide report in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_report()
             

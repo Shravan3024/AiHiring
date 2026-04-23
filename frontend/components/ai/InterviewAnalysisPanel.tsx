@@ -15,6 +15,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer,
 } from "recharts";
+import { toast } from "sonner";
 
 interface InterviewAnalysisPanelProps {
   applicationId: number;
@@ -38,23 +39,25 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
       });
       return response.data;
     },
-    onSuccess: (data) => {
-      onAnalysisComplete?.(data.data);
+    onSuccess: () => {
+      toast.success("Interview analyzed successfully.");
+      refetch();
       setTranscript('');
     },
   });
 
-  // Fetch interview analysis
-  const { data: analysis, isLoading } = useQuery({
-    queryKey: ['interview-analysis', applicationId],
+  // Fetch interview analysis from the main application profile
+  const { data: profileRes, isLoading, refetch } = useQuery({
+    queryKey: ['hr-application', applicationId],
     queryFn: async () => {
-      const response = await api.get(`/ai/analysis/${applicationId}`);
+      const response = await api.get(`/hr/applications/${applicationId}`);
       return response.data;
     },
-    refetchInterval: 30000,
   });
 
-  const interviewData = analysis?.data?.interview_analysis;
+  const interviewData = profileRes?.data?.interviewAnalysis;
+  const sessionData = profileRes?.data?.interview_session;
+  const hasSession = !!sessionData?.answers_provided;
 
   // Chart data for performance metrics
   const chartData = interviewData ? [
@@ -77,43 +80,67 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
     <div className="space-y-6">
       {/* Transcript Input */}
       {!interviewData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5 text-blue-600" />
-              Add Interview Transcript
+        <Card className="border-2 border-blue-100 shadow-lg overflow-hidden">
+          <div className="bg-blue-600 p-4 text-white">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Mic className="w-5 h-5" />
+              Interview Evaluation Engine
             </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Interview Transcript
-              </label>
-              <Textarea
-                placeholder="Paste interview transcript here. Format:&#10;Q: Question text&#10;A: Answer text..."
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                rows={8}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Tip: Format with Q: for questions and A: for answers for better analysis
-              </p>
-            </div>
-            <Button
-              onClick={() => analyzeInterview(transcript)}
-              disabled={isPending || !transcript.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              {isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Interview...
-                </>
-              ) : (
-                "Analyze Interview"
-              )}
-            </Button>
+            <p className="text-blue-100 text-xs mt-1">Generate technical insights and performance predictions from candidate responses.</p>
+          </div>
+          <CardContent className="p-6 space-y-6">
+            
+            {hasSession ? (
+              <div className="p-6 bg-blue-50 rounded-2xl border border-blue-200 text-center space-y-4">
+                <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                   <Zap className="w-8 h-8 text-blue-600 fill-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900">AI Interview Session Detected</h4>
+                  <p className="text-sm text-slate-500 max-w-md mx-auto">The candidate has completed the AI Video Interview. We can now run a full semantic analysis on their responses.</p>
+                </div>
+                <Button 
+                  onClick={() => analyzeInterview("")} 
+                  disabled={isPending}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 h-12 rounded-xl font-bold gap-2 shadow-lg"
+                >
+                  {isPending ? <RefreshCw className="animate-spin w-5 h-5" /> : <Brain className="w-5 h-5" />}
+                  Run Comprehensive AI Analysis
+                </Button>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-black uppercase tracking-widest text-slate-500 mb-3">
+                  Manual Transcript Analysis
+                </label>
+                <Textarea
+                  placeholder="Paste interview transcript here. Format:&#10;Q: Question text&#10;A: Answer text..."
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  rows={8}
+                  className="font-mono text-sm bg-slate-50 border-slate-200 rounded-xl focus:ring-blue-500"
+                />
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-[10px] text-gray-500 italic">
+                    Tip: Format with Q: for questions and A: for answers for better analysis.
+                  </p>
+                  <Button
+                    onClick={() => analyzeInterview(transcript)}
+                    disabled={isPending || !transcript.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 font-bold px-6"
+                  >
+                    {isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      "Analyze Transcript"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

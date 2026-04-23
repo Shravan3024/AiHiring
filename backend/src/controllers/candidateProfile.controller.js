@@ -45,7 +45,8 @@ class CandidateProfileController {
         'id', 'candidate_id', 'job_id', 'status', 'resume_score', 
         'technical_score', 'interview_score', 'overall_score', 'hr_decision', 
           'hr_notes', 'summary', 'applied_at', 'created_at', 'updated_at',
-          'experience_years', 'skills', 'cgpa', 'year_of_passout'
+          'experience_years', 'skills', 'cgpa', 'year_of_passout',
+          'final_decision', 'role_recommendation', 'fit_breakdown', 'ai_rationale', 'success_probability'
         ],
         include: [
           { 
@@ -62,13 +63,20 @@ class CandidateProfileController {
           { model: Job,           required: false, attributes: ['id', 'title', 'department'] },
           { 
             model: require('../models').InterviewSession, 
+            as: 'interview_session',
             required: false, 
             attributes: ['id', 'recording_path', 'answers_provided', 'ai_analysis'] 
           },
-          {
+          { 
             model: require('../models').MalpracticeEvent,
             required: false,
             attributes: ['id', 'type', 'severity', 'created_at']
+          },
+          {
+            model: require('../models').AssessmentAttempt,
+            as: 'assessment_attempts',
+            required: false,
+            attributes: ['id', 'assessment_type', 'status', 'final_score', 'structure_score', 'concept_coverage', 'answers', 'ml_score', 'ai_score', 'anti_cheating_data', 'started_at']
           }
         ]
       });
@@ -207,6 +215,13 @@ class CandidateProfileController {
           },
 
           malpracticeEvents: malpractice.map(e => ({ type: e.event_type || e.type, severity: e.severity, timestamp: e.created_at })),
+          
+          final_decision: application.final_decision,
+          role_recommendation: application.role_recommendation,
+          fit_breakdown: application.fit_breakdown,
+          ai_rationale: application.ai_rationale,
+          success_probability: application.success_probability,
+
           internalNotes: notes.map(n => ({
             id: n.id, content: n.content, type: n.noteType,
             author: n.author?.name || 'System', version: n.version,
@@ -238,7 +253,9 @@ class CandidateProfileController {
               reviewer: { name: log.changed_by === 'SYSTEM_AUTO_REJECTION' ? 'System AI' : (log.changed_by ? `User #${log.changed_by}` : 'HR System') },
               timestamp: log.created_at
             })))
-          }
+          },
+          assessment_attempts: application.assessment_attempts || [],
+          interview_session: application.interview_session || null
         }
       });
 
@@ -446,12 +463,15 @@ function buildProsCons({ resumeScore, technicalScore, interviewScore, malpractic
   );
 
   // Only include stages that the candidate has actually attempted
+  const hasResume     = (resumeScore > 0) || !!resumeAnalysis;
   const hasAssessment = (technicalScore > 0) || !!assessmentAnalysis;
   const hasInterview  = (interviewScore  > 0) || !!interviewAnalysis;
 
-  const result = [
-    { stage: 'RESUME_PARSING', overallScore: resumeScore, ...resume },
-  ];
+  const result = [];
+
+  if (hasResume) {
+    result.push({ stage: 'RESUME_PARSING', overallScore: resumeScore, ...resume });
+  }
 
   if (hasAssessment) {
     result.push({ stage: 'TECHNICAL_ASSESSMENT', overallScore: technicalScore, ...assessment });
@@ -461,18 +481,21 @@ function buildProsCons({ resumeScore, technicalScore, interviewScore, malpractic
     result.push({ stage: 'AI_INTERVIEW', overallScore: interviewScore, ...interviewRes });
   }
 
-  result.push({
-    stage: 'FINAL_RECOMMENDATION',
-    overallScore: aggregatedScore,
-    decision: finalRecommendation,
-    pros: finalStrengths,
-    cons: finalWeaknesses,
-    summary: reasoning,
-    whyToHireReasoning: reasoning,
-    confidence: prediction.confidence,
-    method: prediction.methodUsed,
-    isManual: resume.isManual || assessment.isManual || interviewRes.isManual
-  });
+  // Only show final recommendation if at least one evaluation milestone is reached
+  if (result.length > 0) {
+    result.push({
+      stage: 'FINAL_RECOMMENDATION',
+      overallScore: aggregatedScore,
+      decision: prediction.isComplete ? finalRecommendation : 'IN_PROGRESS',
+      pros: finalStrengths,
+      cons: finalWeaknesses,
+      summary: reasoning,
+      whyToHireReasoning: reasoning,
+      confidence: prediction.confidence,
+      method: prediction.methodUsed,
+      isManual: resume.isManual || assessment.isManual || interviewRes.isManual
+    });
+  }
 
   return result;
 }

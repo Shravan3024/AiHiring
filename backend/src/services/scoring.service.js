@@ -178,25 +178,37 @@ class ScoringService {
   generateInsights(features, score, decision) {
     const strengths = [];
     const weaknesses = [];
+    
+    const hasResume = (features.resumeScore > 0);
+    const hasAssessment = (features.assessmentScore > 0);
+    const hasInterview = (features.interviewScore > 0);
 
-    // Score based insights
+    // Score based insights - Only if attempted
     if (features.assessmentScore >= 80) strengths.push('High precision in technical assessments');
     if (features.interviewScore >= 75) strengths.push('Strong communication and contextual clarity');
     if (features.resumeScore >= 70) strengths.push('Structural alignment between resume and JD');
 
-    if (features.assessmentScore < 50) weaknesses.push('Technical proficiency below target threshold');
-    if (features.interviewScore < 50) weaknesses.push('Potential gaps in concept verbalization');
+    if (hasAssessment && features.assessmentScore < 50) weaknesses.push('Technical proficiency below target threshold');
+    if (hasInterview && features.interviewScore < 50) weaknesses.push('Potential gaps in concept verbalization');
     if (features.malpracticeScore > 3) weaknesses.push('Integrity flags: Proctoring violations detected');
 
     // Text based integration if metadata provided
-    if (features.skillMatch && features.skillMatch.matchPercentage < 40) {
+    if (hasResume && features.skillMatch && features.skillMatch.matchPercentage < 40) {
       weaknesses.push(`Missing critical job-related keywords: ${features.skillMatch.missing.slice(0, 3).join(', ')}`);
-    } else if (features.skillMatch && features.skillMatch.matchPercentage >= 70) {
+    } else if (hasResume && features.skillMatch && features.skillMatch.matchPercentage >= 70) {
       strengths.push(`Excellent keyword overlap with job requirements (${features.skillMatch.matchPercentage}%)`);
     }
 
     let reasoning = "";
-    if (decision === 'HIRE') {
+    const isComplete = hasResume && hasAssessment && hasInterview;
+
+    if (!isComplete) {
+      reasoning = `Evaluation in progress. Current performance reflects available data from ${[
+        hasResume ? 'Resume' : '',
+        hasAssessment ? 'Assessment' : '',
+        hasInterview ? 'Interview' : ''
+      ].filter(Boolean).join(', ')}. Final decision requires completion of all stages.`;
+    } else if (decision === 'HIRE') {
       reasoning = `Highly recommended. Performance exceeds the matrix benchmark of ${score}%. Multi-layer evaluation suggests strong readiness.`;
     } else if (decision === 'HOLD') {
       reasoning = `Marginal candidate. Technical or communication scores warrant a manual secondary review for final fit.`;
@@ -204,7 +216,7 @@ class ScoringService {
       reasoning = `Does not meet current operational benchmarks. Critical skill overlaps or performance metrics fell below acceptable limits.`;
     }
 
-    return { strengths, weaknesses, reasoning };
+    return { strengths, weaknesses, reasoning, isComplete };
   }
 }
 

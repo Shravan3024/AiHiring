@@ -1,9 +1,12 @@
 const PDFDocument = require('pdfkit');
+const { Op } = require('sequelize');
 const {
+  sequelize,
   Application, Candidate, User, Job,
   AssessmentAttempt, TechnicalQuestionBank,
   MalpracticeEvent, InterviewSession, InterviewAnalysis,
-  AssessmentAnalysis, ResumeAnalysis, ApplicationStatusLog
+  AssessmentAnalysis, ResumeAnalysis, ApplicationStatusLog,
+  DocumentRecord
 } = require('../models');
 
 // ─────────────────────────────────────────────────────────────────
@@ -183,6 +186,18 @@ exports.generateCandidateReport = async (req, res) => {
     res.setHeader('Content-Disposition',
       `attachment; filename="Assessment_Report_${candidateName.replace(/\s+/g, '_')}_App${applicationId}.pdf"`);
     doc.pipe(res);
+
+    // Save Record to DB (async)
+    const { DocumentRecord } = require('../models');
+    DocumentRecord.create({
+      application_id: applicationId,
+      document_type: 'ASSESSMENT_REPORT',
+      file_name: `Assessment_Report_${candidateName.replace(/\s+/g, '_')}_App${applicationId}.pdf`,
+      file_path: `/reports/assessment/${applicationId}.pdf`,
+      file_size: 1500000, // Estimate
+      file_type: 'application/pdf',
+      generated_at: new Date()
+    }).catch(err => console.error('Failed to save document record:', err));
 
     // ════════════════════════════════════════════════════
     //  PAGE 1 — CANDIDATE SUMMARY
@@ -544,6 +559,18 @@ exports.generateInterviewReport = async (req, res) => {
       `attachment; filename="Interview_Report_${candidateName.replace(/\s+/g, '_')}_App${applicationId}.pdf"`);
     doc.pipe(res);
 
+    // Save Record to DB (async)
+    const { DocumentRecord } = require('../models');
+    DocumentRecord.create({
+      application_id: applicationId,
+      document_type: 'INTERVIEW_TRANSCRIPT',
+      file_name: `Interview_Report_${candidateName.replace(/\s+/g, '_')}_App${applicationId}.pdf`,
+      file_path: `/reports/interview/${applicationId}.pdf`,
+      file_size: 1600000, // Estimate
+      file_type: 'application/pdf',
+      generated_at: new Date()
+    }).catch(err => console.error('Failed to save document record:', err));
+
     // ════════════════════════════════════════════════════
     //  PAGE 1 — CANDIDATE SUMMARY
     // ════════════════════════════════════════════════════
@@ -863,5 +890,157 @@ exports.generateExecutiveReport = async (req, res) => {
   } catch (err) {
     console.error('Executive Report Error:', err);
     res.status(500).json({ error: 'Failed to generate executive report', details: err.message });
+  }
+};
+
+/**
+ * Get system-wide report statistics
+ * GET /hr/reports/stats
+ */
+exports.getReportStats = async (req, res) => {
+  try {
+    const totalGenerated = await DocumentRecord.count();
+    const last30DaysCount = await DocumentRecord.count({
+      where: {
+        created_at: { [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      }
+    });
+
+    const totalDownloaded = await DocumentRecord.sum('view_count');
+    
+    // Type distribution
+    const distribution = await DocumentRecord.findAll({
+      attributes: ['document_type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      group: ['document_type'],
+      raw: true
+    });
+
+    // Storage calculation (mock for now but based on real count)
+    const storageUsed = (totalGenerated * 1.5); // Assume 1.5MB avg
+    const storageLimit = 10240; // 10GB limit
+
+    res.json({
+      success: true,
+      data: {
+        kpis: {
+          totalGenerated,
+          growth: 12.5, // Mock growth for now
+          totalDownloaded: totalDownloaded || 0,
+          downloadGrowth: 8.4,
+          scheduledReports: 0,
+          accuracy: 98
+        },
+        storage: {
+          used: parseFloat(storageUsed.toFixed(1)),
+          total: storageLimit,
+          percent: Math.round((storageUsed / storageLimit) * 100)
+        },
+        distribution: distribution.map(d => ({
+          name: d.document_type,
+          count: parseInt(d.count)
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching report stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get list of all generated reports
+ * GET /hr/reports/list
+ */
+exports.getReportsList = async (req, res) => {
+  try {
+    const records = await DocumentRecord.findAll({
+      include: [
+        {
+          model: Application,
+          include: [
+            { model: Job, attributes: ['title'] },
+            { model: Candidate, include: [{ model: User, attributes: ['name'] }] }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    const results = records.map(r => ({
+      id: r.id,
+      name: r.file_name,
+      type: r.document_type,
+      generatedBy: 'System AI',
+      dateTime: r.created_at,
+      dateRange: 'N/A',
+      format: r.file_type === 'application/pdf' ? 'PDF' : 'XLSX',
+      size: `${(r.file_size / (1024 * 1024)).toFixed(1)} MB`,
+      application_id: r.application_id,
+      candidate: r.Application?.Candidate?.User?.name || 'Unknown'
+    }));
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error listing reports:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get recently downloaded/viewed reports
+ * GET /hr/reports/recent
+ */
+exports.getRecentDownloads = async (req, res) => {
+  try {
+    const recent = await DocumentRecord.findAll({
+      where: {
+        view_count: { [Op.gt]: 0 }
+      },
+      include: [
+        {
+          model: Application,
+          include: [{ model: Candidate, include: [User] }]
+        }
+      ],
+      order: [['viewed_at', 'DESC']],
+      limit: 5
+    });
+
+    res.json({
+      success: true,
+      data: recent.map(r => ({
+        id: r.id,
+        candidate: r.Application?.Candidate?.User?.name || 'Candidate',
+        reportName: r.file_name,
+        timeAgo: r.viewed_at,
+        img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${r.Application?.Candidate?.User?.name || 'User'}`
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching recent downloads:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Track report download/view
+ * POST /hr/reports/:reportId/track
+ */
+exports.trackDownload = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const record = await DocumentRecord.findByPk(reportId);
+    if (record) {
+      record.view_count += 1;
+      record.viewed_at = new Date();
+      await record.save();
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error tracking download:', err);
+    res.status(500).json({ success: false });
   }
 };

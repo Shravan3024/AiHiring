@@ -7,8 +7,9 @@ import logging
 import json
 import re
 from typing import Dict, List, Any, Optional, Tuple
-from google import genai
+import google.genai as genai
 from google.genai import types
+from utils import strip_markdown
 from dotenv import load_dotenv
 from config import Config
 
@@ -106,7 +107,7 @@ class InterviewAnalyzer:
 Question: {question}
 Answer: {answer}
 
-Provide evaluation in JSON format:
+Provide evaluation in JSON format. DO NOT use markdown like asterisks (**) for bolding. Return plain text only.
 {{
     "relevance_score": 0-100,
     "completeness_score": 0-100,
@@ -131,7 +132,7 @@ Provide evaluation in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_answer_analysis()
             
@@ -155,7 +156,7 @@ Provide evaluation in JSON format:
 Interview Assessment:
 {json.dumps(interview_data, indent=2)[:1500]}
 
-Provide prediction in JSON format:
+Provide prediction in JSON format. DO NOT use markdown like asterisks (**). Return plain text only.
 {{
     "predicted_performance": "high|medium|low",
     "confidence_percentage": 0-100,
@@ -181,7 +182,7 @@ Provide prediction in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_prediction()
             
@@ -205,7 +206,7 @@ Provide prediction in JSON format:
 Transcript:
 {transcript[:2000]}
 
-Provide analysis in JSON format:
+Provide analysis in JSON format. DO NOT use markdown like asterisks (**). Return plain text only.
 {{
     "pace": "fast|normal|slow",
     "clarity": "very_clear|clear|somewhat_clear|unclear",
@@ -229,7 +230,7 @@ Provide analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return {}
             

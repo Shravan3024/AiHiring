@@ -222,9 +222,14 @@ const exportAuditLogs = async (req, res) => {
     if (format === "csv") {
       // Simple CSV generation
       const headers = "ID,Type,User,Role,Entity,EntityID,Description,IP,Status,Timestamp\n";
-      const rows = logs.map(l => 
-        `"${l.auditId}","${l.actionType}","${l.userId}","${l.userRole}","${l.entityType}","${l.entityId}","${l.description}","${l.ipAddress}","${l.status}","${l.timestamp}"`
-      ).join("\n");
+      const rows = logs.map(l => {
+        const escape = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
+        return [
+          l.auditId, l.actionType, l.userId, l.userRole, 
+          l.entityType, l.entityId, l.description, 
+          l.ipAddress, l.status, l.timestamp
+        ].map(escape).join(",");
+      }).join("\n");
       
       res.setHeader("Content-Type", "text/csv");
       res.attachment("audit-logs.csv");

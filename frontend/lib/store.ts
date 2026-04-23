@@ -47,6 +47,14 @@ interface UIState {
   theme: "light" | "dark";
   toggleTheme: () => void;
   setTheme: (theme: "light" | "dark") => void;
+  // System Toggles
+  features: {
+    aiScreening: boolean;
+    proctorShield: boolean;
+    autoReject: boolean;
+    smartInterviews: boolean;
+  };
+  toggleFeature: (feature: keyof UIState["features"]) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -54,10 +62,19 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarOpen: true,
       theme: "light",
+      features: {
+        aiScreening: true,
+        proctorShield: true,
+        autoReject: false,
+        smartInterviews: true,
+      },
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleTheme: () => set((s) => ({ theme: s.theme === "light" ? "dark" : "light" })),
       setTheme: (theme) => set({ theme }),
+      toggleFeature: (feature) => set((s) => ({
+        features: { ...s.features, [feature]: !s.features[feature] }
+      })),
     }),
     { name: "ui-storage" }
   )

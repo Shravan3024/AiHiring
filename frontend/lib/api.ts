@@ -101,10 +101,13 @@ export const adminApi = {
 
   // Audit
   getAuditLogs: (params?: object) => api.get("/admin/audit-logs", { params }),
+  exportAuditLogs: (format: string) => api.get("/admin/audit-logs/export", { params: { format }, responseType: 'blob' }),
+  getAuditStats: () => api.get("/admin/audit-logs/stats"),
   searchAuditLogs: (params?: object) => api.get("/admin/audit-logs/search", { params }),
   getDataRetentionPolicy: () => api.get("/admin/data-retention-policy"),
   updateDataRetentionPolicy: (data: object) => api.put("/admin/data-retention-policy", data),
   getSystemHealthAudit: () => api.get("/admin/system-health"),
+  triggerAiRetry: (data: { applicationId: string; taskType: string }) => api.post("/admin/audit-logs/retry-ai", data),
 
   // HR Management
   getHRs: () => api.get("/admin/hrs"),
@@ -136,7 +139,7 @@ export const hrApi = {
   getRejectionReasons: () => api.get("/hr/dashboard/rejection-reasons"),
 
   // Applications / Pipeline
-  getApplications: () => api.get("/hr/applications"),
+  getApplications: (params?: any) => api.get("/hr/applications", { params }),
   getPipeline: (params?: any) => api.get("/hr/pipeline", { params }),
   getCandidateProfile: (applicationId: string) =>
     api.get(`/hr/applications/${applicationId}`),
@@ -187,6 +190,8 @@ export const hrApi = {
 
   getTopCandidates: () =>
     api.get('/hr/dashboard/top-candidates'),
+  getJobs: () =>
+    api.get('/hr/jobs'),
 };
 
 // ==================== MD ====================

@@ -274,16 +274,91 @@ exports.generateAssessmentReport = async (req, res) => {
  */
 exports.analyzeInterview = async (req, res) => {
   try {
-    const { transcript, interviewDetails } = req.body;
+    const { applicationId, transcript, interviewType } = req.body;
+    const { InterviewSession, InterviewAnalysis, Application, Job, Interview } = require('../models');
 
-    if (!transcript) {
+    let finalTranscript = transcript;
+    let qaPairs = [];
+
+    // 1. If transcript missing, try fetching from InterviewSession
+    if (!finalTranscript || finalTranscript.trim() === "") {
+      const session = await InterviewSession.findOne({ 
+        where: { application_id: applicationId },
+        order: [['created_at', 'DESC']]
+      });
+      
+      if (session && session.answers_provided) {
+        qaPairs = session.answers_provided;
+        finalTranscript = qaPairs.map(q => `Q: ${q.question}\nA: ${q.answer}`).join("\n\n");
+      }
+    }
+
+    if (!finalTranscript && qaPairs.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required field: transcript',
+        message: 'No transcript or session data found for analysis.',
       });
     }
 
-    const analysis = await aiService.analyzeInterview(transcript, interviewDetails || {});
+    const application = await Application.findByPk(applicationId, { include: [Job] });
+    if (!application) return res.status(404).json({ success: false, message: "Application not found" });
+
+    // 2. Execute Full AI Analysis
+    const analysis = await aiService.analyzeFullInterview(qaPairs.length > 0 ? qaPairs : finalTranscript, application.Job?.title || "Professional");
+
+    // 3. Save to InterviewAnalysis
+    const [interviewAnalysis, created] = await InterviewAnalysis.findOrCreate({
+      where: { application_id: applicationId },
+      defaults: {
+        transcript: finalTranscript,
+        qa_pairs: qaPairs,
+        overall_score: analysis.overall_interview_score || 50,
+        technical_knowledge_score: analysis.dimension_scores?.technical || 50,
+        communication_score: analysis.dimension_scores?.communication || 50,
+        confidence_level: analysis.dimension_scores?.confidence > 70 ? 'HIGH' : 'MEDIUM',
+        hire_recommendation: analysis.recommendation || 'CONSIDER',
+        detailed_evaluation: analysis.highlights?.summary || "Analysis completed.",
+        ai_model_used: "gemini-2.5-flash"
+      }
+    });
+
+    if (!created) {
+      await interviewAnalysis.update({
+        transcript: finalTranscript,
+        qa_pairs: qaPairs,
+        overall_score: analysis.overall_interview_score || 50,
+        technical_knowledge_score: analysis.dimension_scores?.technical || 50,
+        communication_score: analysis.dimension_scores?.communication || 50,
+        confidence_level: analysis.dimension_scores?.confidence > 70 ? 'HIGH' : 'MEDIUM',
+        hire_recommendation: analysis.recommendation || 'CONSIDER',
+        detailed_evaluation: analysis.highlights?.summary || "Analysis completed."
+      });
+    }
+
+    // 4. Update Application and Interview records
+    await application.update({
+      interview_score: analysis.overall_interview_score || 50,
+      final_decision: analysis.recommendation,
+      role_recommendation: analysis.recommendation,
+      ai_rationale: analysis.highlights?.summary
+    });
+
+    const [interview] = await Interview.findOrCreate({
+      where: { application_id: applicationId },
+      defaults: {
+        ai_score: analysis.overall_interview_score || 50,
+        ai_summary: analysis.highlights?.summary,
+        status: 'COMPLETED'
+      }
+    });
+
+    if (interview) {
+      await interview.update({
+        ai_score: analysis.overall_interview_score || 50,
+        ai_summary: analysis.highlights?.summary,
+        status: 'COMPLETED'
+      });
+    }
 
     return res.status(200).json({
       success: true,

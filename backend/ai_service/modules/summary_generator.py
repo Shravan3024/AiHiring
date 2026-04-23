@@ -7,10 +7,11 @@ import logging
 import json
 import re
 from typing import Dict, List, Any, Optional
-from google import genai
+import google.genai as genai
 from google.genai import types
 from dotenv import load_dotenv
 from config import Config
+from utils import strip_markdown
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ Education: {education}
 Experience: {experience}
 Raw Profile: {parsed_resume.get('raw_text', '')[:2000]}
 
-Provide in JSON format:
+ Provide in JSON format. DO NOT use markdown like asterisks (**) for bolding. Return plain text only.
 {{
     "executive_summary": "Professional 2-3 sentence summary",
     "professional_overview": "Detailed paragraph about candidate",
@@ -77,7 +78,7 @@ Provide in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_summary_response()
             
@@ -100,7 +101,7 @@ Provide in JSON format:
 
 Assessment Data: {json.dumps(assessment_data, indent=2)}
 
-Provide detailed analysis in JSON format:
+ Provide detailed analysis in JSON format. DO NOT use markdown like asterisks (**). Return plain text only.
 {{
     "overall_performance": "excellent|good|average|poor",
     "performance_score": 0-100,
@@ -129,7 +130,7 @@ Provide detailed analysis in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_assessment_response()
             
@@ -159,7 +160,7 @@ Interview Questions & Answers:
 Transcript:
 {transcript[:2000]}
 
-Provide comprehensive evaluation in JSON format:
+ Provide comprehensive evaluation in JSON format. DO NOT use markdown formatting like asterisks (**). Return plain text only.
 {{
     "interview_score": 0-100,
     "performance_rating": "excellent|good|average|poor",
@@ -194,7 +195,7 @@ Provide comprehensive evaluation in JSON format:
             
             json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group())
+                return strip_markdown(json.loads(json_match.group()))
             
             return self._default_interview_response()
             

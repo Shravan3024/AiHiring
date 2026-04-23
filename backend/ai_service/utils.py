@@ -212,3 +212,17 @@ def is_valid_file(file_path: str) -> bool:
 def get_file_ext(file_path: str) -> str:
     """Get file extension"""
     return Path(file_path).suffix.lower()
+
+def strip_markdown(text: Any) -> Any:
+    """
+    Recursively remove markdown formatting (like asterisks) from strings or collections
+    """
+    if isinstance(text, str):
+        # Remove bold/italic asterisks
+        return text.replace('**', '').replace('*', '').strip()
+    elif isinstance(text, list):
+        return [strip_markdown(item) for item in text]
+    elif isinstance(text, dict):
+        return {key: strip_markdown(value) for key, value in text.items()}
+    return text
+

@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from google import genai
+import google.genai as genai
 
 # Load .env from backend directory
 env_path = os.path.join(os.path.dirname(__file__), '../.env')

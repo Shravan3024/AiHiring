@@ -11,11 +11,11 @@ from typing import Dict, List, Any, Optional, Tuple
 import spacy
 import nltk
 from nltk.tokenize import sent_tokenize
-from google import genai
+import google.genai as genai
 from google.genai import types
 from dotenv import load_dotenv
 from config import Config
-from utils import extract_text_from_file, clean_text, extract_email, extract_phone
+from utils import extract_text_from_file, clean_text, extract_email, extract_phone, strip_markdown
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -152,7 +152,9 @@ class ResumeParser:
 
 {text[:3000]}
 
- Provide the following in JSON format (ensure exactly 5 strengths and 5 weaknesses are provided):
+
+ Provide the following in JSON format (ensure exactly 5 strengths and 5 weaknesses are provided). 
+ CRITICAL: DO NOT use any markdown formatting like asterisks (**) or bolding in the text. Return plain text only.
 {{
     "summary": "Brief summary of candidate",
     "strengths": ["Detailed strength 1", "Detailed strength 2", "Detailed strength 3", "Detailed strength 4", "Detailed strength 5"],
@@ -178,8 +180,9 @@ class ResumeParser:
             response_text = response.text
             logger.info(f"Gemini response received: {response_text[:100]}...")
             json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            # Post-process to ensure 5 items
+            # Post-process to ensure 5 items and remove markdown
             result = json.loads(json_match.group()) if json_match else {}
+            result = strip_markdown(result)
             
             # Helper to pad list to 5 items
             def pad_to_5(items, default_prefix):

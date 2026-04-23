@@ -11,7 +11,13 @@ const {
   sendOfferLetter,
   sendRejectionEmail,
   scheduleInterview,
-  addInternalNote
+  addInternalNote,
+  getAssessmentStats,
+  getAssessmentsList,
+  getAssessmentDetails,
+  getInterviewStats,
+  getInterviewsList,
+  getInterviewDetails
 } = require("../controllers/hr.controller");
 
 const HRDashboardController = require("../controllers/hrDashboard.controller");
@@ -19,13 +25,27 @@ const CandidateProfileController = require("../controllers/candidateProfile.cont
 const HRDecisionController = require("../controllers/hrDecision.controller");
 const { getNotifications } = require("../controllers/notification.controller");
 const ReportController = require("../controllers/report.controller");
-const path = require("path");
 const fs = require("fs");
+const { Job } = require("../models");
 
 
 // ===============================
-// LEGACY ROUTES (STABLE)
+// CORE RESOURCES (HR/ADMIN)
 // ===============================
+
+router.get(
+  "/jobs",
+  auth,
+  role(["HR", "ADMIN"]),
+  async (req, res) => {
+    try {
+      const jobs = await Job.findAll({ order: [["title", "ASC"]] });
+      res.json({ success: true, data: jobs });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+);
 
 router.get(
   "/applications",
@@ -135,6 +155,48 @@ router.get(
   auth,
   role(["HR", "ADMIN"]),
   HRDashboardController.getTopCandidates
+);
+
+router.get(
+  "/assessments/stats",
+  auth,
+  role(["HR", "ADMIN"]),
+  getAssessmentStats
+);
+
+router.get(
+  "/assessments/list",
+  auth,
+  role(["HR", "ADMIN"]),
+  getAssessmentsList
+);
+
+router.get(
+  "/assessments/:jobId/details",
+  auth,
+  role(["HR", "ADMIN"]),
+  getAssessmentDetails
+);
+
+router.get(
+  "/interviews/stats",
+  auth,
+  role(["HR", "ADMIN"]),
+  getInterviewStats
+);
+
+router.get(
+  "/interviews/list",
+  auth,
+  role(["HR", "ADMIN"]),
+  getInterviewsList
+);
+
+router.get(
+  "/interviews/:id/details",
+  auth,
+  role(["HR", "ADMIN"]),
+  getInterviewDetails
 );
 
 
@@ -277,6 +339,34 @@ router.get(
   auth,
   role(["HR", "ADMIN"]),
   ReportController.generateInterviewReport
+);
+
+router.get(
+  "/reports/stats",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.getReportStats
+);
+
+router.get(
+  "/reports/list",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.getReportsList
+);
+
+router.get(
+  "/reports/recent",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.getRecentDownloads
+);
+
+router.post(
+  "/reports/:reportId/track",
+  auth,
+  role(["HR", "ADMIN"]),
+  ReportController.trackDownload
 );
 
 router.get(

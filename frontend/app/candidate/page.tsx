@@ -8,7 +8,7 @@ import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, ClipboardList, Video, FileText, CheckCircle, AlertCircle, Search, ChevronRight, Settings, Zap } from "lucide-react";
+import { Briefcase, ClipboardList, Video, FileText, CheckCircle, AlertCircle, Search, ChevronRight, Settings, Zap, User } from "lucide-react";
 
 type CandidateOverview = {
   applications?: Array<{ id?: number; jobId?: { title?: string }; stage?: string; status?: string; applied_at?: string }>;
@@ -72,7 +72,7 @@ export default function CandidateDashboard() {
   const stage = getStage(validApp?.status);
 
   const quickActions = [
-    { label: "My Profile", icon: Settings, href: "/candidate/profile", color: "bg-slate-100 text-slate-600", desc: "Update your details" },
+    { label: "My Profile", icon: User, href: "/candidate/profile", color: "bg-slate-100 text-slate-600", desc: "Update your details" },
     { label: "Application", icon: FileText, href: "/candidate/application", color: "bg-blue-50 text-blue-600", desc: "View status" },
     { label: "Assessment", icon: ClipboardList, href: "/candidate/assessment", color: "bg-purple-50 text-purple-600", desc: "Technical test" },
     { label: "Interview", icon: Video, href: "/candidate/interview", color: "bg-green-50 text-green-600", desc: "Video session" },

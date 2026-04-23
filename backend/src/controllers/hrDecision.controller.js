@@ -25,7 +25,7 @@ class HRDecisionController {
       if (!applicationId || applicationId === 'undefined') {
         return res.status(400).json({ success: false, message: 'applicationId is required' });
       }
-      const VALID = ['APPROVED', 'REJECTED', 'ON_HOLD', 'REQUEST_RE_INTERVIEW', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW', 'REQUEST_RE_ASSESSMENT'];
+      const VALID = ['APPROVED', 'REJECTED', 'ON_HOLD', 'REQUEST_RE_INTERVIEW', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW', 'REQUEST_RE_ASSESSMENT', 'FINAL_SELECTION', 'SEND_OFFER'];
       if (!VALID.includes(decision)) {
         return res.status(400).json({ success: false, message: `Invalid decision. Must be one of: ${VALID.join(', ')}` });
       }
@@ -53,9 +53,11 @@ class HRDecisionController {
         APPROVE_FOR_INTERVIEW: 'INTERVIEW_UNLOCKED',
         REQUEST_RE_INTERVIEW: 'INTERVIEW_UNLOCKED',
         APPROVED:             'SELECTED',
+        FINAL_SELECTION:      'SELECTED',
         REJECTED:             'REJECTED',
         ON_HOLD:              'HR_REVIEW',
         REQUEST_RE_ASSESSMENT: 'ASSESSMENT_UNLOCKED',
+        SEND_OFFER:           'OFFER_SENT',
       };
 
       const newStatus = STATUS_MAP[decision];
@@ -129,6 +131,8 @@ class HRDecisionController {
       if (candidateId) {
         const msgs = {
           APPROVED:             { type: 'OFFER_LETTER_READY', title: 'Great News!', msg: 'Congratulations! You have been selected. Your offer letter will be ready soon.' },
+          FINAL_SELECTION:      { type: 'OFFER_LETTER_READY', title: 'Selected!', msg: 'You have been officially selected for the position. Congratulations!' },
+          SEND_OFFER:           { type: 'OFFER_LETTER_READY', title: 'Offer Letter Sent', msg: 'Your official offer letter has been sent to your email. Please review and respond.' },
           REJECTED:             { type: 'REJECTION', title: 'Application Update', msg: 'Thank you for your time. While we were impressed, we have decided to move forward with other candidates.' },
           ON_HOLD:              { type: 'OTHER', title: 'Application Update', msg: 'Your application is currently on hold/under review.' },
           REQUEST_RE_INTERVIEW: { type: 'INTERVIEW_SCHEDULED', title: 'Interview Follow-up', msg: 'A re-interview has been requested. Please check your schedule.' },
@@ -392,7 +396,12 @@ class HRDecisionController {
     try {
       const { applicationId } = req.params;
       const application = await Application.findByPk(applicationId, {
-        include: [{ model: AssessmentAttempt, where: { assessment_type: 'TECHNICAL' }, required: false }, { model: InterviewSession }, { model: Job }]
+        include: [
+          { model: AssessmentAttempt, where: { assessment_type: 'TECHNICAL' }, required: false },
+          { model: InterviewSession },
+          { model: Job },
+          { model: Candidate, include: [{ model: User }] }
+        ]
       });
 
       if (!application) return res.status(404).json({ error: "Application not found" });
@@ -404,8 +413,11 @@ class HRDecisionController {
         assessmentScore: application.technical_score || 0,
         interviewScore: application.interview_score || 0,
         integrityScore,
-        behavioralScore: application.interview_score || 50
+        behavioralScore: application.interview_score || 50,
+        jobTitle: application.Job?.title,
+        candidateName: application.Candidate?.User?.name
       });
+
 
       await application.update({
         final_decision: aiResponse.decision,

@@ -166,12 +166,13 @@ Application.hasMany(ApplicationStatusLog, { foreignKey: "application_id" });
 ApplicationStatusLog.belongsTo(Application, { foreignKey: "application_id" });
 
 // Application ↔ AssessmentAttempt
-Application.hasMany(AssessmentAttempt, { foreignKey: "application_id" });
+Application.hasMany(AssessmentAttempt, { foreignKey: "application_id", as: "assessment_attempts" });
 AssessmentAttempt.belongsTo(Application, { foreignKey: "application_id" });
 
 // Application ↔ InterviewSession
-Application.hasMany(InterviewSession, { foreignKey: "application_id" });
+Application.hasMany(InterviewSession, { foreignKey: "application_id", as: "interview_sessions" });
 InterviewSession.belongsTo(Application, { foreignKey: "application_id" });
+Application.hasOne(InterviewSession, { foreignKey: "application_id", as: "interview_session" });
 
 // Candidate ↔ CandidateSession
 Candidate.hasMany(CandidateSession, { foreignKey: "candidate_id" });

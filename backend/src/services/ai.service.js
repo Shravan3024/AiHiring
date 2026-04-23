@@ -15,6 +15,20 @@ const aiServiceClient = axios.create({
 });
 
 /**
+ * Global Sanitization: Strips markdown characters (asterisks, etc.) from AI-generated content
+ */
+const sanitizeAIOutput = (obj) => {
+  if (typeof obj === 'string') return obj.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+  if (Array.isArray(obj)) return obj.map(sanitizeAIOutput);
+  if (typeof obj === 'object' && obj !== null) {
+    const newObj = {};
+    for (let key in obj) newObj[key] = sanitizeAIOutput(obj[key]);
+    return newObj;
+  }
+  return obj;
+};
+
+/**
  * Resume parsing integration
  */
 const parseResumeWithAI = async (filePath) => {
@@ -222,9 +236,19 @@ module.exports = {
     `;
     try {
       const result = await model.generateContent(prompt);
-      return JSON.parse(result.response.text());
+      const responseText = result.response.text().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(responseText);
+      return sanitizeAIOutput(parsed);
     } catch (err) {
-      return { score: 50, structure_score: 50, concept_coverage: 50, explanation: "Fallback" };
+      logger.warn(`AI Technical Evaluation Error: ${err.message}. Providing baseline scores.`);
+      return { 
+        score: 50, 
+        structure_score: 50, 
+        concept_coverage: 50, 
+        explanation: "AI analysis encountered an error. Falling back to semantic baseline.",
+        strengths: ["Baseline response provided"],
+        weaknesses: ["AI analysis was interrupted"]
+      };
     }
   },
 
@@ -239,24 +263,80 @@ module.exports = {
     `;
     try {
       const result = await model.generateContent(prompt);
-      return JSON.parse(result.response.text());
+      const responseText = result.response.text().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(responseText);
+      return sanitizeAIOutput(parsed);
     } catch (err) {
-      return { overall_interview_score: 50, highlights: { summary: "Analysis failed" } };
+      logger.warn(`AI Full Interview Analysis Error: ${err.message}`);
+      return { 
+        overall_interview_score: 50, 
+        highlights: { summary: "The AI interview analysis was interrupted. Please review the transcript manually." },
+        dimension_scores: { technical: 50, communication: 50, confidence: 50 }
+      };
     }
   },
 
   /**
    * Module 4: Final Recommendation Engine
+   * Generates the executive hiring decision and role fit analysis
    */
   getFinalCandidateDecision: async (metrics) => {
-    const { assessmentScore, interviewScore, integrityScore, behavioralScore } = metrics;
+    const { 
+        assessmentScore, 
+        interviewScore, 
+        integrityScore, 
+        behavioralScore,
+        jobTitle = "the specified role",
+        candidateName = "this candidate"
+    } = metrics;
+    
     const finalScore = (assessmentScore * 0.4) + (interviewScore * 0.4) + (integrityScore * 0.1) + (behavioralScore * 0.1);
-    const prompt = `Task: Decision for Mask Polymers. Score: ${finalScore}. JSON: { "decision": "", "role_recommendation": "", "fit_breakdown": {}, "reasoning": "", "success_prediction_percentage": 0 }`;
+    
+    const prompt = `
+      Task: Generate Final Hiring Decision for Mask Polymers Recruitment System.
+      Role: ${jobTitle}
+      Candidate: ${candidateName}
+      
+      Performance Metrics:
+      - Technical Assessment Score: ${assessmentScore}/100
+      - AI Interview Performance: ${interviewScore}/100
+      - Integrity/Security Score: ${integrityScore}/100
+      - Behavioral/Cultural Score: ${behavioralScore}/100
+      - Calculated Weighted Score: ${Math.round(finalScore)}/100
+      
+      Provide a comprehensive hiring recommendation in JSON format.
+      CRITICAL: DO NOT use markdown like asterisks (**) for bolding. Return plain text only.
+      
+      Required JSON Schema:
+      {
+        "decision": "Strong Hire | Hire | Borderline | Reject",
+        "role_recommendation": "A detailed 1-2 sentence recommendation on which specific capacity or sub-role this candidate fits best within ${jobTitle}.",
+        "fit_breakdown": {
+          "technical": 0-100,
+          "communication": 0-100,
+          "leadership": 0-100
+        },
+        "reasoning": "A professional executive rationale for the decision based on the provided metrics.",
+        "success_prediction_percentage": 0-100
+      }
+    `;
+
     try {
       const result = await model.generateContent(prompt);
-      return { ...JSON.parse(result.response.text()), final_score: finalScore };
+      const responseText = result.response.text().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(responseText);
+      
+      return { ...sanitizeAIOutput(parsed), final_score: finalScore };
     } catch (err) {
-      return { decision: "Borderline", final_score: finalScore };
+      logger.error(`[AI Decision Core] Execution Error: ${err.message}`);
+      return { 
+        decision: "Borderline", 
+        role_recommendation: "System requires manual HR review due to analysis error.",
+        fit_breakdown: { technical: assessmentScore, communication: interviewScore, leadership: 50 },
+        reasoning: "The AI decision core encountered a processing error. Please review scores manually.",
+        success_prediction_percentage: 50,
+        final_score: finalScore 
+      };
     }
   }
 };

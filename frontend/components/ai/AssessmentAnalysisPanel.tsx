@@ -22,7 +22,7 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
   });
 
   // Accessing assessment attempts via relationships or data mapping
-  const assessmentData = analysisRes?.data?.AssessmentAttempts || [];
+  const assessmentData = analysisRes?.data?.assessment_attempts || [];
 
   return (
     <div className="space-y-6">
@@ -94,6 +94,13 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                         description="Measures breadth of technical nuances addressed in responses."
                         scheme="emerald"
                       />
+                      <MetricCard 
+                        label="Semantic Match Engine" 
+                        score={attempt.ml_score} 
+                        icon={<Scale className="w-5 h-5 text-amber-600" />}
+                        description="Cosine Similarity & TF-IDF match against gold-standard answer keys."
+                        scheme="amber"
+                      />
                  </div>
               </div>
 
@@ -148,7 +155,8 @@ function MetricCard({ label, score, icon, description, scheme }: any) {
   const colors: any = {
     indigo: "bg-indigo-600",
     emerald: "bg-emerald-600",
-    rose: "bg-rose-600"
+    rose: "bg-rose-600",
+    amber: "bg-amber-600"
   };
 
   return (
