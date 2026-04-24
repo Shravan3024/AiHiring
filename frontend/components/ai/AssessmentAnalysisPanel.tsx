@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  TrendingUp, Zap, CheckCircle, Scale, Target, Layers
+  TrendingUp, Zap, CheckCircle, Scale, Target, Layers, Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { generateAssessmentReport } from "@/lib/utils/generateReports";
 
 interface AssessmentPanelProps {
   applicationId: number;
@@ -23,6 +25,7 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
 
   // Accessing assessment attempts via relationships or data mapping
   const assessmentData = analysisRes?.data?.assessment_attempts || [];
+  const aiAnalysis = analysisRes?.data?.assessmentAnalysis || analysisRes?.data?.assessment_analyses?.[0] || null;
 
   return (
     <div className="space-y-6">
@@ -96,21 +99,141 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                       />
                       <MetricCard 
                         label="Semantic Match Engine" 
-                        score={attempt.ml_score} 
-                        icon={<Scale className="w-5 h-5 text-amber-600" />}
-                        description="Cosine Similarity & TF-IDF match against gold-standard answer keys."
+                        score={attempt.ai_score} 
+                        icon={<Zap className="w-5 h-5 text-amber-600" />}
+                        description="AI semantic alignment with industry-standard answer keys."
                         scheme="amber"
                       />
                  </div>
               </div>
 
+              {/* AI Assessment Executive Summary */}
+              {aiAnalysis && (
+                <Card className="border-blue-100 bg-blue-50/20 mb-6">
+                   <CardHeader className="pb-2 border-b border-blue-50">
+                      <CardTitle className="text-sm font-bold text-blue-800 flex items-center gap-2">
+                         <TrendingUp className="w-4 h-4" /> AI Performance Executive Summary
+                      </CardTitle>
+                   </CardHeader>
+                   <CardContent className="pt-4">
+                      <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                         {aiAnalysis.detailed_feedback || "AI summary generation in progress..."}
+                      </div>
+                      <div className="mt-4 flex gap-4">
+                         <div className="bg-white p-2 rounded-lg border border-blue-100 flex-1">
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Domain Expertise</span>
+                            <span className="text-sm font-bold text-blue-700">{Math.round(attempt.concept_coverage || 0)}% Coverage</span>
+                         </div>
+                         <div className="bg-white p-2 rounded-lg border border-blue-100 flex-1">
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Structural Integrity</span>
+                            <span className="text-sm font-bold text-blue-700">{Math.round(attempt.structure_score || 0)}/100</span>
+                         </div>
+                      </div>
+                   </CardContent>
+                </Card>
+              )}
+
+              {/* AI Assessment Executive Summary */}
+              {aiAnalysis && (
+                <Card className="border-blue-100 bg-blue-50/20 mb-6">
+                   <CardHeader className="pb-2 border-b border-blue-50">
+                      <CardTitle className="text-sm font-bold text-blue-800 flex items-center gap-2">
+                         <TrendingUp className="w-4 h-4" /> AI Performance Executive Summary
+                      </CardTitle>
+                   </CardHeader>
+                   <CardContent className="pt-4">
+                      <div className="text-sm text-slate-700 leading-relaxed">
+                         <div className="space-y-3">
+                            {(aiAnalysis.detailed_feedback || "").split('\n').filter((line: string) => line.trim()).map((line: string, i: number) => (
+                               <div key={i} className="flex gap-3 items-start">
+                                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                                  <span>{line.replace(/^[•\-\*\d\.]+\s*/, '')}</span>
+                               </div>
+                            ))}
+                            {(!aiAnalysis.detailed_feedback) && <p className="text-slate-400 italic">No summary points generated for this attempt.</p>}
+                         </div>
+                      </div>
+                      <div className="mt-6 flex gap-4">
+                         <div className="bg-white p-3 rounded-xl border border-blue-100 flex-1 shadow-sm">
+                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Domain Expertise</span>
+                            <div className="flex items-end gap-2">
+                               <span className="text-2xl font-black text-blue-700">{Math.round(attempt.concept_coverage || 0)}%</span>
+                               <span className="text-[10px] text-slate-400 mb-1 font-bold">Accuracy</span>
+                            </div>
+                         </div>
+                         <div className="bg-white p-3 rounded-xl border border-blue-100 flex-1 shadow-sm">
+                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Structural Integrity</span>
+                            <div className="flex items-end gap-2">
+                               <span className="text-2xl font-black text-blue-700">{Math.round(attempt.structure_score || 0)}/100</span>
+                               <span className="text-[10px] text-slate-400 mb-1 font-bold">Score</span>
+                            </div>
+                         </div>
+                      </div>
+                   </CardContent>
+                </Card>
+              )}
+
+              {/* AI Strengths & Weaknesses from Analysis */}
+              {aiAnalysis && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border-emerald-100 bg-emerald-50/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-bold text-emerald-800 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" /> Key Strengths
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                            {(aiAnalysis.strengths || []).map((s: string, i: number) => (
+                              <li key={i} className="text-xs text-emerald-700 flex items-start gap-2">
+                                <span className="mt-1 w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                                {s}
+                              </li>
+                            ))}
+                        </ul>
+                      </CardContent>
+                  </Card>
+
+                  <Card className="border-rose-100 bg-rose-50/30">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-bold text-rose-800 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" /> Areas for Improvement
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                            {(aiAnalysis.weaknesses || []).map((w: string, i: number) => (
+                              <li key={i} className="text-xs text-rose-700 flex items-start gap-2">
+                                <span className="mt-1 w-1 h-1 rounded-full bg-rose-500 shrink-0" />
+                                {w}
+                              </li>
+                            ))}
+                        </ul>
+                      </CardContent>
+                  </Card>
+                </div>
+              )}
+
               {/* Assessment Trace Table */}
               <Card className="shadow-md border-slate-200 overflow-hidden">
-                <CardHeader className="bg-slate-50 border-b">
-                   <CardTitle className="text-lg font-bold flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-amber-500" /> Detailed Assessment Trace
-                   </CardTitle>
-                </CardHeader>
+                 <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between py-3">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                       <Zap className="w-5 h-5 text-amber-500" /> Detailed Assessment Trace
+                    </CardTitle>
+                    <Button 
+                      onClick={() => generateAssessmentReport({
+                        candidate: analysisRes?.data?.candidate,
+                        job: analysisRes?.data?.job,
+                        attempt: attempt,
+                        proctoring: analysisRes?.data?.malpractice_events || []
+                      })}
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 border-slate-300 hover:bg-slate-100"
+                    >
+                      <Download className="w-3 h-3" /> Download Assessment Report
+                    </Button>
+                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader className="bg-slate-50">
@@ -124,10 +247,22 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                       {Object.keys(attempt.answers || {}).map((qId: string, idx: number) => (
                         <TableRow key={idx}>
                           <TableCell className="font-semibold text-slate-700 max-w-xs border-r">
-                             Q: {qId}
+                             <div className="text-xs text-slate-400 mb-1 font-mono uppercase tracking-tighter">Question Trace</div>
+                             <p className="leading-relaxed">
+                                {attempt.answers[qId]?.question_text || qId}
+                             </p>
+                             {attempt.answers[qId]?.correct_answer && (
+                               <div className="mt-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-[11px] text-emerald-700">
+                                  <span className="font-bold uppercase mr-1">Expected:</span>
+                                  {attempt.answers[qId].correct_answer}
+                               </div>
+                             )}
                           </TableCell>
                           <TableCell className="text-slate-600 text-sm">
-                             {attempt.answers[qId]?.answer_text || "Skipped / No Signal Detected"}
+                             <div className="text-xs text-slate-400 mb-1 font-mono uppercase tracking-tighter">Candidate Response</div>
+                             <p className="italic">
+                                "{attempt.answers[qId]?.answer_text || "No response provided"}"
+                             </p>
                           </TableCell>
                           <TableCell className="text-right space-x-2">
                              <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 border-slate-200">

@@ -23,6 +23,7 @@ const {
 const HRDashboardController = require("../controllers/hrDashboard.controller");
 const CandidateProfileController = require("../controllers/candidateProfile.controller");
 const HRDecisionController = require("../controllers/hrDecision.controller");
+const RiskMonitorController = require("../controllers/riskMonitor.controller");
 const { getNotifications } = require("../controllers/notification.controller");
 const ReportController = require("../controllers/report.controller");
 const fs = require("fs");
@@ -212,10 +213,24 @@ router.get(
 );
 
 router.get(
+  "/candidates/:candidateId",
+  auth,
+  role(["HR", "ADMIN"]),
+  CandidateProfileController.getCandidateById
+);
+
+router.get(
   "/pipeline",
   auth,
   role(["HR", "ADMIN"]),
   CandidateProfileController.getPipelineCandidates
+);
+
+router.get(
+  "/risk-monitor",
+  auth,
+  role(["HR", "ADMIN"]),
+  RiskMonitorController.getRiskMonitor
 );
 
 

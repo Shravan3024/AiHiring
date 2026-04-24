@@ -158,7 +158,12 @@ export default function PipelinePage() {
                                 <div className="flex items-start justify-between">
                                    <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-xl bg-muted border border-border/50 overflow-hidden shadow-inner">
-                                         <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${cand.candidateName}`} alt={cand.candidateName} className="w-full h-full object-cover" />
+                                         <img 
+                                            src={cand.profileImage || "/images/default-avatar.png"} 
+                                            alt={cand.candidateName} 
+                                            className="w-full h-full object-cover" 
+                                            onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                                         />
                                       </div>
                                       <div>
                                          <p className="text-[11px] font-black text-foreground uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{cand.candidateName}</p>

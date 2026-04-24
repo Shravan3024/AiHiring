@@ -338,5 +338,64 @@ module.exports = {
         final_score: finalScore 
       };
     }
+  },
+
+  /**
+   * Module 5: Strategic System Report
+   */
+  generateSystemReport: async (stats) => {
+    const prompt = `
+      Task: Generate Strategic AI Recruitment Report for Mask Polymers.
+      Stats Data: ${JSON.stringify(stats)}
+      
+      Generate a professional executive summary, trend analysis, and strategic recommendations.
+      Return JSON format: { "title": "", "summary": "", "sections": [{ "heading": "", "content": "" }], "conclusion": "" }
+    `;
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(responseText);
+      return sanitizeAIOutput(parsed);
+    } catch (err) {
+      return { title: "AI Report Error", summary: "Failed to generate report using AI." };
+    }
+  },
+
+  /**
+   * Module 6: Specific Section Insight Generator
+   */
+  generateStrategicInsight: async (section, data) => {
+    const prompt = `
+      Task: Generate a Strategic Recruitment Insight for the section: "${section}".
+      Context Data: ${JSON.stringify(data)}
+      
+      Requirements:
+      - Use professional recruitment language.
+      - Base the insight on the provided data trends.
+      - For "Talent Intelligence", identify correlations.
+      - For "Predictive Analytics", provide probability-based rationale.
+      - For "Recommendations", give actionable advice.
+      
+      Return a concise JSON object:
+      {
+        "title": "Short title",
+        "content": "A 2-3 sentence strategic insight based on data.",
+        "impact": "High | Moderate | Low",
+        "action_item": "Suggested next step"
+      }
+    `;
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(responseText);
+      return sanitizeAIOutput(parsed);
+    } catch (err) {
+      logger.error(`[AI Insight Generator] Error: ${err.message}`);
+      return { 
+        title: `${section} Insight`, 
+        content: "The AI is currently analyzing recent data trends. Please check back shortly.",
+        impact: "Moderate"
+      };
+    }
   }
 };

@@ -3,7 +3,7 @@ const {
   TechnicalRound, Interview,
   MalpracticeEvent, Offer, Job, HRInternalNote,
   ResumeAnalysis, AssessmentAnalysis, InterviewAnalysis,
-  ApplicationStatusLog
+  ApplicationStatusLog, TechnicalQuestionBank, MCQQuestion, InterviewQuestionBank
 } = require('../models');
 const { Op } = require('sequelize');
 const { STATUS_GROUPS, computeApplicationScore, getFitBand } = require('../utils/applicationStatus.utils');
@@ -108,6 +108,81 @@ class CandidateProfileController {
 
       let malpractice = [];
       let notes = [];
+      let enrichedAttempts = [];
+
+      // Enrich Assessment Attempts with Question Text
+      const rawAttempts = application.assessment_attempts || [];
+      const allQIds = new Set();
+      rawAttempts.forEach(att => {
+        let answers = att.answers;
+        if (typeof answers === 'string') {
+          try { answers = JSON.parse(answers); } catch (e) { answers = {}; }
+        }
+        if (answers) {
+          Object.keys(answers).forEach(id => {
+            if (id && id !== 'null' && id !== 'undefined') allQIds.add(id);
+          });
+        }
+      });
+
+      const questionMap = {};
+      if (allQIds.size > 0) {
+        const ids = Array.from(allQIds);
+        
+        // 1. TechnicalQuestionBank
+        const techQuestions = await TechnicalQuestionBank.findAll({
+          attributes: ['questionId', 'question', 'correct_answer', 'expected_answer']
+        });
+        techQuestions.forEach(q => {
+          if (q.questionId) {
+            const qtext = q.question || "N/A";
+            const qcorr = q.correct_answer || q.expected_answer || "N/A";
+            questionMap[q.questionId.trim()] = { text: qtext, correct: qcorr };
+            questionMap[q.questionId.toLowerCase().trim()] = { text: qtext, correct: qcorr };
+          }
+        });
+
+        // 2. MCQQuestion (Uses 'id')
+        const mcqQuestions = await MCQQuestion.findAll({
+          attributes: ['id', 'question', 'correct_option']
+        });
+        mcqQuestions.forEach(q => {
+          questionMap[String(q.id)] = { text: q.question, correct: q.correct_option };
+        });
+
+        // 3. InterviewQuestionBank
+        const intQuestions = await InterviewQuestionBank.findAll({
+          attributes: ['questionId', 'question', 'expectedAnswer']
+        });
+        intQuestions.forEach(q => {
+          if (q.questionId) {
+            questionMap[q.questionId.trim()] = { text: q.question, correct: q.expectedAnswer };
+            questionMap[q.questionId.toLowerCase().trim()] = { text: q.question, correct: q.expectedAnswer };
+          }
+        });
+      }
+
+      enrichedAttempts = rawAttempts.map(att => {
+        const attObj = att.get({ plain: true });
+        let answers = attObj.answers;
+        if (typeof answers === 'string') {
+          try { answers = JSON.parse(answers); } catch (e) { answers = {}; }
+        }
+        
+        if (answers) {
+          const enrichedAnswers = {};
+          Object.keys(answers).forEach(qId => {
+            enrichedAnswers[qId] = {
+              ...answers[qId],
+              question_text: questionMap[qId]?.text || null,
+              correct_answer: questionMap[qId]?.correct || null
+            };
+          });
+          attObj.answers = enrichedAnswers;
+        }
+        return attObj;
+      });
+
       try {
         malpractice = await MalpracticeEvent.findAll({
           where: { application_id: applicationId },
@@ -142,6 +217,7 @@ class CandidateProfileController {
             year_of_passout: application.Candidate?.year_of_passout || application.year_of_passout || null,
             summary:         application.summary || application.Candidate?.summary || null,
             aiSummary:       application.Candidate?.ai_summary || null,
+            profileImage:    application.Candidate?.profile_image_path ? `http://localhost:5000${application.Candidate.profile_image_path.startsWith('/') ? '' : '/'}${application.Candidate.profile_image_path}` : "/images/default-avatar.png",
           },
           job: {
             id:             application.job_id,
@@ -150,11 +226,14 @@ class CandidateProfileController {
           },
           status:           application.status,
           stage:            application.status,
+          assessment_attempts: enrichedAttempts,
+          assessmentAnalysis: application.AssessmentAnalysis,
           appliedAt:        application.applied_at || application.createdAt,
           resumeUrl:        application.Candidate?.resume_path ? `http://localhost:5000${application.Candidate.resume_path}` : null,
           aiScore:          aggregateScore,
           aiFitBand,
           integrityScore:   application.Candidate?.integrity_score || 100,
+          malpractice_events: application.MalpracticeEvents || [],
 
           scores: {
             resume: resumeScore,
@@ -266,6 +345,62 @@ class CandidateProfileController {
   }
 
   /**
+   * GET /hr/candidates/:candidateId
+   * Fetch candidate details by Candidate ID (used by Talent Pool)
+   */
+  static async getCandidateById(req, res) {
+    try {
+      const { candidateId } = req.params;
+
+      // Find the latest application for this candidate to provide context
+      const latestApp = await Application.findOne({
+        where: { candidate_id: candidateId },
+        order: [['created_at', 'DESC']],
+        attributes: ['id']
+      });
+
+      if (latestApp) {
+        // If they have an application, reuse the getCandidateProfile logic by redirecting or calling it
+        req.params.applicationId = latestApp.id;
+        return CandidateProfileController.getCandidateProfile(req, res);
+      }
+
+      // If no application, just return the candidate base info
+      const candidate = await Candidate.findByPk(candidateId, {
+        include: [{ model: User, attributes: ['name', 'email'] }]
+      });
+
+      if (!candidate) {
+        return res.status(404).json({ success: false, message: 'Candidate not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          id: candidateId,
+          candidate: {
+            id: candidate.id,
+            name: candidate.User?.name || 'N/A',
+            email: candidate.User?.email || 'N/A',
+            location: candidate.location,
+            experience: candidate.experience_years,
+            skills: candidate.skills || [],
+            summary: candidate.summary,
+            profileImage: candidate.profile_image_path ? `http://localhost:5000${candidate.profile_image_path.startsWith('/') ? '' : '/'}${candidate.profile_image_path}` : "/images/default-avatar.png",
+          },
+          status: 'UNPROCESSED',
+          scores: { resume: 0, technical: 0, interview: 0, aggregate: 0 },
+          aiScore: 0,
+          integrityScore: candidate.integrity_score || 100
+        }
+      });
+    } catch (error) {
+      console.error('Error in getCandidateById:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching candidate' });
+    }
+  }
+
+  /**
    * GET /hr/pipeline
    */
   static async getPipelineCandidates(req, res) {
@@ -278,7 +413,7 @@ class CandidateProfileController {
           include: [
             { 
               model: Candidate, 
-              attributes: ['id', 'user_id', 'integrity_score'],
+              attributes: ['id', 'user_id', 'integrity_score', 'profile_image_path'],
               include: [{ model: User, attributes: ['id', 'name', 'email'] }] 
             },
             { model: TechnicalRound, required: false, attributes: ['id', 'score'] },
@@ -316,6 +451,7 @@ class CandidateProfileController {
             integrityScore:    app.Candidate?.integrity_score || null,
             daysInStage, resumeScore, technicalScore: techScore, interviewScore: intScore,
             malpracticeCount:  app.MalpracticeEvents?.length || 0,
+            profileImage: app.Candidate?.profile_image_path ? `http://localhost:5000${app.Candidate.profile_image_path.startsWith('/') ? '' : '/'}${app.Candidate.profile_image_path}` : null,
           };
         });
 

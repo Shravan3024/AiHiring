@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,50 +9,163 @@ import {
   AlertCircle, CheckCircle2, ArrowUpRight, ArrowDownRight,
   ShieldCheck, MessageSquare, Star, Activity, Clock, 
   UserPlus, BarChart3, PieChart as PieIcon, LineChart as LineIcon,
-  ZapOff, Ghost, Wand2, RefreshCw, Download, Layers, Users, Rocket
+  ZapOff, Ghost, Wand2, RefreshCw, Download, Layers, Users, Rocket, Loader2,
+  Database, Cpu, Network, Globe, History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   AreaChart, Area, BarChart, Bar, Cell
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { aiInsightsApi } from "@/lib/api";
+import { toast } from "sonner";
 
-export default function HighFidelityAIInsightsV2() {
-  const qualityTrend = [
-    { name: "Mar 10", score: 68 },
-    { name: "Mar 24", score: 62 },
-    { name: "Apr 7", score: 65 },
-    { name: "Apr 21", score: 58 },
-    { name: "May 5", score: 72 },
-    { name: "May 19", score: 68 },
-    { name: "Jun 2", score: 75 },
-  ];
+export default function IndustryReadyAIInsights() {
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [analyzingSection, setAnalyzingSection] = useState<string | null>(null);
+  const [predictiveView, setPredictiveView] = useState<"success" | "attrition">("success");
+  const [lastSynced, setLastSynced] = useState<string>("");
 
-  const skillGap = [
-    { skill: "Data Analysis", current: 48, demand: 92, gap: "-44%" },
-    { skill: "Machine Learning", current: 22, demand: 64, gap: "-42%" },
-    { skill: "Cloud Computing", current: 31, demand: 68, gap: "-37%" },
-    { skill: "Product Strategy", current: 45, demand: 70, gap: "-25%" },
-    { skill: "Communication", current: 78, demand: 85, gap: "-7%" },
-  ];
+  const fetchData = useCallback(async (isRefresh = false) => {
+    try {
+      if (!isRefresh) setLoading(true);
+      const res = await aiInsightsApi.getDashboardData();
+      setData(res.data.data);
+      setLastSynced(new Date().toLocaleTimeString());
+      if (isRefresh) toast.success("Neural Link Synchronized with Database");
+    } catch (err) {
+      console.error(err);
+      toast.error("Database Connection Failure: Check Neural Link Status");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const roles = [
-    { role: "Data Analyst", prob: "89%", status: "Very High", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { role: "Product Manager", prob: "76%", status: "High", color: "text-blue-500", bg: "bg-blue-500/10" },
-    { role: "UX Designer", prob: "68%", status: "Moderate", color: "text-amber-500", bg: "bg-amber-500/10" },
-    { role: "Marketing Manager", prob: "61%", status: "Moderate", color: "text-amber-500", bg: "bg-amber-500/10" },
-    { role: "Sales Executive", prob: "45%", status: "Low", color: "text-rose-500", bg: "bg-rose-500/10" },
-  ];
+  useEffect(() => {
+    fetchData();
+    // Auto-sync every 5 minutes for "Real-time" feel
+    const interval = setInterval(() => fetchData(true), 300000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
-  const recommended = [
-    { name: "Aarav Mehta", role: "Data Analyst", score: "92%", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav" },
-    { name: "Priya Sharma", role: "UX Designer", score: "88%", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" },
-    { name: "Rohan Verma", role: "Product Manager", score: "85%", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan" },
-    { name: "Neha Kapoor", role: "Data Scientist", score: "83%", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha" },
-    { name: "Arjun Nair", role: "Marketing Manager", score: "81%", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun" },
-  ];
+  const handleNeuralMap = async () => {
+    try {
+      setAnalyzingSection("Neural Map");
+      const res = await aiInsightsApi.analyzeSection("Neural Map Synthesis", data);
+      toast.success("Strategic Neural Map Synthesized!");
+      
+      const insight = res.data.data;
+      const newData = {...data};
+      if (newData.kpis && newData.kpis[3]) {
+          newData.kpis[3].value = "Synced";
+          newData.kpis[3].progress = 100;
+      }
+      setData(newData);
+    } catch (err) {
+      toast.error("Failed to synthesize Neural Map");
+    } finally {
+      setAnalyzingSection(null);
+    }
+  };
+
+  const handleDeepAnalyze = async (section: string, currentData: any) => {
+    try {
+      setAnalyzingSection(section);
+      const res = await aiInsightsApi.analyzeSection(section, currentData);
+      toast.success(`${section} Logic Optimized`);
+      
+      const insight = res.data.data;
+      const newData = {...data};
+      if (section === "Talent Intelligence") {
+          newData.marketInsights[0].desc = insight.content;
+          newData.marketInsights[0].impact = insight.impact;
+      } else if (section === "Recommendations") {
+          newData.recommendations[0].sub = insight.content;
+      } else if (section === "Strategic Observations") {
+          toast.info(insight.content, { duration: 5000 });
+      }
+      setData(newData);
+    } catch (err) {
+      toast.error(`Neural Analysis Failed for ${section}`);
+    } finally {
+      setAnalyzingSection(null);
+    }
+  };
+
+  const handleDownloadInsights = async () => {
+    try {
+      const res = await aiInsightsApi.downloadInsights();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Mask_Polymers_AI_Insights_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error("PDF Synthesis Failed");
+    }
+  };
+
+  const handleGenerateAIReport = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await aiInsightsApi.generateReport();
+      toast.success("Strategic Executive Report Ready", {
+        description: "AI has synthesized the full dataset into a strategic roadmap."
+      });
+    } catch (err) {
+      toast.error("AI Report Generation Failed");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
+       {[1,2,3,4,5].map(i => (
+         <Card key={i} className="border-border/40 glass">
+            <CardContent className="p-6 space-y-4">
+               <Skeleton className="h-8 w-8 rounded-xl" />
+               <Skeleton className="h-4 w-24" />
+               <Skeleton className="h-10 w-16" />
+               <Skeleton className="h-2 w-full rounded-full" />
+            </CardContent>
+         </Card>
+       ))}
+    </div>
+  );
+
+  if (loading || !data) {
+    return (
+      <PanelLayout title="AI Insights" allowedRoles={["HR", "ADMIN"]}>
+        <div className="max-w-[1600px] mx-auto p-8 space-y-8">
+           <div className="flex items-center justify-between mb-12">
+              <div className="space-y-2">
+                 <Skeleton className="h-10 w-64" />
+                 <Skeleton className="h-4 w-48" />
+              </div>
+              <div className="flex gap-4">
+                 <Skeleton className="h-11 w-32 rounded-2xl" />
+                 <Skeleton className="h-11 w-48 rounded-2xl" />
+              </div>
+           </div>
+           <LoadingSkeleton />
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <Skeleton className="lg:col-span-8 h-[400px] rounded-[2.5rem]" />
+              <Skeleton className="lg:col-span-4 h-[400px] rounded-[2.5rem]" />
+           </div>
+        </div>
+      </PanelLayout>
+    );
+  }
+
+  const tabs = ["Overview", "Hiring Intelligence", "Talent Intelligence", "Predictive Analytics", "Recommendations", "Market Insights"];
 
   return (
     <PanelLayout title="AI Insights" allowedRoles={["HR", "ADMIN"]}>
@@ -60,289 +173,354 @@ export default function HighFidelityAIInsightsV2() {
         
         {/* HEADER */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-           <div className="space-y-1">
-              <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2 uppercase">AI Insights</h1>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">AI-powered insights and recommendations to optimize your hiring decisions</p>
+           <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 animate-pulse">
+                    <Cpu className="w-5 h-5 text-primary" />
+                 </div>
+                 <h1 className="text-3xl font-black text-foreground tracking-tighter flex items-center gap-2 uppercase italic">Neural Recruitment Hub<span className="text-primary not-italic">.</span></h1>
+              </div>
+              <div className="flex items-center gap-4">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2">
+                   <Network className="w-3.5 h-3.5 text-primary" /> Multi-Vector AI Engine Synchronized
+                 </p>
+                 <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 text-[8px] font-black uppercase tracking-widest gap-1.5 px-2 py-0.5">
+                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" /> Live Sync: {lastSynced}
+                 </Badge>
+              </div>
            </div>
            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative group">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                 <Input className="pl-10 h-10 w-64 bg-muted/30 border-border/50 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
-              </div>
-              <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
-                 <Download className="w-4 h-4" /> Download Insights
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadInsights}
+                className="h-11 rounded-2xl border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted/50 transition-all px-6"
+              >
+                 <Download className="w-4 h-4" /> Export Strategic Dossier
               </Button>
-              <Button className="h-10 rounded-xl industrial-gradient text-white text-xs font-black uppercase tracking-widest gap-2 shadow-xl shadow-primary/20">
-                 <Sparkles className="w-4 h-4" /> Generate AI Report
+              <Button 
+                onClick={handleGenerateAIReport}
+                disabled={isGenerating}
+                className="h-11 rounded-2xl industrial-gradient text-white text-[10px] font-black uppercase tracking-widest gap-2 shadow-2xl shadow-primary/30 px-8 hover:scale-105 active:scale-95 transition-all"
+              >
+                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                 {isGenerating ? "Synthesizing Dataset..." : "Generate AI Strategic Report"}
               </Button>
            </div>
         </div>
 
-        {/* TABS */}
-        <div className="flex bg-muted/20 p-1.5 rounded-2xl gap-2 border border-border/40 overflow-x-auto no-scrollbar">
-           {["Overview", "Hiring Intelligence", "Talent Intelligence", "Predictive Analytics", "Recommendations", "Market Insights"].map((t, i) => (
-              <Button key={i} variant="ghost" className={cn(
-                 "h-10 text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all whitespace-nowrap",
-                 i === 0 ? "bg-card text-primary shadow-lg" : "text-muted-foreground opacity-60 hover:opacity-100"
-              )}>{t}</Button>
+        {/* TAB NAVIGATION */}
+        <div className="flex bg-muted/20 p-2 rounded-2xl gap-2 border border-border/40 overflow-x-auto no-scrollbar backdrop-blur-md sticky top-4 z-50 shadow-2xl shadow-black/5">
+           {tabs.map((t, i) => (
+              <Button 
+                key={i} 
+                variant="ghost" 
+                onClick={() => setActiveTab(t)}
+                className={cn(
+                  "h-10 text-[10px] font-black uppercase tracking-[0.2em] px-8 rounded-xl transition-all whitespace-nowrap",
+                  activeTab === t ? "bg-card text-primary shadow-xl ring-1 ring-border/50" : "text-muted-foreground opacity-50 hover:opacity-100 hover:bg-white/5"
+               )}>{t}</Button>
            ))}
         </div>
 
-        {/* KPI GRID WITH PROGRESS BARS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-           {[
-              { title: "Overall Hiring Quality Score", value: "78", subLeft: "Good", subRight: "Improving", color: "text-purple-500", icon: Layers, progress: 78 },
-              { title: "AI Fit Score (Top Candidates)", value: "85%", subLeft: "Strong Fit", subRight: "Quality Match", color: "text-emerald-500", icon: Brain, progress: 85 },
-              { title: "Hiring Efficiency Score", value: "72", subLeft: "Fair", subRight: "Room to Improve", color: "text-amber-500", icon: Zap, progress: 72 },
-              { title: "Time to Fill (Avg.)", value: "23", subLeft: "Good", subRight: "Faster", color: "text-blue-500", icon: Clock, progress: 65 },
-              { title: "Offer Acceptance Rate", value: "81%", subLeft: "Good", subRight: "Impressive", color: "text-rose-500", icon: Target, progress: 81 },
-           ].map((k, i) => (
-              <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden group">
-                 <CardContent className="p-5 space-y-4">
-                    <div className="flex items-center justify-between">
-                       <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", k.color)}>
-                          <k.icon className="w-4 h-4" />
+        {/* PRIMARY KPI METRICS */}
+        {activeTab === "Overview" && (
+           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
+              {data.kpis.map((k: any, i: number) => (
+                 <Card key={i} className="border-border/40 glass shadow-2xl overflow-hidden group hover:scale-[1.02] transition-all duration-500 border-b-4 border-b-transparent hover:border-b-primary">
+                    <CardContent className="p-6 space-y-5">
+                       <div className="flex items-center justify-between">
+                          <div className={cn("p-2.5 rounded-2xl bg-muted/50 border border-border/50", k.color)}>
+                             <Layers className="w-4 h-4" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                             <Database className="w-3 h-3 text-muted-foreground opacity-30" />
+                             <Badge variant="outline" className="text-[7px] font-black uppercase border-border/50 tracking-widest px-2">Verified</Badge>
+                          </div>
                        </div>
-                       <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-right max-w-[120px]">{k.title}</span>
-                    </div>
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k.title}</p>
+                          <p className="text-3xl font-black text-foreground tracking-tighter tabular-nums">{k.value}</p>
+                       </div>
+                       <div className="space-y-2.5">
+                          <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden shadow-inner">
+                             <div className={cn("h-full rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(0,0,0,0.1)]", k.color.replace('text', 'bg'))} style={{ width: `${k.progress}%` }}></div>
+                          </div>
+                          <div className="flex justify-between text-[8px] font-black text-muted-foreground uppercase tracking-widest">
+                             <span>{k.subLeft}</span>
+                             <span>{k.subRight}</span>
+                          </div>
+                       </div>
+                    </CardContent>
+                 </Card>
+              ))}
+           </div>
+        )}
+
+        {/* NEURAL ANALYSIS GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+           
+           {/* Hiring Intelligence: Quality Trends */}
+           {(activeTab === "Overview" || activeTab === "Hiring Intelligence") && (
+              <Card className="lg:col-span-8 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500">
+                 <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
                     <div className="space-y-1">
-                       <p className="text-2xl font-black text-foreground tracking-tighter tabular-nums">{k.value}</p>
-                       <div className="flex items-center gap-1 text-[8px] font-black text-emerald-500 uppercase">
-                          <ArrowUpRight className="w-2.5 h-2.5" /> 8% vs last 30 days
-                       </div>
+                       <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
+                          <History className="w-4 h-4 text-primary" /> Neural Hiring Quality Trend
+                       </CardTitle>
                     </div>
-                    <div className="space-y-2">
-                       <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                          <div className={cn("h-full rounded-full transition-all duration-1000", k.color.replace('text', 'bg'))} style={{ width: `${k.progress}%` }}></div>
+                    {analyzingSection === "Hiring Intelligence" ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <LineIcon className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />}
+                 </CardHeader>
+                 <CardContent className="p-8">
+                    <div className="h-[300px] w-full">
+                       <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={data.qualityTrend}>
+                             <defs>
+                                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                   <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                                   <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                </linearGradient>
+                             </defs>
+                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                             <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} />
+                             <YAxis hide domain={[0, 100]} />
+                             <Tooltip 
+                               contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '10px' }}
+                               itemStyle={{ fontWeight: 'black', color: 'hsl(var(--primary))' }}
+                             />
+                             <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorScore)" animationDuration={2000} />
+                          </AreaChart>
+                       </ResponsiveContainer>
+                    </div>
+                    <div className="mt-8 grid grid-cols-3 gap-6">
+                        {[
+                          { label: "Pool Depth", val: data.kpis[1].value, col: "text-emerald-500" },
+                          { label: "Avg Quality", val: `${data.kpis[0].value}%`, col: "text-purple-500" },
+                          { label: "Efficiency", val: data.kpis[2].value, col: "text-amber-500" }
+                        ].map((stat, idx) => (
+                           <div key={idx} className="p-5 rounded-3xl bg-muted/20 border border-border/40 space-y-1">
+                              <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                              <p className={cn("text-xl font-black tracking-tighter", stat.col)}>{stat.val}</p>
+                           </div>
+                        ))}
+                    </div>
+                 </CardContent>
+              </Card>
+           )}
+
+           {/* Talent Intelligence: Dynamic Observations */}
+           {(activeTab === "Overview" || activeTab === "Talent Intelligence") && (
+              <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+                 <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Talent Intelligence</CardTitle>
+                    {analyzingSection === "Talent Intelligence" ? <Loader2 className="w-5 h-5 animate-spin text-emerald-500" /> : <Brain className="w-5 h-5 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                 </CardHeader>
+                 <CardContent className="p-0">
+                    <div className="divide-y divide-border/10">
+                       {data.marketInsights.map((ins: any, i: number) => (
+                          <div key={i} 
+                            onClick={() => handleDeepAnalyze("Talent Intelligence", ins)}
+                            className="p-8 hover:bg-emerald-500/5 transition-all cursor-pointer group space-y-4">
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                   <div className={cn("p-2.5 rounded-2xl border border-border/50 bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform")}>
+                                      <TrendingUp className="w-4 h-4" />
+                                   </div>
+                                   <h4 className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover:text-emerald-500 transition-colors">{ins.title}</h4>
+                                </div>
+                                <Badge variant="outline" className={cn("text-[8px] font-black uppercase border-none bg-emerald-500/10 text-emerald-500 px-3 py-1")}>{ins.impact}</Badge>
+                             </div>
+                             <p className="text-[10px] font-medium text-muted-foreground leading-relaxed pl-12 group-hover:text-foreground/80 transition-colors">{ins.desc}</p>
+                          </div>
+                       ))}
+                    </div>
+                 </CardContent>
+              </Card>
+           )}
+
+           {/* Predictive Analytics: Yield & Attrition */}
+           {(activeTab === "Overview" || activeTab === "Predictive Analytics") && (
+              <Card className="lg:col-span-6 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+                 <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Neural Predictive Models</CardTitle>
+                    {analyzingSection === "Predictive Analytics" ? <Loader2 className="w-5 h-5 animate-spin text-blue-500" /> : <Sparkles className="w-5 h-5 text-blue-500 opacity-50 group-hover:opacity-100 animate-pulse transition-all" />}
+                 </CardHeader>
+                 <CardContent className="p-8 space-y-8">
+                    <div className="flex bg-muted/30 p-1.5 rounded-2xl gap-1.5 border border-border/40 shadow-inner">
+                       <Button 
+                         variant="ghost" 
+                         onClick={() => setPredictiveView("success")}
+                         className={cn("flex-1 h-10 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl transition-all", predictiveView === "success" ? "bg-card text-blue-500 shadow-xl" : "text-muted-foreground opacity-50")}>
+                          Success Probability
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         onClick={() => setPredictiveView("attrition")}
+                         className={cn("flex-1 h-10 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl transition-all", predictiveView === "attrition" ? "bg-card text-rose-500 shadow-xl" : "text-muted-foreground opacity-50")}>
+                          Attrition Risk
+                       </Button>
+                    </div>
+                    <div className="space-y-6">
+                       {data.predictions.map((r: any, i: number) => (
+                          <div key={i} 
+                            onClick={() => handleDeepAnalyze("Predictive Analytics", r)}
+                            className="flex items-center justify-between group/row cursor-pointer hover:bg-blue-500/5 p-3 rounded-2xl transition-all border border-transparent hover:border-blue-500/20">
+                             <div className="space-y-1">
+                                <span className="text-[12px] font-black text-foreground uppercase tracking-tight group-hover/row:text-blue-500 transition-colors">{r.role}</span>
+                                <div className="flex items-center gap-2">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                   <p className="text-[7px] font-black text-muted-foreground uppercase tracking-[0.2em]">Neural Match Confidence</p>
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-6">
+                                <span className="text-lg font-black text-foreground tabular-nums">{predictiveView === 'success' ? r.prob : `${100 - parseInt(r.prob)}%`}</span>
+                                <Badge className={cn("text-[9px] font-black uppercase border-none w-28 justify-center py-2 rounded-lg", r.bg, r.color)}>{r.status}</Badge>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleNeuralMap}
+                      disabled={analyzingSection === "Neural Map"}
+                      className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-primary/5 hover:border-primary/30 transition-all gap-3 group relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                        {analyzingSection === "Neural Map" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Network className="w-5 h-5 text-primary" />}
+                        {analyzingSection === "Neural Map" ? "Mapping Neural Vectors..." : "Synthesize Full Neural Roadmap"} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                 </CardContent>
+              </Card>
+           )}
+
+           {/* Market Skill Gap Analysis: Real-time Supply/Demand */}
+           {(activeTab === "Overview" || activeTab === "Market Insights") && (
+              <Card className="lg:col-span-6 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden p-8 group">
+                 <div className="flex items-center justify-between mb-10">
+                    <div className="space-y-1">
+                       <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-blue-500" /> Market Skill Gap Index
+                       </CardTitle>
+                       <p className="text-[8px] font-black text-muted-foreground/60 uppercase tracking-widest">Aggregate Supply vs Demand Mapping</p>
+                    </div>
+                    <Badge className="bg-blue-500/10 text-blue-500 text-[9px] font-black border-none px-4 py-2 uppercase tracking-widest rounded-full shadow-lg shadow-blue-500/10">Neural Map Active</Badge>
+                 </div>
+                 <div className="space-y-8">
+                    <div className="grid grid-cols-4 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4 border-b border-border/10 pb-4">
+                       <span className="col-span-1">Talent Axis</span>
+                       <span className="col-span-1 text-center">Internal Supply</span>
+                       <span className="col-span-1 text-center">Market Demand</span>
+                       <span className="col-span-1 text-right">Strategic Gap</span>
+                    </div>
+                    {data.skillGap.map((s: any, i: number) => (
+                       <div key={i} className="grid grid-cols-4 items-center gap-6 group/skill hover:bg-white/5 p-3 rounded-2xl transition-all">
+                          <span className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover/skill:text-blue-500 transition-colors">{s.skill}</span>
+                          <div className="flex flex-col gap-2 items-center">
+                             <div className="text-[10px] font-black text-blue-500 tabular-nums">{s.current || 0}%</div>
+                             <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${s.current || 0}%` }}></div></div>
+                          </div>
+                          <div className="flex flex-col gap-2 items-center">
+                             <div className="text-[10px] font-black text-emerald-500 tabular-nums">{s.demand || 0}%</div>
+                             <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${s.demand || 0}%` }}></div></div>
+                          </div>
+                          <div className="text-right">
+                             <Badge variant="outline" className={cn("text-[10px] font-black tabular-nums border-none px-3 py-1.5 rounded-lg", (parseInt(s.gap) || 0) < -30 ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")}>
+                                {s.gap || "0%"}
+                             </Badge>
+                          </div>
                        </div>
-                       <div className="flex justify-between text-[8px] font-black text-muted-foreground uppercase tracking-tighter">
-                          <span>{k.subLeft}</span>
-                          <span>{k.subRight}</span>
+                    ))}
+                 </div>
+              </Card>
+           )}
+
+           {/* Strategic AI Recommendations */}
+           {(activeTab === "Overview" || activeTab === "Recommendations") && (
+              <Card className="lg:col-span-12 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group">
+                 <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Autonomous Strategic Action Plan</CardTitle>
+                    {analyzingSection === "Recommendations" ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <Lightbulb className="w-5 h-5 text-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                 </CardHeader>
+                 <CardContent className="p-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-x divide-border/10">
+                       {data.recommendations.map((rec: any, i: number) => (
+                          <div key={i} 
+                            onClick={() => handleDeepAnalyze("Recommendations", rec)}
+                            className="p-10 hover:bg-amber-500/5 transition-all cursor-pointer group/rec space-y-5">
+                             <div className="p-4 rounded-2xl bg-muted/50 border border-border/50 w-fit group-hover/rec:bg-amber-500/10 group-hover/rec:border-amber-500/30 transition-all shadow-xl">
+                                <Target className={cn("w-6 h-6", rec.color)} />
+                             </div>
+                             <div className="space-y-2">
+                                <p className="text-[14px] font-black text-foreground uppercase tracking-tight leading-tight group-hover/rec:text-amber-500 transition-colors">{rec.text}</p>
+                                <p className="text-[11px] font-medium text-muted-foreground leading-snug">{rec.sub}</p>
+                             </div>
+                             <div className="flex items-center gap-2 pt-2 opacity-0 group-hover/rec:opacity-100 transition-opacity">
+                                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Execute AI Action</span>
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                             </div>
+                          </div>
+                       ))}
+                       <div 
+                         onClick={() => handleDeepAnalyze("Full Suite", data)}
+                         className="p-10 flex items-center justify-center bg-primary/5 cursor-pointer hover:bg-primary/10 transition-all border-l border-border/10 group/btn">
+                          <div className="text-center space-y-4">
+                             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto group-hover/btn:rotate-180 transition-all duration-700 ring-8 ring-primary/5">
+                                <RefreshCw className="w-8 h-8 text-primary" />
+                             </div>
+                             <div className="space-y-1">
+                                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-primary block">Synchronize AI Engine</span>
+                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest block opacity-60">Full Neural Recalculation</span>
+                             </div>
+                          </div>
                        </div>
                     </div>
                  </CardContent>
               </Card>
-           ))}
-        </div>
-
-        {/* MIDDLE SECTION: SUMMARIES, RECOMMENDATIONS, PREDICTIVE */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           
-           {/* AI Insight Summary */}
-           <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">AI Insight Summary</CardTitle>
-                 <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">View All Insights</Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                 <div className="divide-y divide-border/10">
-                    {[
-                       { title: "High Performing Skill", desc: "Data Analysis skill is strongly correlated with high performance in Data & Analytics roles.", impact: "High Impact", color: "text-emerald-500", bg: "bg-emerald-500/10", icon: TrendingUp },
-                       { title: "Drop-off Alert", desc: "We noticed a 24% drop-off in the assessment stage for Marketing roles. Consider reviewing assessment difficulty.", impact: "Moderate", color: "text-rose-500", bg: "bg-rose-500/10", icon: AlertCircle },
-                       { title: "Better Interview Predictors", desc: "Technical interviews are 31% better predictors of on-the-job performance than HR interviews.", impact: "High Impact", color: "text-blue-500", bg: "bg-blue-500/10", icon: Lightbulb },
-                       { title: "Diversity Opportunity", desc: "Female candidates drop-off rate is 18% higher in the technical assessment stage.", impact: "Moderate", color: "text-purple-500", bg: "bg-purple-500/10", icon: Users },
-                       { title: "Top Source Performance", desc: "Candidates from LinkedIn have 27% higher average scores compared to other sources.", impact: "High Impact", color: "text-blue-500", bg: "bg-blue-500/10", icon: LineIcon },
-                    ].map((ins, i) => (
-                       <div key={i} className="p-6 hover:bg-muted/5 transition-colors cursor-pointer group space-y-3">
-                          <div className="flex items-center justify-between">
-                             <div className="flex items-center gap-3">
-                                <div className={cn("p-1.5 rounded-lg border border-border/50", ins.bg, ins.color)}>
-                                   <ins.icon className="w-3.5 h-3.5" />
-                                </div>
-                                <h4 className="text-[10px] font-black text-foreground uppercase tracking-tight">{ins.title}</h4>
-                             </div>
-                             <Badge variant="outline" className={cn("text-[7px] font-black uppercase border-none", ins.bg, ins.color)}>{ins.impact}</Badge>
-                          </div>
-                          <p className="text-[9px] font-medium text-muted-foreground leading-relaxed pl-10">{ins.desc}</p>
-                       </div>
-                    ))}
-                 </div>
-              </CardContent>
-           </Card>
-
-           {/* AI Hiring Recommendations */}
-           <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">AI Hiring Recommendations</CardTitle>
-                 <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">View All</Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                 <div className="divide-y divide-border/10">
-                    {[
-                       { text: "Focus on candidates with strong problem solving skills", sub: "They show 32% higher performance in similar roles", icon: Target, color: "text-emerald-500" },
-                       { text: "Reduce assessment length for marketing roles", sub: "Shorter assessments may improve completion rate", icon: Zap, color: "text-amber-500" },
-                       { text: "Increase technical interview weightage", sub: "Technical interviews are better predictors of performance", icon: MessageSquare, color: "text-blue-500" },
-                       { text: "Engage passive candidates from your talent pool", sub: "412 high-fit passive candidates available", icon: UserPlus, color: "text-purple-500" },
-                       { text: "Review compensation for Product Manager role", sub: "Offer acceptance rate is 12% lower than industry avg", icon: Star, color: "text-rose-500" },
-                    ].map((rec, i) => (
-                       <div key={i} className="p-6 flex items-center justify-between hover:bg-muted/5 transition-colors cursor-pointer group">
-                          <div className="flex items-center gap-4">
-                             <div className="p-2 rounded-xl bg-muted/50 border border-border/50 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all">
-                                <rec.icon className={cn("w-4 h-4", rec.color)} />
-                             </div>
-                             <div>
-                                <p className="text-[10px] font-black text-foreground uppercase tracking-tight">{rec.text}</p>
-                                <p className="text-[9px] font-medium text-muted-foreground mt-0.5">{rec.sub}</p>
-                             </div>
-                          </div>
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                       </div>
-                    ))}
-                 </div>
-              </CardContent>
-           </Card>
-
-           {/* Predictive Insights */}
-           <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Predictive Insights</CardTitle>
-                 <Badge className="bg-primary/10 text-primary text-[8px] font-black border-none px-2 h-4">AI POWERED</Badge>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                 <div className="flex bg-muted/20 p-1 rounded-xl gap-1 border border-border/40">
-                    <Button variant="ghost" className="flex-1 h-8 text-[9px] font-black uppercase tracking-widest bg-card text-primary shadow-sm rounded-lg">Role Success Prediction</Button>
-                    <Button variant="ghost" className="flex-1 h-8 text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Candidate Risk Prediction</Button>
-                 </div>
-                 <div className="space-y-4">
-                    <div className="flex justify-between text-[9px] font-black text-muted-foreground uppercase tracking-widest border-b border-border/10 pb-2">
-                       <span>Role</span>
-                       <span>Success Probability</span>
-                    </div>
-                    {roles.map((r, i) => (
-                       <div key={i} className="flex items-center justify-between group">
-                          <span className="text-[10px] font-black text-foreground uppercase tracking-tight">{r.role}</span>
-                          <div className="flex items-center gap-4">
-                             <span className="text-[11px] font-black text-foreground tabular-nums">{r.prob}</span>
-                             <Badge className={cn("text-[8px] font-black uppercase border-none w-20 justify-center", r.bg, r.color)}>{r.status}</Badge>
-                          </div>
-                       </div>
-                    ))}
-                 </div>
-                 <Button variant="outline" className="w-full h-10 rounded-xl text-[9px] font-black uppercase tracking-widest border-border/50 hover:bg-muted/50 transition-all">View All Role Predictions</Button>
-              </CardContent>
-           </Card>
+           )}
 
         </div>
 
-        {/* BOTTOM SECTION: SKILL GAP, QUALITY TREND, OBSERVATIONS */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           
-           {/* Skill Gap Analysis */}
-           <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
-              <div className="flex items-center justify-between mb-8">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Skill Gap Analysis</CardTitle>
-                 <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">View Full Analysis</Button>
-              </div>
-              <div className="space-y-6">
-                 <div className="grid grid-cols-4 text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-2 border-b border-border/10 pb-2">
-                    <span className="col-span-1">Skill</span>
-                    <span className="col-span-1 text-center">Current Availability</span>
-                    <span className="col-span-1 text-center">Demand</span>
-                    <span className="col-span-1 text-right">Gap</span>
-                 </div>
-                 {skillGap.map((s, i) => (
-                    <div key={i} className="grid grid-cols-4 items-center gap-4 group">
-                       <span className="text-[9px] font-black text-foreground uppercase tracking-tight">{s.skill}</span>
-                       <div className="flex flex-col gap-1 items-center">
-                          <div className="text-[9px] font-black text-blue-500">{s.current}%</div>
-                          <div className="h-1 w-full bg-muted rounded-full"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${s.current}%` }}></div></div>
-                       </div>
-                       <div className="flex flex-col gap-1 items-center">
-                          <div className="text-[9px] font-black text-emerald-500">{s.demand}%</div>
-                          <div className="h-1 w-full bg-muted rounded-full"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${s.demand}%` }}></div></div>
-                       </div>
-                       <span className="text-[10px] font-black text-rose-500 text-right tabular-nums">{s.gap}</span>
-                    </div>
-                 ))}
-              </div>
-           </Card>
-
-           {/* Candidate Quality Trend */}
-           <Card className="lg:col-span-5 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
-              <div className="flex items-center justify-between mb-8">
-                 <div className="space-y-1">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Candidate Quality Trend</CardTitle>
-                    <p className="text-[8px] font-black text-muted-foreground/60 uppercase">(AI Score Avg.)</p>
-                 </div>
-                 <select className="bg-transparent border border-border/40 rounded-lg text-[9px] font-black uppercase px-2 h-7">
-                    <option>Last 90 Days</option>
-                 </select>
-              </div>
-              <div className="h-[250px] w-full">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={qualityTrend}>
-                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                       <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-                       <YAxis tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-                       <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '10px' }} />
-                       <Line type="monotone" dataKey="score" name="AI Score (Average)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, fill: '#3b82f6' }} />
-                    </LineChart>
-                 </ResponsiveContainer>
-              </div>
-           </Card>
-
-           {/* AI Observations */}
-           <Card className="lg:col-span-3 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
-              <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-2">
-                 <Wand2 className="w-3.5 h-3.5 text-primary" /> AI Observations
-              </CardTitle>
-              <div className="space-y-8">
-                 {[
-                    { text: "Candidates with 'Data Visualization' skill have 28% higher success rate in Data roles.", icon: Lightbulb, color: "text-blue-500" },
-                    { text: "Weekday interviews (Tue-Thu) show 15% higher completion rate than other days.", icon: RefreshCw, color: "text-indigo-500" },
-                    { text: "Candidates applying between 10 AM - 2 PM have higher assessment completion rate.", icon: Clock, color: "text-emerald-500" },
-                 ].map((obs, i) => (
-                    <div key={i} className="flex gap-4 group">
-                       <div className={cn("shrink-0 p-2 h-fit rounded-xl bg-muted/50 border border-border/50 group-hover:scale-110 transition-transform", obs.color)}>
-                          <obs.icon className="w-3.5 h-3.5" />
-                       </div>
-                       <p className="text-[10px] font-medium text-foreground leading-relaxed leading-tight">{obs.text}</p>
-                    </div>
-                 ))}
-                 <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit text-primary flex items-center gap-2 group mt-4">
-                    Explore All Observations <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                 </Button>
-              </div>
-           </Card>
-
-        </div>
-
-        {/* TOP RECOMMENDED CANDIDATES (HORIZONTAL LIST) */}
-        <div className="space-y-4 pb-12">
+        {/* TOP RECOMMENDED NEURAL MATCHES */}
+        <div className="space-y-8 pb-20">
            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Top AI Recommended Candidates</h2>
-                 <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Based on role fit, skills, and potential</p>
+              <div className="space-y-2">
+                 <h2 className="text-2xl font-black uppercase tracking-tight text-foreground italic flex items-center gap-3">
+                    <Star className="w-7 h-7 text-amber-500 fill-amber-500" /> Top Recommended Neural Matches
+                 </h2>
+                 <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-60">Aggregated from Technical, Behavioral, and Cultural Alignment Vectors</p>
               </div>
-              <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">View All Candidates</Button>
+              <Button 
+                onClick={() => fetchData(true)}
+                variant="outline"
+                className="h-12 rounded-2xl border border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted transition-all px-8">
+                 <RefreshCw className="w-4 h-4" /> Refresh Talent Pool
+              </Button>
            </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {recommended.map((c, i) => (
-                 <Card key={i} className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden group hover:border-primary/30 transition-all cursor-pointer">
-                    <CardContent className="p-6 space-y-4">
-                       <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 rounded-xl bg-muted border border-border/50 overflow-hidden">
-                                <img src={c.img} alt="" className="w-full h-full object-cover" />
-                             </div>
-                             <div>
-                                <h4 className="text-[10px] font-black text-foreground uppercase tracking-tight">{c.name}</h4>
-                                <p className="text-[8px] font-bold text-muted-foreground uppercase">{c.role}</p>
-                             </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+              {data.topCandidates.map((c: any, i: number) => (
+                 <Card key={i} className="border-border/40 glass shadow-2xl rounded-[3rem] overflow-hidden group hover:scale-105 hover:border-primary/40 transition-all duration-500 cursor-pointer bg-gradient-to-b from-card to-background relative">
+                    <div className="absolute top-6 right-6">
+                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                    </div>
+                    <CardContent className="p-10 space-y-8 text-center">
+                       <div className="relative mx-auto w-32 h-32">
+                          <svg className="w-full h-full transform -rotate-90">
+                             <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-muted/10" />
+                             <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={377} strokeDashoffset={377 * (1 - parseFloat(c.score)/100)} className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-1000" strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                             <span className="text-2xl font-black text-foreground tracking-tighter">{c.score}</span>
+                             <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Match Index</span>
                           </div>
-                          <div className="relative w-10 h-10">
-                             <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2.5" fill="transparent" className="text-muted/10" />
-                                <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2.5" fill="transparent" strokeDasharray={113} strokeDashoffset={113 * (1 - 0.92)} className="text-emerald-500" />
-                             </svg>
-                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-[7px] font-black text-foreground">{c.score}</span>
-                             </div>
+                          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-20 rounded-[2rem] border-4 border-background bg-muted overflow-hidden shadow-2xl group-hover:scale-110 transition-transform duration-500 ring-8 ring-primary/5">
+                             <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
                           </div>
                        </div>
-                       <div className="flex items-center justify-between pt-2 border-t border-border/10">
-                          <Badge className="bg-emerald-500/10 text-emerald-500 text-[7px] font-black border-none px-2 h-4 uppercase">High Potential</Badge>
-                          <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest">AI FIT SCORE</span>
+                       <div className="pt-8 space-y-2">
+                          <h4 className="text-[15px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{c.name}</h4>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{c.role}</p>
+                       </div>
+                       <div className="flex flex-col gap-2.5 pt-4">
+                          <Badge className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black border-none py-2 uppercase tracking-widest rounded-xl justify-center">Technical Elite</Badge>
+                          <Badge className="bg-primary/10 text-primary text-[9px] font-black border-none py-2 uppercase tracking-widest rounded-xl justify-center">High Potential</Badge>
                        </div>
                     </CardContent>
                  </Card>

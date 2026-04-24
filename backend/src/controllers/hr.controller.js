@@ -61,6 +61,7 @@ exports.getAllApplications = async (req, res) => {
           _id: String(j.Candidate.id),
           name: j.Candidate.User?.name,
           email: j.Candidate.User?.email,
+          profileImage: j.Candidate.profile_image_path ? `http://localhost:5000${j.Candidate.profile_image_path.startsWith('/') ? '' : '/'}${j.Candidate.profile_image_path}` : null,
         } : j.candidate_id,
         jobId: j.Job ? {
           _id: String(j.Job.id),
@@ -758,7 +759,7 @@ exports.getInterviewStats = async (req, res) => {
         highlights: recentHighlights.map(h => ({
           name: h.Application?.Candidate?.User?.name || 'Candidate',
           insight: h.ai_analysis?.overall_feedback || "Demonstrated strong technical potential and cultural alignment.",
-          img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${h.Application?.Candidate?.User?.name || 'User'}`
+          img: h.Application?.Candidate?.profile_image_path ? `http://localhost:5000${h.Application?.Candidate?.profile_image_path.startsWith('/') ? '' : '/'}${h.Application?.Candidate?.profile_image_path}` : "/images/default-avatar.png"
         }))
       }
     });
@@ -800,7 +801,8 @@ exports.getInterviewsList = async (req, res) => {
       dateTime: i.scheduled_at || i.created_at,
       status: i.status,
       score: i.overall_score || '-',
-      recommendation: i.hire_recommendation
+      recommendation: i.hire_recommendation,
+      img: i.Application?.Candidate?.profile_image_path ? `http://localhost:5000${i.Application?.Candidate?.profile_image_path.startsWith('/') ? '' : '/'}${i.Application?.Candidate?.profile_image_path}` : "/images/default-avatar.png"
     }));
 
     res.json({

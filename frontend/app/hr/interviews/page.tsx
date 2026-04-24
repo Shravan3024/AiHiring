@@ -324,7 +324,12 @@ export default function HighFidelityInterviewsV2() {
                         <p className="text-xs font-medium text-foreground leading-relaxed italic mb-4">"{h.insight}"</p>
                         <div className="flex items-center gap-2 pt-2 border-t border-border/10">
                             <div className="w-6 h-6 rounded-full bg-muted border border-border/50 overflow-hidden">
-                              <img src={h.img} alt="" className="w-full h-full object-cover" />
+                              <img 
+                                src={h.img} 
+                                alt="" 
+                                className="w-full h-full object-cover" 
+                                onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                              />
                             </div>
                             <span className="text-[10px] font-black text-foreground uppercase tracking-tight">{h.name}</span>
                         </div>
@@ -373,7 +378,12 @@ export default function HighFidelityInterviewsV2() {
                                    <td className="px-6 py-4">
                                       <div className="flex items-center gap-3">
                                          <div className="w-9 h-9 rounded-xl bg-muted border border-border/50 overflow-hidden">
-                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${int.candidate}`} alt="" className="w-full h-full object-cover" />
+                                            <img 
+                                               src={int.img || "/images/default-avatar.png"} 
+                                               alt="" 
+                                               className="w-full h-full object-cover" 
+                                               onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                                            />
                                          </div>
                                          <div>
                                             <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{int.candidate}</p>

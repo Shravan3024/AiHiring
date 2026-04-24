@@ -272,7 +272,12 @@ export default function CandidatesPage() {
                              <td className="px-8 py-5">
                                 <div className="flex items-center gap-4">
                                    <div className="w-10 h-10 rounded-2xl bg-muted border border-border/50 overflow-hidden shadow-sm group-hover:border-primary/40 transition-colors">
-                                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || i}`} alt="Avatar" className="w-full h-full object-cover" />
+                                      <img 
+                                         src={app.candidateId?.profileImage || "/images/default-avatar.png"} 
+                                         alt="Avatar" 
+                                         className="w-full h-full object-cover" 
+                                         onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                                      />
                                    </div>
                                    <div>
                                       <p className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{user?.name || "Candidate"}</p>

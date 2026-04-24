@@ -14,7 +14,7 @@ export default function CandidateProfilePage() {
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["candidate-profile", id],
-    queryFn: () => hrApi.getCandidateProfile(id).then(r => r.data || {}),
+    queryFn: () => hrApi.getCandidateById(id).then(r => r.data || {}),
     enabled: !!id,
   });
 

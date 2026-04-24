@@ -668,11 +668,65 @@ exports.getAIAnalysis = async (req, res) => {
       where: { application_id: applicationId }
     });
 
-    // Fetch AssessmentAttempt to get the actual answers provided
-    const { AssessmentAttempt, TechnicalQuestionBank } = require('../models');
+    const { AssessmentAttempt, TechnicalQuestionBank, MCQQuestion, InterviewQuestionBank } = require('../models');
     const assessmentAttempts = await AssessmentAttempt.findAll({
       where: { application_id: applicationId },
       order: [['created_at', 'DESC']]
+    });
+
+    // Resolve all question IDs across all banks
+    const allQIds = new Set();
+    assessmentAttempts.forEach(att => {
+      let answers = att.answers;
+      if (typeof answers === 'string') { try { answers = JSON.parse(answers); } catch (e) { answers = {}; } }
+      if (answers) Object.keys(answers).forEach(id => { if (id && id !== 'null') allQIds.add(id); });
+    });
+
+    const questionMap = {};
+    if (allQIds.size > 0) {
+      const ids = Array.from(allQIds);
+      
+      // 1. Technical Bank
+      const techQs = await TechnicalQuestionBank.findAll({ attributes: ['questionId', 'question', 'correct_answer', 'expected_answer'] });
+      techQs.forEach(q => {
+        if (q.questionId) {
+          questionMap[q.questionId.trim()] = { text: q.question, correct: q.correct_answer || q.expected_answer };
+          questionMap[q.questionId.toLowerCase().trim()] = { text: q.question, correct: q.correct_answer || q.expected_answer };
+        }
+      });
+
+      // 2. MCQ Bank
+      const mcqQs = await MCQQuestion.findAll({ attributes: ['id', 'question', 'correct_option'] });
+      mcqQs.forEach(q => { questionMap[String(q.id)] = { text: q.question, correct: q.correct_option }; });
+
+      // 3. Interview Bank
+      const intQs = await InterviewQuestionBank.findAll({ attributes: ['questionId', 'question', 'expectedAnswer'] });
+      intQs.forEach(q => {
+        if (q.questionId) {
+          questionMap[q.questionId.trim()] = { text: q.question, correct: q.expectedAnswer };
+          questionMap[q.questionId.toLowerCase().trim()] = { text: q.question, correct: q.expectedAnswer };
+        }
+      });
+    }
+
+    const enrichedAttempts = assessmentAttempts.map(att => {
+      const attObj = att.get({ plain: true });
+      let answers = attObj.answers;
+      if (typeof answers === 'string') { try { answers = JSON.parse(answers); } catch (e) { answers = {}; } }
+      
+      if (answers) {
+        const enrichedAnswers = {};
+        Object.keys(answers).forEach(qId => {
+          const qData = questionMap[qId] || questionMap[qId.toLowerCase()] || {};
+          enrichedAnswers[qId] = {
+            ...answers[qId],
+            question_text: qData.text || null,
+            correct_answer: qData.correct || null
+          };
+        });
+        attObj.answers = enrichedAnswers;
+      }
+      return attObj;
     });
 
     // Enrich assessment analyses with question details if available
@@ -719,15 +773,36 @@ exports.getAIAnalysis = async (req, res) => {
       where: { application_id: applicationId }
     });
 
+    // Fetch Application with associations for candidate/job details
+    const application = await Application.findByPk(applicationId, {
+      include: [
+        { 
+          model: Candidate, 
+          include: [{ model: User, attributes: ['name', 'email'] }] 
+        },
+        { model: Job, attributes: ['title', 'department'] },
+        { model: require('../models').MalpracticeEvent }
+      ]
+    });
+
     return res.status(200).json({
       success: true,
       message: 'AI analysis retrieved successfully',
       data: {
+        candidate: application?.Candidate ? {
+          name: application.Candidate.User?.name || 'N/A',
+          email: application.Candidate.User?.email || 'N/A'
+        } : null,
+        job: application?.Job ? {
+          title: application.Job.title || 'N/A',
+          department: application.Job.department || 'N/A'
+        } : null,
         resume_analysis: resumeAnalysis,
         assessment_analyses: enrichedAssessments,
         interview_analysis: interviewAnalysis,
         ai_decision: aiDecision,
-        assessment_attempts: assessmentAttempts
+        assessment_attempts: enrichedAttempts,
+        malpractice_events: application?.MalpracticeEvents || []
       }
     });
 

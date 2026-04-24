@@ -23,6 +23,8 @@ const proctoringRoutes = require("./routes/proctoring.routes");
 const aiRoutes = require("./routes/ai.routes.complete");
 const scoringRoutes = require("./routes/scoring.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const aiInsightsRoutes = require("./routes/aiInsights.routes");
+const talentPoolRoutes = require("./routes/talentPool.routes");
 console.log("✅ ai.routes.complete loaded");
 console.log("✅ scoring.routes loaded");
 
@@ -88,5 +90,7 @@ app.use("/api/md", mdRoutes);
 app.use("/api/ai", aiRoutes); // 🔥 AI Analysis Pipeline
 app.use("/api/score", scoringRoutes); // 🔥 Standalone Scoring Engine
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/hr/ai-insights", aiInsightsRoutes);
+app.use("/api/hr/talent-pool", talentPoolRoutes);
 
 module.exports = app;

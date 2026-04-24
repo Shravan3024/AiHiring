@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Mic, MessageSquare, CheckCircle, AlertCircle, TrendingUp,
-  RefreshCw, Brain, Zap, Flag, Heart,
+  RefreshCw, Brain, Zap, Flag, Heart, Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { generateInterviewReport } from "@/lib/utils/generateReports";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer,
@@ -69,78 +70,46 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
   ] : [];
 
   const getRecommendationColor = (recommendation: string) => {
-    if (recommendation.includes("strong_yes")) return "bg-green-600";
-    if (recommendation.includes("yes")) return "bg-green-500";
-    if (recommendation.includes("maybe")) return "bg-yellow-600";
-    if (recommendation.includes("no")) return "bg-red-500";
+    if (!recommendation) return "bg-gray-600";
+    const rec = recommendation.toLowerCase();
+    if (rec.includes("strong_yes")) return "bg-green-600";
+    if (rec.includes("yes")) return "bg-green-500";
+    if (rec.includes("maybe")) return "bg-yellow-600";
+    if (rec.includes("no")) return "bg-red-500";
     return "bg-gray-600";
   };
 
   return (
     <div className="space-y-6">
       {/* Transcript Input */}
+      {/* Auto Analysis Trigger */}
       {!interviewData && (
         <Card className="border-2 border-blue-100 shadow-lg overflow-hidden">
           <div className="bg-blue-600 p-4 text-white">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Mic className="w-5 h-5" />
-              Interview Evaluation Engine
+              Automated Interview Intelligence
             </CardTitle>
-            <p className="text-blue-100 text-xs mt-1">Generate technical insights and performance predictions from candidate responses.</p>
+            <p className="text-blue-100 text-xs mt-1">Neural core ready for semantic session analysis.</p>
           </div>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-10 text-center space-y-6">
+            <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-sm border-4 border-white ring-8 ring-blue-50/50">
+               <Zap className="w-10 h-10 text-blue-600 fill-blue-600 animate-pulse" />
+            </div>
             
-            {hasSession ? (
-              <div className="p-6 bg-blue-50 rounded-2xl border border-blue-200 text-center space-y-4">
-                <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                   <Zap className="w-8 h-8 text-blue-600 fill-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900">AI Interview Session Detected</h4>
-                  <p className="text-sm text-slate-500 max-w-md mx-auto">The candidate has completed the AI Video Interview. We can now run a full semantic analysis on their responses.</p>
-                </div>
-                <Button 
-                  onClick={() => analyzeInterview("")} 
-                  disabled={isPending}
-                  className="bg-blue-600 hover:bg-blue-700 px-8 h-12 rounded-xl font-bold gap-2 shadow-lg"
-                >
-                  {isPending ? <RefreshCw className="animate-spin w-5 h-5" /> : <Brain className="w-5 h-5" />}
-                  Run Comprehensive AI Analysis
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-black uppercase tracking-widest text-slate-500 mb-3">
-                  Manual Transcript Analysis
-                </label>
-                <Textarea
-                  placeholder="Paste interview transcript here. Format:&#10;Q: Question text&#10;A: Answer text..."
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  rows={8}
-                  className="font-mono text-sm bg-slate-50 border-slate-200 rounded-xl focus:ring-blue-500"
-                />
-                <div className="flex items-center justify-between mt-4">
-                  <p className="text-[10px] text-gray-500 italic">
-                    Tip: Format with Q: for questions and A: for answers for better analysis.
-                  </p>
-                  <Button
-                    onClick={() => analyzeInterview(transcript)}
-                    disabled={isPending || !transcript.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 font-bold px-6"
-                  >
-                    {isPending ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      "Analyze Transcript"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
+            <div className="max-w-md mx-auto space-y-2">
+              <h4 className="font-black text-slate-900 uppercase tracking-tight text-xl">Session Intelligence Detected</h4>
+              <p className="text-sm text-slate-500 font-medium">The candidate's AI Video Interview session is available for deep-learning analysis. Click below to generate forensic performance insights.</p>
+            </div>
+
+            <Button 
+              onClick={() => analyzeInterview("")} 
+              disabled={isPending}
+              className="bg-blue-600 hover:bg-blue-700 px-10 h-14 rounded-2xl font-black text-sm gap-3 shadow-xl transition-all hover:scale-105 active:scale-95"
+            >
+              {isPending ? <RefreshCw className="animate-spin w-5 h-5" /> : <Brain className="w-5 h-5" />}
+              INITIATE NEURAL ANALYSIS
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -152,8 +121,24 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Interview Analysis</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-blue-600" />
+                  <span>Interview Analysis</span>
+                </div>
                 <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => generateInterviewReport({
+                      candidate: profileRes?.data?.candidate,
+                      job: profileRes?.data?.job,
+                      analysis: interviewData,
+                      session: profileRes?.data?.interview_session
+                    })}
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 border-slate-300 hover:bg-slate-50"
+                  >
+                    <Download className="w-3 h-3" /> Download Interview Report
+                  </Button>
                   <Badge className={cn(
                     "text-white",
                     interviewData.overall_score >= 70 ? "bg-green-600" :
