@@ -135,14 +135,31 @@ export default function Sidebar() {
           <button 
              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group border border-border/50",
+                "w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group border border-border/50 shadow-sm",
                 theme === "dark" 
-                   ? "text-amber-500 bg-amber-500/5 hover:bg-amber-500/10" 
-                   : "text-primary bg-primary/5 hover:bg-primary/10"
+                   ? "text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20" 
+                   : "text-primary bg-primary/5 hover:bg-primary/10 border-primary/20"
              )}
           >
-             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-             {sidebarOpen && <span className="text-[10px] font-black uppercase tracking-widest mt-0.5">{theme === "dark" ? "Solaris Mode" : "Deep Space"}</span>}
+             <div className="flex items-center gap-4">
+                <div className={cn(
+                   "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                   theme === "dark" ? "bg-amber-500/20" : "bg-primary/20"
+                )}>
+                   {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </div>
+                {sidebarOpen && <span className="text-[10px] font-black uppercase tracking-widest mt-0.5">{theme === "dark" ? "Solaris Mode" : "Deep Space"}</span>}
+             </div>
+             {sidebarOpen && (
+                <div className={cn(
+                   "w-10 h-5 rounded-full relative transition-all duration-500 border border-current opacity-40",
+                )}>
+                   <div className={cn(
+                      "absolute top-1 w-2.5 h-2.5 rounded-full transition-all duration-500 shadow-sm",
+                      theme === "dark" ? "right-1.5 bg-amber-500" : "left-1.5 bg-primary"
+                   )} />
+                </div>
+             )}
           </button>
 
           <button

@@ -1,16 +1,17 @@
 const aiService = require('../services/ai.service');
 const scoringService = require('../services/scoring.service');
-const { 
-  Resume, 
-  ResumeAnalysis, 
-  AssessmentAnalysis, 
-  InterviewAnalysis, 
+const {
+  Resume,
+  ResumeAnalysis,
+  AssessmentAnalysis,
+  InterviewAnalysis,
   AIDecision,
   Application,
   ApplicationStatusLog,
   Candidate,
   ManualJobMapping,
-  Job
+  Job,
+  User
 } = require('../models');
 const logger = require('../utils/logger');
 
@@ -44,7 +45,7 @@ exports.parseResumeWithAI = async (req, res) => {
 
     // Parse with AI service
     const parsedData = await aiService.parseResumeWithAI(req.file.path);
-    
+
     // Generate resume summary
     const summary = await aiService.generateResumeSummary(parsedData);
 
@@ -52,7 +53,7 @@ exports.parseResumeWithAI = async (req, res) => {
     const job = jobId ? await Job.findByPk(jobId) : null;
     const jdText = job ? `${job.title} ${job.description} ${job.required_skills?.join(' ')}` : '';
     const resumeText = JSON.stringify(parsedData);
-    
+
     // ML Validation Layer (Cosine Similarity)
     const cosineSimilarityScore = scoringService.calculateCosineSimilarity(jdText, resumeText);
     const hybridJDScore = Math.round((parsedData.overall_score * 0.6) + (cosineSimilarityScore * 40));
@@ -73,10 +74,10 @@ exports.parseResumeWithAI = async (req, res) => {
       recommendations: summary.recommended_improvements || [],
       key_achievements: parsedData.key_achievements,
       overall_score: hybridJDScore,
-      jd_match_score: 0, 
+      jd_match_score: 0,
       total_years_experience: parsedData.total_years_experience,
       highest_qualification: parsedData.highest_qualification,
-      ai_model_used: 'gemini-2.5-flash-hybrid'
+      ai_model_used: 'gemini-2.0-flash-hybrid'
     });
 
     // JD matching if jobId provided
@@ -93,7 +94,7 @@ exports.parseResumeWithAI = async (req, res) => {
 
     // Update application with resume score
     await Application.update(
-      { 
+      {
         resume_score: resumeAnalysis.jd_match_score || resumeAnalysis.overall_score,
         status: 'RESUME_EVALUATED'
       },
@@ -126,15 +127,15 @@ exports.parseResumeWithAI = async (req, res) => {
 
   } catch (error) {
     logger.warn(`AI Resume parsing failed for application ${req.body.applicationId}, triggering ML Fallback:`, error.message);
-    
+
     try {
       const { applicationId, jobId } = req.body;
       const job = jobId ? await Job.findByPk(jobId) : null;
       const application = await Application.findByPk(applicationId);
-      
+
       const jdText = job ? `${job.title} ${job.description} ${job.required_skills?.join(' ')}` : '';
       const candidateInfo = `${application?.skills?.join(' ')} ${application?.summary || ''} ${application?.experience_years} years ${application?.education}`;
-      
+
       const mlScore = Math.round(scoringService.calculateCosineSimilarity(jdText, candidateInfo) * 100);
       const skillMatch = scoringService.matchSkills(job?.required_skills?.join(' ') || job?.title || '', application?.skills || []);
 
@@ -161,6 +162,127 @@ exports.parseResumeWithAI = async (req, res) => {
       logger.error(`Critical Failure: Even ML fallback failed for app ${req.body.applicationId}:`, manualError);
       return res.status(500).json({ success: false, message: 'Total failure of evaluation system' });
     }
+  }
+};
+
+/**
+ * Re-parse an existing resume for an application
+ */
+exports.reparseResume = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    logger.info(`Triggering re-parse for application ${applicationId}`);
+
+    const application = await Application.findByPk(applicationId, {
+      include: [{ model: Candidate }, { model: Job }]
+    });
+
+    if (!application || !application.Candidate) {
+      return res.status(404).json({ success: false, message: 'Application or Candidate not found' });
+    }
+
+    const candidate = application.Candidate;
+    const resumePath = candidate.resume_path;
+
+    if (!resumePath) {
+      return res.status(400).json({ success: false, message: 'No resume found for this candidate' });
+    }
+
+    const path = require('path');
+    const fs = require('fs');
+    const absolutePath = path.join(__dirname, '../../../', resumePath);
+
+    if (!fs.existsSync(absolutePath)) {
+      logger.warn(`[Reparse] File not found at ${absolutePath}, searching in alternate locations...`);
+      // Try alternate path if first one fails
+      const altPath = path.join(__dirname, '../../', resumePath);
+      if (!fs.existsSync(altPath)) {
+        return res.status(404).json({
+          success: false,
+          message: `Resume file not found on disk at any expected location: ${resumePath}`,
+          code: 'FILE_NOT_FOUND'
+        });
+      }
+    }
+
+    // Parse with AI service
+    const parsedData = await aiService.parseResumeWithAI(absolutePath);
+
+    // Generate resume summary
+    const summary = await aiService.generateResumeSummary(parsedData);
+
+    // Fetch Job Data
+    const job = application.Job;
+    const jdText = job ? `${job.title} ${job.description} ${job.required_skills?.join(' ')}` : '';
+    const resumeText = JSON.stringify(parsedData);
+
+    // ML Validation Layer (Cosine Similarity)
+    const cosineSimilarityScore = scoringService.calculateCosineSimilarity(jdText, resumeText);
+    const hybridScore = Math.round((parsedData.overall_score * 0.6) + (cosineSimilarityScore * 40));
+
+    // Update or Create AI Analysis
+    let resumeAnalysis = await ResumeAnalysis.findOne({ where: { application_id: applicationId } });
+
+    const analysisData = {
+      contact_info: parsedData.contact_info,
+      education: parsedData.education,
+      experience: parsedData.experience,
+      skills: parsedData.skills,
+      certifications: parsedData.certifications,
+      ai_summary: summary.executive_summary,
+      strengths: summary.key_strengths,
+      weaknesses: summary.weaknesses || [],
+      recommendations: summary.recommended_improvements || [],
+      overall_score: hybridScore,
+      total_years_experience: parsedData.total_years_experience,
+      highest_qualification: parsedData.highest_qualification,
+      ai_model_used: 'gemini-2.0-flash-hybrid'
+    };
+
+    if (resumeAnalysis) {
+      await resumeAnalysis.update(analysisData);
+    } else {
+      resumeAnalysis = await ResumeAnalysis.create({
+        application_id: applicationId,
+        ...analysisData
+      });
+    }
+
+    // JD matching if job exists
+    if (job) {
+      const jdScore = await aiService.scoreResume(parsedData, job.id);
+      const finalJDScore = Math.round((jdScore.overall_fit_percentage * 0.6) + (cosineSimilarityScore * 40));
+      await resumeAnalysis.update({
+        jd_match_score: finalJDScore,
+        jd_matched_skills: jdScore.matched_skills,
+        jd_missing_skills: jdScore.missing_skills
+      });
+    }
+
+    // Update application with resume score
+    await application.update({
+      resume_score: resumeAnalysis.jd_match_score || resumeAnalysis.overall_score,
+      status: application.status === 'PENDING' ? 'RESUME_EVALUATED' : application.status
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Resume re-parsed successfully',
+      data: {
+        analysis_id: resumeAnalysis.id,
+        resume_score: resumeAnalysis.overall_score,
+        jd_match_score: resumeAnalysis.jd_match_score
+      }
+    });
+
+  } catch (error) {
+    logger.error(`[Reparse] Critical failure for app ${req.params.applicationId}: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to re-parse resume: ' + error.message,
+      code: 'REPARSE_ERROR'
+    });
   }
 };
 
@@ -210,9 +332,21 @@ exports.analyzeCodingAssessment = async (req, res) => {
       improvement_areas: analysis.optimization_suggestions,
       estimated_skill_level: analysis.skill_level,
       estimated_years_experience: analysis.estimated_experience_years,
-      detailed_feedback: JSON.stringify(analysis),
+      detailed_feedback: analysis.detailed_feedback,
       follow_up_questions: analysis.recommendations,
-      ai_model_used: 'gemini-2.5-flash-hybrid'
+      ai_model_used: 'gemini-2.0-flash-hybrid'
+    });
+
+    const { AssessmentAttempt } = require('../models');
+    await AssessmentAttempt.update({
+      ai_score: analysis.overall_score || 0,
+      structure_score: analysis.structure_score || 0,
+      concept_coverage: analysis.concept_coverage || 0,
+      final_score: hybridScore,
+      ai_feedback: analysis.detailed_feedback,
+      status: 'COMPLETED'
+    }, {
+      where: { application_id: applicationId, assessment_type: 'coding' }
     });
 
     // Update application with hybrid technical score
@@ -235,7 +369,7 @@ exports.analyzeCodingAssessment = async (req, res) => {
     logger.warn(`Coding assessment analysis failed for app ${req.body.applicationId}, triggering ML Fallback:`, error.message);
     try {
       const { applicationId, code, problemDescription, testName } = req.body;
-      
+
       // ML FALLBACK
       const similarityScore = scoringService.calculateCosineSimilarity(code, problemDescription);
       const fallbackScore = Math.round(similarityScore * 100);
@@ -306,8 +440,20 @@ exports.analyzeMCQAssessment = async (req, res) => {
       weaknesses: analysis.topics_weaknesses || [],
       improvement_areas: analysis.learning_recommendations || [],
       estimated_skill_level: analysis.estimated_skill_level,
-      detailed_feedback: JSON.stringify(analysis),
-      ai_model_used: 'gemini-2.5-flash-hybrid'
+      detailed_feedback: analysis.detailed_feedback || `Score: ${analysis.score_percentage}%`,
+      ai_model_used: 'gemini-2.0-flash-hybrid'
+    });
+
+    const { AssessmentAttempt } = require('../models');
+    await AssessmentAttempt.update({
+      ai_score: analysis.score_percentage || 0,
+      structure_score: 85,
+      concept_coverage: analysis.score_percentage || 0,
+      final_score: score,
+      ai_feedback: analysis.detailed_feedback || `Score: ${analysis.score_percentage}%`,
+      status: 'COMPLETED'
+    }, {
+      where: { application_id: applicationId, assessment_type: 'mcq' }
     });
 
     // Update application with technical score
@@ -330,12 +476,12 @@ exports.analyzeMCQAssessment = async (req, res) => {
     logger.warn(`MCQ assessment analysis failed for app ${req.body.applicationId}, attempting deterministic fallback:`, error.message);
     try {
       const { applicationId, questions, answers, testName } = req.body;
-      
+
       // DETERMINISTIC FALLBACK (Pure Logic)
       let correct = 0;
-      questions.forEach((q, i) => { 
+      questions.forEach((q, i) => {
         if (answers[i] === q.correct_answer || answers[i]?.toString() === q.correct_answer?.toString()) {
-          correct++; 
+          correct++;
         }
       });
       const score = Math.round((correct / questions.length) * 100);
@@ -371,14 +517,49 @@ exports.analyzeMCQAssessment = async (req, res) => {
  */
 exports.analyzeInterview = async (req, res) => {
   try {
-    const { applicationId, transcript, questions, interviewType } = req.body;
+    let { applicationId, transcript, questions, interviewType } = req.body;
 
-    if (!applicationId || !transcript) {
+    if (!applicationId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: applicationId, transcript',
+        message: 'applicationId is required',
         code: 'INVALID_INPUT'
       });
+    }
+
+    // CRITICAL: If transcript is missing, try to fetch from InterviewSession
+    if (!transcript || transcript.trim() === "") {
+      const { InterviewSession } = require('../models');
+      const session = await InterviewSession.findOne({
+        where: { application_id: applicationId },
+        order: [['created_at', 'DESC']]
+      });
+
+      if (session) {
+        if (session.transcription) {
+          transcript = session.transcription;
+          logger.info(`Fetched transcript from database for application ${applicationId}`);
+        } else if (session.questions_asked && Array.isArray(session.questions_asked)) {
+          // Rebuild transcript from questions
+          const parts = session.questions_asked
+            .filter(q => q.response_text)
+            .map(q => `Q: ${q.question_text || q.question}\nA: ${q.response_text}`)
+            .join('\n\n');
+
+          if (parts) {
+            transcript = parts;
+            logger.info(`Rebuilt transcript from questions_asked for application ${applicationId}`);
+          }
+        }
+      }
+
+      if (!transcript || transcript.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: 'No transcript provided and no session recording found.',
+          code: 'TRANSCRIPT_MISSING'
+        });
+      }
     }
 
     logger.info(`Analyzing interview for application ${applicationId}`);
@@ -392,41 +573,60 @@ exports.analyzeInterview = async (req, res) => {
     const aiScore = analysis.overall_assessment?.overall_score || 0;
 
     // ML Validation Layer (TF-IDF + Cosine Similarity)
-    // We compare transcript with expected answers or JD context
     const referenceText = questions ? JSON.stringify(questions) : "Job Requirements and Technical Skills";
     const similarityScore = scoringService.calculateCosineSimilarity(transcript, referenceText);
-    
-    // Hybrid Rule: (ai_score * 0.6) + (cosine_similarity_score * 0.4)
-    const hybridScore = Math.round((aiScore * 0.6) + (similarityScore * 40));
+
+    // Hybrid Rule: (ai_score * 0.7) + (similarityScore * 30)
+    const hybridScore = Math.round((aiScore * 0.7) + (similarityScore * 30));
 
     // Store interview analysis
     const interviewAnalysis = await InterviewAnalysis.create({
       application_id: applicationId,
       interview_type: interviewType || 'technical',
-      transcript: transcript.substring(0, 5000), 
+      transcript: transcript.substring(0, 10000),
       qa_pairs: analysis.qa_analyses || [],
       overall_score: hybridScore,
-      technical_knowledge_score: Math.round(hybridScore * 0.8),
-      problem_solving_score: Math.round(hybridScore * 0.7),
-      communication_score: Math.round(hybridScore * 0.9),
-      soft_skills_score: Math.round(hybridScore * 0.6),
-      cultural_fit_score: Math.round(hybridScore * 0.5),
+      technical_knowledge_score: analysis.metrics?.technical_knowledge || Math.round(hybridScore * 0.8),
+      problem_solving_score: analysis.metrics?.problem_solving || Math.round(hybridScore * 0.7),
+      communication_score: analysis.metrics?.communication || Math.round(hybridScore * 0.9),
+      soft_skills_score: analysis.metrics?.soft_skills || Math.round(hybridScore * 0.6),
+      cultural_fit_score: analysis.metrics?.cultural_fit || Math.round(hybridScore * 0.5),
+
+      confidence_level: analysis.speaking_patterns?.confidence_level || 'moderate',
+      pace: analysis.speaking_patterns?.pace || 'steady',
+      clarity: analysis.speaking_patterns?.clarity || 'clear',
+      hesitation_level: analysis.speaking_patterns?.hesitation_level || 'low',
+
       answer_analyses: analysis.qa_analyses,
       strengths: analysis.overall_assessment?.key_takeaways || [],
-      weaknesses: [],
+      weaknesses: analysis.weaknesses || [],
       green_flags: analysis.green_flags || [],
       red_flags: analysis.red_flags || [],
+
+      predicted_on_job_performance: analysis.performance_prediction?.predicted_on_job_performance || 'strong',
+      time_to_productivity_months: analysis.performance_prediction?.time_to_productivity_months || 1,
+      retention_probability_percentage: analysis.performance_prediction?.retention_probability_percentage || 80,
+
       hire_recommendation: analysis.recommendation || 'maybe',
       next_round_ready: analysis.overall_assessment?.next_round_readiness || false,
       detailed_evaluation: JSON.stringify(analysis),
-      ai_model_used: 'gemini-2.5-flash-hybrid'
+      ai_model_used: 'gemini-2.0-flash-hybrid'
     });
 
     // Update application and core interview record
+    await Application.update(
+      {
+        interview_score: hybridScore,
+        behavioral_score: analysis.metrics?.soft_skills || 70,
+        status: 'INTERVIEW_COMPLETED'
+      },
+      { where: { id: applicationId } }
+    );
+
     const { Interview } = require('../models');
     await Interview.update(
-      { 
-        ai_score: interviewAnalysis.overall_score, 
+      {
+        ai_score: interviewAnalysis.overall_score,
         ai_summary: interviewAnalysis.hire_recommendation,
         status: 'COMPLETED'
       },
@@ -434,7 +634,7 @@ exports.analyzeInterview = async (req, res) => {
     );
 
     await Application.update(
-      { 
+      {
         interview_score: interviewAnalysis.overall_score,
         status: 'HR_REVIEW' // Assessment is likely done if they reach here
       },
@@ -457,7 +657,7 @@ exports.analyzeInterview = async (req, res) => {
     logger.warn(`Interview analysis failed for app ${req.body.applicationId}, triggering ML Fallback:`, error.message);
     try {
       const { applicationId, transcript, interviewType } = req.body;
-      
+
       // ML FALLBACK (Deterministic Similarity Engine)
       const similarityScore = scoringService.calculateCosineSimilarity(transcript, "Technical skills, experience, and professional background");
       const fallbackScore = Math.round(similarityScore * 100);
@@ -512,7 +712,7 @@ exports.makeFinalAIDecision = async (req, res) => {
     const application = await Application.findByPk(applicationId, {
       include: [{ model: Job }]
     });
-    
+
     if (!application) {
       return res.status(404).json({
         success: false,
@@ -525,7 +725,7 @@ exports.makeFinalAIDecision = async (req, res) => {
     const resumeScore = application.resume_score || 0;
     const technicalScore = application.technical_score || 0;
     const interviewScore = application.interview_score || 0;
-    const isAiAvailable = true; 
+    const isAiAvailable = true;
 
     // Calculate text-based skill match for final insights
     const skillMatch = scoringService.matchSkills(job?.required_skills?.join(' ') || job?.title || '', application?.skills || []);
@@ -541,8 +741,8 @@ exports.makeFinalAIDecision = async (req, res) => {
       skillMatch: skillMatch
     });
     const finalScore = scoringResult.finalScore;
-    const aiDecision = scoringResult.decision === 'HIRE' ? 'RECOMMENDED' : 
-                      scoringResult.decision === 'HOLD' ? 'PROCEED_TO_HR' : 'AUTO_REJECTED';
+    const aiDecision = scoringResult.decision === 'HIRE' ? 'RECOMMENDED' :
+      scoringResult.decision === 'HOLD' ? 'PROCEED_TO_HR' : 'AUTO_REJECTED';
     const decisionReason = scoringResult.insights.reasoning;
 
     // Store AI decision with hybrid insights
@@ -563,7 +763,7 @@ exports.makeFinalAIDecision = async (req, res) => {
       decision_reason: decisionReason,
       confidence_percentage: Math.round(scoringResult.confidence * 100),
       summary: `Score: ${finalScore}% | Method: ${scoringResult.methodUsed}. ${scoringResult.insights.reasoning}`,
-      ai_model_used: isAiAvailable ? 'gemini-2.5-flash-hybrid' : 'ml-regression-fallback'
+      ai_model_used: isAiAvailable ? 'gemini-2.0-flash-hybrid' : 'ml-regression-fallback'
     });
 
     // Update application status based on decision
@@ -576,7 +776,7 @@ exports.makeFinalAIDecision = async (req, res) => {
     // }
 
     await Application.update(
-      { 
+      {
         status: 'HR_REVIEW', // Consistent review state
         overall_score: finalScore
       },
@@ -617,7 +817,7 @@ exports.makeFinalAIDecision = async (req, res) => {
   } catch (error) {
     logger.error(`Final AI decision error for application ${req.body.applicationId}:`, error);
     if (error.errors) {
-       error.errors.forEach(e => logger.error(`  - ${e.field}: ${e.message}`));
+      error.errors.forEach(e => logger.error(`  - ${e.field}: ${e.message}`));
     }
     return res.status(500).json({
       success: false,
@@ -685,7 +885,7 @@ exports.getAIAnalysis = async (req, res) => {
     const questionMap = {};
     if (allQIds.size > 0) {
       const ids = Array.from(allQIds);
-      
+
       // 1. Technical Bank
       const techQs = await TechnicalQuestionBank.findAll({ attributes: ['questionId', 'question', 'correct_answer', 'expected_answer'] });
       techQs.forEach(q => {
@@ -713,7 +913,7 @@ exports.getAIAnalysis = async (req, res) => {
       const attObj = att.get({ plain: true });
       let answers = attObj.answers;
       if (typeof answers === 'string') { try { answers = JSON.parse(answers); } catch (e) { answers = {}; } }
-      
+
       if (answers) {
         const enrichedAnswers = {};
         Object.keys(answers).forEach(qId => {
@@ -734,12 +934,12 @@ exports.getAIAnalysis = async (req, res) => {
       const attempt = assessmentAttempts.find(a => a.id === analysis.attempt_id) || assessmentAttempts[0];
       if (attempt && attempt.answers) {
         // Handle both Array (legacy) and Object (new) formats for answers
-        const answersArray = Array.isArray(attempt.answers) 
-          ? attempt.answers 
-          : Object.entries(attempt.answers).map(([qid, data]) => ({ 
-              question_id: qid, 
-              answer_text: typeof data === 'string' ? data : data.answer_text 
-            }));
+        const answersArray = Array.isArray(attempt.answers)
+          ? attempt.answers
+          : Object.entries(attempt.answers).map(([qid, data]) => ({
+            question_id: qid,
+            answer_text: typeof data === 'string' ? data : data.answer_text
+          }));
 
         const questionIds = answersArray.map((a) => a.question_id);
         const questions = await TechnicalQuestionBank.findAll({
@@ -776,9 +976,9 @@ exports.getAIAnalysis = async (req, res) => {
     // Fetch Application with associations for candidate/job details
     const application = await Application.findByPk(applicationId, {
       include: [
-        { 
-          model: Candidate, 
-          include: [{ model: User, attributes: ['name', 'email'] }] 
+        {
+          model: Candidate,
+          include: [{ model: User, attributes: ['name', 'email'] }]
         },
         { model: Job, attributes: ['title', 'department'] },
         { model: require('../models').MalpracticeEvent }
@@ -797,6 +997,7 @@ exports.getAIAnalysis = async (req, res) => {
           title: application.Job.title || 'N/A',
           department: application.Job.department || 'N/A'
         } : null,
+        resume_url: application?.resume_url ? `http://localhost:5000${application.resume_url}` : (application?.Candidate?.resume_path ? `http://localhost:5000${application.Candidate.resume_path}` : null),
         resume_analysis: resumeAnalysis,
         assessment_analyses: enrichedAssessments,
         interview_analysis: interviewAnalysis,
@@ -805,6 +1006,7 @@ exports.getAIAnalysis = async (req, res) => {
         malpractice_events: application?.MalpracticeEvents || []
       }
     });
+
 
   } catch (error) {
     logger.error(`Get AI analysis error for application ${req.params.applicationId}:`, error);
@@ -883,7 +1085,7 @@ exports.getAIAnalytics = async (req, res) => {
     if (skillLevel) {
       decisions = decisions.filter(d => {
         const estimatedLevel = d.summary?.includes('junior') ? 'junior' :
-                               d.summary?.includes('mid') ? 'mid_level' : 'senior';
+          d.summary?.includes('mid') ? 'mid_level' : 'senior';
         return estimatedLevel === skillLevel;
       });
     }
@@ -894,7 +1096,7 @@ exports.getAIAnalytics = async (req, res) => {
       recommended_count: decisions.filter(d => d.ai_decision === 'RECOMMENDED').length,
       rejected_count: decisions.filter(d => d.ai_decision === 'AUTO_REJECTED').length,
       proceeding_count: decisions.filter(d => d.ai_decision === 'PROCEED_TO_HR').length,
-      average_final_score: decisions.length > 0 
+      average_final_score: decisions.length > 0
         ? (decisions.reduce((sum, d) => sum + (d.final_score || 0), 0) / decisions.length).toFixed(2)
         : 0,
       average_resume_score: decisions.length > 0
@@ -1004,7 +1206,7 @@ exports.exportAIAnalytics = async (req, res) => {
     if (skillLevel) {
       decisions = decisions.filter(d => {
         const estimatedLevel = d.summary?.includes('junior') ? 'junior' :
-                               d.summary?.includes('mid') ? 'mid_level' : 'senior';
+          d.summary?.includes('mid') ? 'mid_level' : 'senior';
         return estimatedLevel === skillLevel;
       });
     }
@@ -1056,7 +1258,7 @@ exports.reEvaluateAssessment = async (req, res) => {
     logger.info(`Manually re-evaluating assessment for app ${applicationId}`);
 
     // Try to find raw responses from the last attempt (usually stored in AssessmentAnalysis or a separate model)
-    const analysis = await AssessmentAnalysis.findOne({ 
+    const analysis = await AssessmentAnalysis.findOne({
       where: { application_id: applicationId },
       order: [['created_at', 'DESC']]
     });
@@ -1072,9 +1274,9 @@ exports.reEvaluateAssessment = async (req, res) => {
     req.body.answers = analysis.candidate_response.answers;
 
     if (analysis.assessment_type === 'coding') {
-       return exports.analyzeCodingAssessment(req, res);
+      return exports.analyzeCodingAssessment(req, res);
     } else {
-       return exports.analyzeMCQAssessment(req, res);
+      return exports.analyzeMCQAssessment(req, res);
     }
 
   } catch (error) {

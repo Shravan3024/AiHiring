@@ -397,8 +397,8 @@ class HRDecisionController {
       const { applicationId } = req.params;
       const application = await Application.findByPk(applicationId, {
         include: [
-          { model: AssessmentAttempt, where: { assessment_type: 'TECHNICAL' }, required: false },
-          { model: InterviewSession },
+          { model: AssessmentAttempt, as: 'assessment_attempts', required: false },
+          { model: InterviewSession, as: 'interview_sessions', required: false },
           { model: Job },
           { model: Candidate, include: [{ model: User }] }
         ]
@@ -413,25 +413,30 @@ class HRDecisionController {
         assessmentScore: application.technical_score || 0,
         interviewScore: application.interview_score || 0,
         integrityScore,
-        behavioralScore: application.interview_score || 50,
-        jobTitle: application.Job?.title,
-        candidateName: application.Candidate?.User?.name
+        behavioralScore: application.behavioral_score || 50,
+        jobTitle: application.Job?.title || "Target Role",
+        candidateName: application.Candidate?.User?.name || "Candidate"
       });
 
+      // Defensive logic for AI response fields
+      const successProb = typeof aiResponse.success_prediction_percentage === 'number' 
+        ? aiResponse.success_prediction_percentage / 100 
+        : 0.5;
 
       await application.update({
-        final_decision: aiResponse.decision,
-        role_recommendation: aiResponse.role_recommendation,
-        fit_breakdown: aiResponse.fit_breakdown,
-        ai_rationale: aiResponse.reasoning,
-        success_probability: aiResponse.success_prediction_percentage / 100,
-        overall_score: aiResponse.final_score,
+        final_decision: aiResponse.decision || 'Borderline',
+        role_recommendation: aiResponse.role_recommendation || 'Standard capacity',
+        fit_breakdown: aiResponse.fit_breakdown || { technical: 50, communication: 50, leadership: 50 },
+        ai_rationale: aiResponse.reasoning || 'Automated evaluation based on performance benchmarks.',
+        success_probability: successProb,
+        overall_score: aiResponse.final_score || 50,
         integrity_score: integrityScore
       });
 
       res.json({ success: true, decision: aiResponse });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error("[Decision Core] Error:", err);
+      res.status(500).json({ error: err.message, stack: process.env.NODE_ENV === 'development' ? err.stack : undefined });
     }
   }
 

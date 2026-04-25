@@ -28,6 +28,7 @@ interface ApplicationDetails {
     email: string;
     phone?: string;
     location?: string;
+    profileImage?: string;
   };
   job: {
     id: number;
@@ -43,6 +44,7 @@ interface ApplicationDetails {
     aggregate: number;
   };
   appliedAt: string;
+  resumeUrl?: string;
 }
 
 export default function HRApplicationDetailsPage() {
@@ -163,7 +165,21 @@ export default function HRApplicationDetailsPage() {
                   >
                     <FileText className="w-3.5 h-3.5" /> Executive AI Report
                   </Button>
+
+
+
+                  {appData.resumeUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 text-[10px] gap-1.5 px-3 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold"
+                      onClick={() => window.open(appData.resumeUrl, '_blank')}
+                    >
+                      <Download className="w-3.5 h-3.5" /> Original Resume
+                    </Button>
+                  )}
                 </div>
+
               </div>
             </div>
             <div className="text-right space-y-2">
@@ -198,12 +214,21 @@ export default function HRApplicationDetailsPage() {
                   <p className="font-semibold text-gray-900">{appData.candidate?.name || "N/A"}</p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Mail className="w-4 h-4 text-gray-600 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <a href={`mailto:${appData.candidate?.email}`} className="font-semibold text-blue-600 hover:underline">
-                      {appData.candidate?.email || "N/A"}
-                    </a>
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-white border-2 border-blue-200 overflow-hidden shadow-lg">
+                      <img 
+                        src={appData.candidate?.profileImage || "/images/default-avatar.png"} 
+                        alt={appData.candidate?.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <a href={`mailto:${appData.candidate?.email}`} className="font-semibold text-blue-600 hover:underline">
+                        {appData.candidate?.email || "N/A"}
+                      </a>
+                    </div>
                   </div>
                 </div>
                 {appData.candidate?.phone && (

@@ -18,10 +18,10 @@ import { cn } from "@/lib/utils";
 
 const PIPELINE_STAGES = [
   { id: "SOURCED", label: "Sourced", statuses: ["APPLIED", "RESUME_SUBMITTED"], color: "bg-blue-500" },
-  { id: "SCREENING", label: "Screening", statuses: ["RESUME_EVALUATED", "TECHNICAL_ROUND_PENDING"], color: "bg-purple-500" },
+  { id: "SCREENING", label: "Screening", statuses: ["RESUME_EVALUATED", "TECHNICAL_ROUND_PENDING", "PROCEED_TO_HR"], color: "bg-purple-500" },
   { id: "ASSESSMENT", label: "Assessment", statuses: ["TECHNICAL_ROUND_IN_PROGRESS", "TECHNICAL_ROUND_COMPLETED"], color: "bg-amber-500" },
   { id: "INTERVIEW", label: "Interview", statuses: ["INTERVIEW_SCHEDULED", "INTERVIEW_IN_PROGRESS", "INTERVIEW_COMPLETED"], color: "bg-emerald-500" },
-  { id: "OFFERED", label: "Offered", statuses: ["HR_REVIEW", "SELECTED", "OFFER_SENT"], color: "bg-cyan-500" },
+  { id: "OFFERED", label: "Offered", statuses: ["HR_REVIEW", "SELECTED", "OFFER_SENT", "RECOMMENDED_BY_AI"], color: "bg-cyan-500" },
   { id: "HIRED", label: "Hired", statuses: ["OFFER_ACCEPTED"], color: "bg-indigo-500" },
 ];
 
@@ -158,12 +158,12 @@ export default function PipelinePage() {
                                 <div className="flex items-start justify-between">
                                    <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-xl bg-muted border border-border/50 overflow-hidden shadow-inner">
-                                         <img 
-                                            src={cand.profileImage || "/images/default-avatar.png"} 
-                                            alt={cand.candidateName} 
-                                            className="w-full h-full object-cover" 
-                                            onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
-                                         />
+                                          <img 
+                                             src={cand.profileImage || "/images/default-avatar.png"} 
+                                             alt={cand.candidateName} 
+                                             className="w-full h-full object-cover" 
+                                             onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                                          />
                                       </div>
                                       <div>
                                          <p className="text-[11px] font-black text-foreground uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{cand.candidateName}</p>

@@ -127,8 +127,9 @@ module.exports = (sequelize) => {
       },
       ai_model_used: {
         type: DataTypes.STRING,
-        defaultValue: "gemini-2.5-flash",
+        defaultValue: "gemini-2.0-flash",
       },
+
       decision_type: {
         type: DataTypes.STRING, // Changed from ENUM
         defaultValue: "automated",

@@ -369,7 +369,12 @@ export default function HighFidelityReportsV2() {
                     {recentDownloads.length > 0 ? recentDownloads.slice(0, 3).map((dl: any, i: number) => (
                        <div key={i} className="flex gap-3">
                           <div className="w-8 h-8 rounded-full bg-muted border border-border/50 overflow-hidden shrink-0">
-                             <img src={dl.img} alt="" className="w-full h-full object-cover" />
+                             <img 
+                                 src={dl.img || "/images/default-avatar.png"} 
+                                 alt="" 
+                                 className="w-full h-full object-cover" 
+                                 onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                              />
                           </div>
                           <div className="flex-1 min-w-0">
                              <p className="text-[10px] font-black text-foreground tracking-tight leading-tight uppercase">{dl.candidate}</p>

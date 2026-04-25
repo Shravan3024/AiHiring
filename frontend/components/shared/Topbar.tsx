@@ -70,6 +70,13 @@ export default function Topbar({ title }: { title?: string }) {
     }
   });
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (!mounted) return <header className="h-20 bg-background border-b" />;
 
   const unreadCount = notifications.filter((n: any) => n.unread).length;
@@ -94,7 +101,9 @@ export default function Topbar({ title }: { title?: string }) {
           </div>
           <div className="flex items-center gap-2 mt-1">
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Neural Link Synchronized</span>
+             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                Neural Link Synchronized | {currentTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} | {currentTime.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+             </span>
           </div>
         </div>
       </div>
@@ -121,11 +130,20 @@ export default function Topbar({ title }: { title?: string }) {
            <button 
              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
              className={cn(
-                "p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95",
-                theme === "dark" ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"
+                "flex items-center gap-3 p-1.5 rounded-2xl transition-all border border-border/40 bg-muted/20 hover:bg-muted/30 group",
+                theme === "dark" ? "text-amber-500" : "text-primary"
              )}
            >
-              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <div className={cn(
+                 "w-8 h-8 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                 theme === "dark" ? "bg-amber-500 text-white" : "bg-primary text-white"
+              )}>
+                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </div>
+              <div className="hidden lg:flex flex-col items-start pr-2">
+                 <span className="text-[8px] font-black uppercase tracking-widest leading-none">Theme</span>
+                 <span className="text-[9px] font-bold uppercase tracking-tighter mt-1">{theme === "dark" ? "Solaris" : "Deep Space"}</span>
+              </div>
            </button>
 
            {/* Notifications */}

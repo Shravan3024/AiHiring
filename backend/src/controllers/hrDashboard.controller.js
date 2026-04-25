@@ -401,7 +401,7 @@ class HRDashboardController {
         include: [
           {
             model: Candidate,
-            attributes: ['id', 'integrity_score'],
+            attributes: ['id', 'integrity_score', 'profile_image_path'],
             include: [{ model: User, attributes: ['name', 'email'] }]
           },
           { model: Job, attributes: ['title', 'department'] }
@@ -415,6 +415,7 @@ class HRDashboardController {
         applicationId: app.id,
         name: app.Candidate?.User?.name || 'Unknown',
         email: app.Candidate?.User?.email || '',
+        profileImage: app.Candidate?.profile_image_path ? `http://localhost:5000/${app.Candidate.profile_image_path}` : null,
         job: app.Job?.title || 'N/A',
         department: app.Job?.department || '',
         score: app.overall_score || 0,

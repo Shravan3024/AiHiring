@@ -32,7 +32,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
   const location = candidate?.location || "N/A";
   const experience = candidate?.experience_years || "N/A";
   const score = Math.round(application?.overall_score || candidate?.ai_score || 0);
-  const avatar = candidate?.profile_image_path ? `http://localhost:5000${candidate.profile_image_path}` : "/images/default-avatar.png";
+  const avatar = candidate?.profileImage || candidate?.profile_image_path ? `http://localhost:5000${candidate.profile_image_path.startsWith('/') ? '' : '/'}${candidate.profile_image_path}` : "/images/default-avatar.png";
 
   // Adaptive Skill Data
   const skills = Array.isArray(candidate?.skills) ? candidate.skills : [];
@@ -84,7 +84,12 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                 <div className="relative w-24 h-24 rounded-full bg-muted border-2 border-primary/50 overflow-hidden">
-                  <img src={avatar} alt="Candidate" className="w-full h-full object-cover" />
+                  <img 
+                    src={avatar} 
+                    alt="Candidate" 
+                    className="w-full h-full object-cover" 
+                    onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                  />
                 </div>
                 <div className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full border-2 border-background flex items-center justify-center">
                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />

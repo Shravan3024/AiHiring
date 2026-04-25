@@ -4,14 +4,25 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../utils/logger');
 const scoringService = require('./scoring.service');
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5000';
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || "gemini-2.5-flash" });
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+const keyRotator = require('../utils/keyRotator');
+const llmService = require('./llm.service');
+
+/**
+ * Gets a fresh model instance with a rotated API key
+ */
+const getModel = () => {
+
+  const key = keyRotator.getNextKey();
+  const genAI = new GoogleGenerativeAI(key);
+  return genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || "gemini-2.0-flash" });
+};
+
 
 
 const aiServiceClient = axios.create({
   baseURL: AI_SERVICE_URL,
-  timeout: 30000,
+  timeout: 45000, // Increased timeout for heavy AI tasks
 });
 
 /**
@@ -22,7 +33,11 @@ const sanitizeAIOutput = (obj) => {
   if (Array.isArray(obj)) return obj.map(sanitizeAIOutput);
   if (typeof obj === 'object' && obj !== null) {
     const newObj = {};
-    for (let key in obj) newObj[key] = sanitizeAIOutput(obj[key]);
+    for (let key in obj) {
+       if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          newObj[key] = sanitizeAIOutput(obj[key]);
+       }
+    }
     return newObj;
   }
   return obj;
@@ -33,11 +48,9 @@ const sanitizeAIOutput = (obj) => {
  */
 const parseResumeWithAI = async (filePath) => {
   try {
-    if (AI_SERVICE_URL.includes('localhost:5000') || AI_SERVICE_URL.includes('127.0.0.1:5000')) {
-        logger.info("[AI Service] Local mode detected - using built-in ML parser fallback");
-        return await localResumeParser(filePath);
-    }
-
+    // 1. Try Remote AI Service first (Flask)
+    logger.info(`[AI Service] Attempting remote parse via ${AI_SERVICE_URL}`);
+    
     const formData = new FormData();
     const fs = require('fs');
     if (!fs.existsSync(filePath)) throw new Error("File not found for parsing");
@@ -49,11 +62,70 @@ const parseResumeWithAI = async (filePath) => {
       headers: formData.getHeaders(),
     });
 
-    return response.data.data;
+    if (response.data && response.data.success) {
+        logger.info("[AI Service] Remote parse successful");
+        return response.data.data;
+    }
+    throw new Error("Remote service returned unsuccessful response");
+
   } catch (error) {
-    logger.warn(`[AI Service] Remote parse failed: ${error.message}. Falling back to local ML parser.`);
-    return await localResumeParser(filePath);
+    logger.warn(`[AI Service] Remote parse failed: ${error.message}. Attempting Direct Gemini Parse...`);
+    
+    // 2. Try Direct Gemini Parse from Node (Secondary Pipeline)
+    try {
+        return await parseResumeWithGeminiDirect(filePath);
+    } catch (geminiError) {
+        logger.error(`[AI Service] Direct Gemini parse also failed: ${geminiError.message}. Falling back to local ML parser.`);
+        // 3. Last Resort: Local ML Parser
+        return await localResumeParser(filePath);
+    }
   }
+};
+
+/**
+ * Direct Gemini Resume Parser (Node-based secondary pipeline)
+ */
+const parseResumeWithGeminiDirect = async (filePath) => {
+    try {
+        const fs = require('fs');
+        const pdf = require('pdf-parse'); 
+        const dataBuffer = fs.readFileSync(filePath);
+        
+        let text = "";
+        if (filePath.toLowerCase().endsWith('.pdf')) {
+            const pdfData = await pdf(dataBuffer);
+            text = pdfData.text;
+        } else {
+            text = dataBuffer.toString('utf-8');
+        }
+
+        const prompt = `
+            Task: Parse the following resume text and return a structured JSON object.
+            
+            Resume Text:
+            ${text.substring(0, 4000)}
+
+            Required JSON Format:
+            {
+                "contact_info": { "email": "", "phone": "", "name": "" },
+                "skills": ["skill1", "skill2"],
+                "experience_years": number,
+                "overall_score": 0-100,
+                "summary": "Short executive summary",
+                "education": [{ "degree": "", "specialization": "", "cgpa": "" }],
+                "strengths": ["string", "string", "string", "string", "string"],
+                "weaknesses": ["string", "string", "string", "string", "string"],
+                "role_fit": { "fit_level": "High/Medium/Low", "explanation": "" }
+            }
+        `;
+
+        const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
+        const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+        return sanitizeAIOutput(parsed);
+    } catch (e) {
+        logger.error(`[Gemini Direct] Failed: ${e.message}`);
+        throw e;
+    }
 };
 
 /**
@@ -62,12 +134,21 @@ const parseResumeWithAI = async (filePath) => {
 const localResumeParser = async (filePath) => {
     try {
         const fs = require('fs');
-        const { PDFParse } = require('pdf-parse');
+        const pdf = require('pdf-parse');
+        let text = "";
         
-        const dataBuffer = fs.readFileSync(filePath);
-        const pdfInstance = new PDFParse({ data: dataBuffer });
-        const textResult = await pdfInstance.getText();
-        const text = textResult.text;
+        try {
+            const dataBuffer = fs.readFileSync(filePath);
+            if (filePath.toLowerCase().endsWith('.pdf')) {
+                const pdfData = await pdf(dataBuffer);
+                text = pdfData.text;
+            } else {
+                text = dataBuffer.toString('utf-8');
+            }
+        } catch (readErr) {
+            logger.warn(`Local parser text extraction failed: ${readErr.message}`);
+            text = "Text extraction failed";
+        }
 
         const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0];
         const phone = text.match(/(\+?\d{1,3}[- ]?)?\d{10}/)?.[0];
@@ -76,22 +157,22 @@ const localResumeParser = async (filePath) => {
         const foundSkills = commonSkills.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(text));
 
         const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
-        const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 0;
+        const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 2;
 
         return {
             contact_info: { email, phone },
             skills: foundSkills,
             experience_years: parseInt(experience),
-            overall_score: 55,
-            summary: "Extracted via Local Semantic Parser",
-            education: [{ degree: "Detected from content", cgpa: cgpaMatch?.[1] }],
-            total_years_experience: experience,
-            highest_qualification: "Bachelor Equivalent",
-            role_fit: { fit_level: "Determined via Semantic Density", explanation: "Baseline match against core industrial keywords." }
+            overall_score: 65,
+            summary: "Extracted via Local Semantic Pipeline (AI Fallback Active)",
+            education: [{ degree: "Detected Degree", cgpa: cgpaMatch?.[1] }],
+            strengths: ["Clear professional background", "Documented technical skills", "Structured profile layout"],
+            weaknesses: ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
+            role_fit: { fit_level: "Moderate", explanation: "Matched against core industrial keywords." }
         };
     } catch (e) {
         logger.error(`[Local Parser] Critical Failure: ${e.message}`);
-        return { skills: [], summary: "Parsing Failed", overall_score: 0 };
+        return { skills: [], summary: "Parsing Failed", overall_score: 0, strengths: [], weaknesses: [] };
     }
 };
 
@@ -100,14 +181,15 @@ const localResumeParser = async (filePath) => {
  */
 const scoreResume = async (parsedResume, jobRequirements) => {
   try {
-    const jdSkillsText = jobRequirements.required_skills?.join(' ') || jobRequirements.description || '';
+    const jdSkillsText = (jobRequirements.required_skills?.join(' ') || jobRequirements.description || '').toLowerCase();
     const candSkills = parsedResume.skills ? (Array.isArray(parsedResume.skills) ? parsedResume.skills : Object.values(parsedResume.skills).flat()) : [];
     
     const skillMatch = scoringService.matchSkills(jdSkillsText, candSkills);
-    const resumeText = JSON.stringify(parsedResume);
+    const resumeText = JSON.stringify(parsedResume).toLowerCase();
     const cosineScore = scoringService.calculateCosineSimilarity(jdSkillsText, resumeText);
     
-    const finalFitScore = Math.round((skillMatch.matchPercentage * 0.6) + (cosineScore * 40));
+    // Higher weight for skill match in JD scoring
+    const finalFitScore = Math.round((skillMatch.matchPercentage * 0.7) + (cosineScore * 30));
 
     return {
       overall_fit_percentage: finalFitScore,
@@ -172,23 +254,75 @@ const analyzeAssessmentResponse = async (assessmentData) => {
 /**
  * Analyze Interview
  */
+/**
+ * Analyze Interview using Deep AI
+ */
 const analyzeInterview = async (transcript, interviewDetails = {}) => {
-  try {
-    const keywords = interviewDetails.keywords || ['professional', 'experienced', 'leadership', 'technical'];
-    const jdText = keywords.join(' ');
-    
-    const semanticScore = scoringService.calculateCosineSimilarity(jdText, transcript);
-    const score = Math.round(semanticScore * 100);
+  const { type = 'technical', questions = [] } = interviewDetails;
+  
+  const prompt = `
+    Task: Deep AI Interview Analysis for Mask Polymers.
+    Interview Type: ${type}
+    Context Questions: ${JSON.stringify(questions)}
+    Transcript: ${transcript.substring(0, 8000)}
 
-    return {
-      overall_score: score,
-      summary: `Semantic alignment with requirements stands at ${score}%.`,
-      technical_knowledge_score: Math.min(100, score + 10),
-      communication_score: 80,
-      hire_recommendation: score > 60 ? 'HIRE' : 'CONSIDER'
-    };
+    Analyze the transcript and provide a comprehensive evaluation in JSON format.
+    Include scores (0-100), green/red flags, and hiring recommendations.
+
+    Required JSON Schema:
+    {
+      "overall_assessment": {
+        "overall_score": 0-100,
+        "summary": "string",
+        "key_takeaways": ["string"],
+        "next_round_readiness": boolean
+      },
+      "qa_analyses": [
+        { "question": "string", "answer_summary": "string", "technical_depth": 0-10, "communication_clarity": 0-10 }
+      ],
+      "metrics": {
+        "technical_knowledge": 0-100,
+        "communication": 0-100,
+        "problem_solving": 0-100,
+        "soft_skills": 0-100,
+        "cultural_fit": 0-100
+      },
+      "speaking_patterns": {
+        "confidence_level": "high | moderate | low",
+        "pace": "steady | fast | slow",
+        "clarity": "clear | average | poor",
+        "hesitation_level": "low | medium | high"
+      },
+      "green_flags": ["string"],
+      "red_flags": ["string"],
+      "recommendation": "strong_yes | yes | maybe | no",
+      "performance_prediction": {
+        "predicted_on_job_performance": "exceptional | strong | average | risk",
+        "time_to_productivity_months": number,
+        "retention_probability_percentage": 0-100
+      }
+    }
+  `;
+
+  try {
+    const responseText = await llmService.generateCompletion('INTERVIEW_ANALYSIS', prompt);
+    const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+    return sanitizeAIOutput(parsed);
   } catch (error) {
-    return { overall_score: 50, summary: "Local analysis fallback triggered" };
+    logger.error(`AI Interview Analysis Error: ${error.message}`);
+    // Deterministic fallback
+    const semanticScore = scoringService.calculateCosineSimilarity("professionalism experience knowledge", transcript);
+    const score = Math.round(semanticScore * 100);
+    
+    return {
+      overall_assessment: { 
+        overall_score: score, 
+        summary: "Semantic fallback analysis active due to AI service interruption.",
+        key_takeaways: ["Candidate provided structured responses"]
+      },
+      metrics: { technical_knowledge: score, communication: 70, problem_solving: 60, soft_skills: 70, cultural_fit: 60 },
+      recommendation: score > 60 ? 'yes' : 'maybe'
+    };
   }
 };
 
@@ -235,9 +369,8 @@ module.exports = {
       }
     `;
     try {
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(responseText);
+      const responseText = await llmService.generateCompletion('INTERVIEW_ANALYSIS', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
       return sanitizeAIOutput(parsed);
     } catch (err) {
       logger.warn(`AI Technical Evaluation Error: ${err.message}. Providing baseline scores.`);
@@ -262,9 +395,8 @@ module.exports = {
       Output Format (JSON): { "dimension_scores": { "technical": 0, "communication": 0, "confidence": 0, "soft_skills": 0, "integrity": 0 }, "overall_interview_score": 0, "highlights": { "summary": "" }, "recommendation": "" }
     `;
     try {
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(responseText);
+      const responseText = await llmService.generateCompletion('INTERVIEW_ANALYSIS', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
       return sanitizeAIOutput(parsed);
     } catch (err) {
       logger.warn(`AI Full Interview Analysis Error: ${err.message}`);
@@ -322,9 +454,8 @@ module.exports = {
     `;
 
     try {
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(responseText);
+      const responseText = await llmService.generateCompletion('BIAS_SAFE_HR', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
       
       return { ...sanitizeAIOutput(parsed), final_score: finalScore };
     } catch (err) {
@@ -352,9 +483,8 @@ module.exports = {
       Return JSON format: { "title": "", "summary": "", "sections": [{ "heading": "", "content": "" }], "conclusion": "" }
     `;
     try {
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(responseText);
+      const responseText = await llmService.generateCompletion('LOW_COST_SCALING', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
       return sanitizeAIOutput(parsed);
     } catch (err) {
       return { title: "AI Report Error", summary: "Failed to generate report using AI." };
@@ -385,9 +515,8 @@ module.exports = {
       }
     `;
     try {
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(responseText);
+      const responseText = await llmService.generateCompletion('LOW_COST_SCALING', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
       return sanitizeAIOutput(parsed);
     } catch (err) {
       logger.error(`[AI Insight Generator] Error: ${err.message}`);

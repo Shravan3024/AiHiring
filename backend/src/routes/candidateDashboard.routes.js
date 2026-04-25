@@ -18,7 +18,7 @@ const router = express.Router();
 
 // 🔐 Protect all candidate routes
 router.use(authMiddleware);
-router.use(roleMiddleware(["CANDIDATE"]));
+router.use(roleMiddleware(["CANDIDATE", "HR", "ADMIN"]));
 
 /**
  * @route   GET /dashboard/candidate/overview

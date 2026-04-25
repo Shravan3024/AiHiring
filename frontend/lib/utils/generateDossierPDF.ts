@@ -14,12 +14,12 @@ export const generateDossierPDF = (data: DossierData) => {
   // Branding
   doc.setFillColor(59, 130, 246); // Blue-500
   doc.rect(0, 0, pageWidth, 40, "F");
-  
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.text("CANDIDATE DOSSIER", 20, 25);
-  
+
   doc.setFontSize(10);
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 20, 25, { align: "right" });
 
@@ -47,7 +47,7 @@ export const generateDossierPDF = (data: DossierData) => {
   // AI Scores Breakdown
   doc.setFontSize(14);
   doc.text("AI SCORING BREAKDOWN", 20, (doc as any).lastAutoTable.finalY + 15);
-  
+
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 20,
     head: [["Category", "Score", "AI Insight"]],
@@ -64,7 +64,7 @@ export const generateDossierPDF = (data: DossierData) => {
   doc.setFontSize(14);
   const startY = (doc as any).lastAutoTable.finalY + 15;
   doc.text("STRENGTHS & PROS", 20, startY);
-  
+
   const pros = [
     ...(aiAnalysis.resume_analysis?.strengths || []),
     ...(aiAnalysis.assessment_analyses?.[0]?.strengths || []),
@@ -81,7 +81,7 @@ export const generateDossierPDF = (data: DossierData) => {
   doc.setFontSize(14);
   const consY = (doc as any).lastAutoTable.finalY + 10;
   doc.text("IDENTIFIED RISKS / CONS", 20, consY);
-  
+
   const cons = [
     ...(aiAnalysis.resume_analysis?.weaknesses || []),
     ...(aiAnalysis.assessment_analyses?.[0]?.weaknesses || []),
@@ -105,7 +105,7 @@ export const generateDossierPDF = (data: DossierData) => {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
       doc.text("TECHNICAL ASSESSMENT: DETAILED Q&A", 20, 13);
-      
+
       const qaBody = assessment.detailed_qa.map((qa: any, idx: number) => [
         idx + 1,
         qa.question_text,

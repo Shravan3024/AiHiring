@@ -5,8 +5,12 @@ const {
   NotificationQueue,
   ApplicationStatusLog,
   Job,
-  sequelize  // FIX #4: needed for transactions
+  ResumeAnalysis, // Added for auto-analysis
+  sequelize
 } = require("../models");
+const aiService = require("../services/ai.service");
+const logger = require("../utils/logger");
+
 
 // FIX #10: only expose internal error details outside production
 const isDev = process.env.NODE_ENV !== "production";
@@ -119,6 +123,59 @@ exports.applyJob = async (req, res) => {
     }
 
     await t.commit();
+
+    // ========== ASYNC AUTO-ANALYSIS TRIGGER (NON-BLOCKING) ==========
+    // We trigger this after commit so the application ID is definitely available
+    setImmediate(async () => {
+      try {
+        logger.info(`[Auto-Analysis] Triggering automatic AI analysis for application ${application.id}`);
+        const path = require('path');
+        const absolutePath = path.join(__dirname, '../../', candidate.resume_path);
+        
+        const aiParsedData = await aiService.parseResumeWithAI(absolutePath);
+        
+        let jdScores = { overall_fit_percentage: 0, matched_skills: [], missing_skills: [] };
+        if (job) {
+          const jobRequirements = {
+            title: job.title,
+            description: job.description,
+            required_skills: job.required_skills || [],
+            min_experience: job.min_experience || 0
+          };
+          jdScores = await aiService.scoreResume(aiParsedData, jobRequirements);
+        }
+
+        // Create Analysis Record
+        await ResumeAnalysis.create({
+          application_id: application.id,
+          resume_id: 0,
+          contact_info: aiParsedData.contact_info || {},
+          education: aiParsedData.education || [],
+          experience: aiParsedData.experience || [],
+          total_years_experience: aiParsedData.experience_years || 0, // FIXED MAPPING
+          skills: aiParsedData.skills || {},
+          ai_summary: aiParsedData.summary || 'AI parsed profile',
+          strengths: aiParsedData.strengths || [],
+          weaknesses: aiParsedData.weaknesses || [],
+          overall_score: aiParsedData.overall_score || 0,
+          jd_match_score: jdScores.overall_fit_percentage || 0,
+          jd_matched_skills: jdScores.matched_skills || [],
+          jd_missing_skills: jdScores.missing_skills || [],
+          role_fit: aiParsedData.role_fit || {}
+        });
+
+
+        // Update application with final scores
+        await application.update({
+          resume_score: Math.round(jdScores.overall_fit_percentage || aiParsedData.overall_score || 0),
+          skills: jdScores.matched_skills || []
+        });
+
+        logger.info(`[Auto-Analysis] Completed successfully for app ${application.id}`);
+      } catch (err) {
+        logger.error(`[Auto-Analysis] Failed for app ${application.id}: ${err.message}`);
+      }
+    });
 
     return res.status(201).json({
       success: true,

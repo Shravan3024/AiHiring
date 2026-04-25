@@ -190,7 +190,7 @@ export default function IndustrialTalentPoolV4() {
                                       <div className="flex items-center gap-5">
                                          <div className="w-12 h-12 rounded-2xl bg-muted border-2 border-border/50 overflow-hidden group-hover:border-primary/50 transition-all shadow-2xl ring-8 ring-primary/5">
                                             <img 
-                                               src={t.img} 
+                                               src={t.img || "/images/default-avatar.png"} 
                                                alt="" 
                                                className="w-full h-full object-cover" 
                                                onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}

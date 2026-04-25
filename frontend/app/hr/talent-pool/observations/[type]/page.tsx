@@ -87,7 +87,12 @@ export default function ObservationDeepDive() {
                        <div key={i} className="p-8 hover:bg-primary/[0.02] transition-all group flex items-center justify-between">
                           <div className="flex items-center gap-6">
                              <div className="w-14 h-14 rounded-2xl bg-muted border-2 border-border/50 overflow-hidden shadow-xl ring-8 ring-primary/5">
-                                <img src={t.img} alt="" className="w-full h-full object-cover" />
+                                <img 
+                                   src={t.img || "/images/default-avatar.png"} 
+                                   alt="" 
+                                   className="w-full h-full object-cover" 
+                                   onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                                />
                              </div>
                              <div className="space-y-1">
                                 <h4 className="text-[14px] font-black text-foreground uppercase tracking-tight">{t.name}</h4>

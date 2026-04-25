@@ -143,6 +143,10 @@ export const hrApi = {
   getPipeline: (params?: any) => api.get("/hr/pipeline", { params }),
   getCandidateProfile: (applicationId: string) =>
     api.get(`/hr/applications/${applicationId}`),
+  getCandidateById: (candidateId: string) =>
+    api.get(`/hr/candidates/${candidateId}`),
+  getRiskMonitor: (params?: any) =>
+    api.get("/hr/risk-monitor", { params }),
 
   // Decisions
   makeDecision: (applicationId: string, data: any) =>
@@ -297,6 +301,18 @@ export const aiApi = {
   // Decision
   makeDecision: (data: { applicationId: number; jobId?: number }) =>
     api.post("/ai/decision/make", data),
+};
+
+// ==================== AI INSIGHTS ====================
+export const aiInsightsApi = {
+  getDashboardData: () => api.get("/hr/ai-insights/dashboard"),
+  downloadInsights: () => api.get("/hr/ai-insights/download-insights", { responseType: 'blob' }),
+  generateReport: () => api.post("/hr/ai-insights/generate-report"),
+  analyzeSection: (section: string, currentData?: any) => api.post("/hr/ai-insights/analyze-section", { section, currentData }),
+};
+
+export const talentPoolApi = {
+  getTalentPool: (params?: any) => api.get("/hr/talent-pool", { params }),
 };
 
 export default api;

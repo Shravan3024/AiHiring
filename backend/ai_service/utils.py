@@ -6,13 +6,77 @@ import os
 import logging
 import json
 import hashlib
+import re
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import PyPDF2
 import pdfplumber
+import google.genai as genai
+from openai import OpenAI
 from config import Config
 
 logger = logging.getLogger(__name__)
+
+class LLMManager:
+    """Dual-LLM Orchestrator for Python AI Service (GPT & Gemini Only)"""
+    def __init__(self):
+        # Gemini setup
+        keys_str = Config.GEMINI_API_KEYS or Config.GOOGLE_API_KEY or ""
+        self.gemini_keys = [k.strip() for k in keys_str.split(',') if k.strip()]
+        self.gemini_index = 0
+        self.gemini_model = Config.GENAI_MODEL or "gemini-2.5-flash"
+        
+        # OpenAI setup
+        self.openai_client = None
+        openai_key = os.getenv('OPENAI_API_KEY')
+        if openai_key:
+            self.openai_client = OpenAI(api_key=openai_key)
+        
+        logger.info(f"LLMManager initialized. Gemini: {self.gemini_model}, OpenAI: {'Available' if self.openai_client else 'Missing'}")
+
+    def get_provider_for_use_case(self, use_case: str) -> str:
+        mappings = {
+            'RESUME_SCORING': 'GPT',
+            'INTERVIEW_ANALYSIS': 'GPT',
+            'VIDEO_AUDIO_INTERVIEW': 'GEMINI',
+            'BIAS_SAFE_HR': 'GPT',
+            'LOW_COST_SCALING': 'GEMINI'
+        }
+        return mappings.get(use_case, 'GEMINI')
+
+    def generate_completion(self, use_case: str, prompt: str) -> str:
+        provider = self.get_provider_for_use_case(use_case)
+        logger.info(f"[LLM Python Router] Routing '{use_case}' to {provider}")
+        
+        try:
+            if provider == 'GPT' and self.openai_client:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"}
+                )
+                return response.choices[0].message.content
+            
+            # Use Gemini
+            return self.call_gemini(prompt)
+        except Exception as e:
+            logger.error(f"LLM Error in '{use_case}': {e}. Falling back to Gemini.")
+            return self.call_gemini(prompt)
+
+    def call_gemini(self, prompt: str) -> str:
+        if not self.gemini_keys:
+            raise ValueError("No Gemini keys configured")
+        key = self.gemini_keys[self.gemini_index]
+        self.gemini_index = (self.gemini_index + 1) % len(self.gemini_keys)
+        client = genai.Client(api_key=key)
+        response = client.models.generate_content(
+            model=self.gemini_model,
+            contents=prompt
+        )
+        return response.text
+
+# Global instances
+llm_manager = LLMManager()
 
 def setup_logging(log_level=logging.INFO):
     """Setup logging configuration"""
@@ -26,34 +90,15 @@ def setup_logging(log_level=logging.INFO):
     )
 
 def clean_text(text: str) -> str:
-    """
-    Clean and normalize text
-    
-    Args:
-        text: Raw text to clean
-        
-    Returns:
-        Cleaned text
-    """
-    # Remove extra whitespace
+    """Clean and normalize text"""
     text = ' '.join(text.split())
-    # Remove special characters but keep important ones
     text = text.replace('\x00', '')
     return text.strip()
 
 def extract_text_from_pdf(file_path: str) -> str:
-    """
-    Extract text from PDF file using multiple methods for better accuracy
-    
-    Args:
-        file_path: Path to PDF file
-        
-    Returns:
-        Extracted text
-    """
+    """Extract text from PDF file"""
     text = ""
     try:
-        # Try pdfplumber first (better for formatted text)
         try:
             with pdfplumber.open(file_path) as pdf:
                 for page in pdf.pages:
@@ -63,88 +108,33 @@ def extract_text_from_pdf(file_path: str) -> str:
         except Exception as e:
             logger.warning(f"pdfplumber extraction failed: {e}, trying PyPDF2")
         
-        # Fallback to PyPDF2
         with open(file_path, 'rb') as file:
             reader = PyPDF2.PdfReader(file)
             for page in reader.pages:
                 text += page.extract_text() + "\n"
-        
         return clean_text(text)
-    
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {e}")
         raise
 
-def extract_text_from_docx(file_path: str) -> str:
-    """
-    Extract text from DOCX file
-    
-    Args:
-        file_path: Path to DOCX file
-        
-    Returns:
-        Extracted text
-    """
-    try:
-        from docx import Document
-        doc = Document(file_path)
-        text = "\n".join([para.text for para in doc.paragraphs])
-        return clean_text(text)
-    except Exception as e:
-        logger.error(f"Error extracting text from DOCX: {e}")
-        raise
-
 def extract_text_from_file(file_path: str) -> str:
-    """
-    Extract text from file based on extension
-    
-    Args:
-        file_path: Path to file
-        
-    Returns:
-        Extracted text
-    """
+    """Extract text from file based on extension"""
     file_ext = Path(file_path).suffix.lower()
-    
     if file_ext == '.pdf':
         return extract_text_from_pdf(file_path)
-    elif file_ext in ['.docx', '.doc']:
-        return extract_text_from_docx(file_path)
     elif file_ext == '.txt':
         with open(file_path, 'r', encoding='utf-8') as f:
             return clean_text(f.read())
     else:
         raise ValueError(f"Unsupported file format: {file_ext}")
 
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
-    """
-    Split text into overlapping chunks for processing
-    
-    Args:
-        text: Text to chunk
-        chunk_size: Size of each chunk
-        overlap: Overlap between chunks
-        
-    Returns:
-        List of text chunks
-    """
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        start = end - overlap
-    return chunks
-
 def extract_email(text: str) -> Optional[str]:
     """Extract email address from text"""
-    import re
     match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
     return match.group(0) if match else None
 
 def extract_phone(text: str) -> Optional[str]:
     """Extract phone number from text"""
-    import re
     # Common phone patterns
     patterns = [
         r'\b(?:\+91|91)?[6-9]\d{9}\b',  # Indian
@@ -158,9 +148,20 @@ def extract_phone(text: str) -> Optional[str]:
 
 def extract_urls(text: str) -> List[str]:
     """Extract URLs from text"""
-    import re
     pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     return re.findall(pattern, text)
+
+def is_valid_file(file_path: str) -> bool:
+    """Check if file exists and is valid"""
+    if not os.path.exists(file_path):
+        return False
+    if os.path.getsize(file_path) > Config.MAX_FILE_SIZE:
+        return False
+    return True
+
+def get_file_ext(file_path: str) -> str:
+    """Get file extension"""
+    return Path(file_path).suffix.lower()
 
 def calculate_text_hash(text: str) -> str:
     """Calculate SHA256 hash of text"""
@@ -201,28 +202,12 @@ def truncate_text(text: str, max_length: int = 1000) -> str:
         return text
     return text[:max_length] + "..."
 
-def is_valid_file(file_path: str) -> bool:
-    """Check if file exists and is valid"""
-    if not os.path.exists(file_path):
-        return False
-    if os.path.getsize(file_path) > Config.MAX_FILE_SIZE:
-        return False
-    return True
-
-def get_file_ext(file_path: str) -> str:
-    """Get file extension"""
-    return Path(file_path).suffix.lower()
-
 def strip_markdown(text: Any) -> Any:
-    """
-    Recursively remove markdown formatting (like asterisks) from strings or collections
-    """
+    """Recursively remove markdown formatting"""
     if isinstance(text, str):
-        # Remove bold/italic asterisks
         return text.replace('**', '').replace('*', '').strip()
     elif isinstance(text, list):
         return [strip_markdown(item) for item in text]
     elif isinstance(text, dict):
         return {key: strip_markdown(value) for key, value in text.items()}
     return text
-

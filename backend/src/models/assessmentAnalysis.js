@@ -107,8 +107,9 @@ module.exports = (sequelize) => {
       },
       ai_model_used: {
         type: DataTypes.STRING,
-        defaultValue: "gemini-2.5-flash",
+        defaultValue: "gemini-2.0-flash",
       },
+
       analysis_confidence: {
         type: DataTypes.FLOAT,
       },

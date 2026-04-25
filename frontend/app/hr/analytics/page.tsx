@@ -78,7 +78,7 @@ export default function HighFidelityAnalyticsV2() {
                  <Input className="pl-10 h-10 w-64 bg-muted/30 border-border/50 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
               </div>
               <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
-                 <Calendar className="w-4 h-4" /> May 12 - Jun 10, 2025
+                 <Calendar className="w-4 h-4" /> {new Date(new Date().setDate(new Date().getDate() - 30)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </Button>
               <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
                  <Download className="w-4 h-4" /> Export
@@ -125,11 +125,13 @@ export default function HighFidelityAnalyticsV2() {
         </div>
 
         {/* TABS */}
-        <div className="flex bg-muted/20 p-1.5 rounded-2xl gap-2 border border-border/40 overflow-x-auto no-scrollbar">
+        <div className="flex bg-muted/10 p-1 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar shadow-inner backdrop-blur-md">
            {["Overview", "Sourcing", "Pipeline", "Assessments", "Interviews", "Offers & Hires", "Diversity", "Time & Efficiency"].map((t, i) => (
               <Button key={i} variant="ghost" className={cn(
-                 "h-10 text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all whitespace-nowrap",
-                 i === 0 ? "bg-card text-primary shadow-lg" : "text-muted-foreground opacity-60 hover:opacity-100"
+                 "h-10 text-[10px] font-black uppercase tracking-[0.2em] px-8 rounded-xl transition-all whitespace-nowrap",
+                 i === 0 
+                    ? "bg-card text-primary shadow-2xl shadow-primary/10 border border-border/50 scale-[1.02]" 
+                    : "text-muted-foreground opacity-40 hover:opacity-100 hover:bg-white/5"
               )}>{t}</Button>
            ))}
         </div>

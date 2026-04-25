@@ -511,7 +511,12 @@ export default function HighFidelityAssessmentsV3() {
                     {recentActivity.length > 0 ? recentActivity.slice(0, 5).map((act: any, i: number) => (
                        <div key={i} className="flex gap-3">
                           <div className="w-8 h-8 rounded-full bg-muted border border-border/50 overflow-hidden shrink-0">
-                             <img src={act.img} alt={act.name} className="w-full h-full object-cover" />
+                             <img 
+                                src={act.img || "/images/default-avatar.png"} 
+                                alt={act.name} 
+                                className="w-full h-full object-cover" 
+                                onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                             />
                           </div>
                           <div className="flex-1 min-w-0">
                              <p className="text-[10px] font-black text-foreground tracking-tight leading-tight">

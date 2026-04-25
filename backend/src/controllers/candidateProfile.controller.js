@@ -57,7 +57,8 @@ class CandidateProfileController {
           { model: TechnicalRound, required: false, attributes: ['id', 'score', 'status', 'ai_feedback'] },
           { model: Interview,      required: false, attributes: ['id', 'ai_score', 'ai_summary', 'hire_recommendation', 'status'] },
           { model: Offer,          as: "offer", required: false, attributes: ['id', 'salary', 'joining_date', 'status'] },
-          { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary'] },
+          { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary', 'total_years_experience', 'jd_match_score', 'contact_info', 'education', 'skills'] },
+
           { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score'] },
           { model: InterviewAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'qa_pairs', 'detailed_evaluation', 'interview_session_id'] },
           { model: Job,           required: false, attributes: ['id', 'title', 'department'] },
@@ -92,6 +93,12 @@ class CandidateProfileController {
       const resumeScore    = application.ResumeAnalysis?.overall_score || application.resume_score || 0;
       const technicalScore = technical?.score || application.AssessmentAnalysis?.overall_score || application.technical_score || 0;
       const interviewScore = interview?.ai_score || application.InterviewAnalysis?.overall_score || application.interview_score || 0;
+
+      // Sync application table if discrepancy found (for real-time consistency)
+      if (resumeScore !== application.resume_score) {
+        application.update({ resume_score: resumeScore }).catch(err => console.error("Sync error:", err));
+      }
+
 
       const aggregateScore = computeApplicationScore({
         overallScore: application.overall_score,
@@ -229,7 +236,8 @@ class CandidateProfileController {
           assessment_attempts: enrichedAttempts,
           assessmentAnalysis: application.AssessmentAnalysis,
           appliedAt:        application.applied_at || application.createdAt,
-          resumeUrl:        application.Candidate?.resume_path ? `http://localhost:5000${application.Candidate.resume_path}` : null,
+          resumeUrl:        application.resume_url ? `http://localhost:5000${application.resume_url}` : (application.Candidate?.resume_path ? `http://localhost:5000${application.Candidate.resume_path}` : null),
+
           aiScore:          aggregateScore,
           aiFitBand,
           integrityScore:   application.Candidate?.integrity_score || 100,

@@ -465,7 +465,7 @@ exports.submitResponsePhase5 = async (req, res) => {
 
       let interviewScore = 0;
       try {
-        logger.info(`[Interview AI] Running Gemini-2.5-flash analysis for session ${sessionId}`);
+        logger.info(`[Interview AI] Running Gemini-2.0-flash analysis for session ${sessionId}`);
         
         const qaPairs = questionsAsked.map(q => ({
           question: q.question_text,
@@ -820,7 +820,7 @@ const scoringService = require('../services/scoring.service');
  */
 async function runGeminiInterviewAnalysis(questionsAsked) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({ model: process.env.GENAI_MODEL || 'gemini-2.0-flash' });
 
   // 1. Calculate ML Validation Score (Cosine Similarity)
   let totalCosine = 0;

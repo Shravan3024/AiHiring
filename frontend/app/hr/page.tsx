@@ -142,12 +142,7 @@ export default function HRDashboard() {
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                  <Input className="pl-10 h-10 w-64 bg-muted/30 border-border/50 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
               </div>
-              <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
-                 <Calendar className="w-4 h-4" /> May 10 - Jun 10, 2025
-              </Button>
-              <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
-                 <Filter className="w-4 h-4" /> Filters
-              </Button>
+
               {/* REMOVED ADD CANDIDATE BUTTON AS REQUESTED */}
            </div>
         </div>
@@ -277,7 +272,7 @@ export default function HRDashboard() {
                        { title: 'Top Performer', desc: `${topCandidate.name} is in top 5% of all candidates`, score: `${topCandidate.score}/100`, icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
                        { title: 'Risk Alert', desc: `${kpiData?.rejected || 0} candidates flagged for potential risks`, score: 'High', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' },
                        { title: 'Bottleneck', desc: 'Assessment stage is dropping significant candidates', score: 'High', icon: Target, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                       { title: 'Hiring Forecast', desc: 'You will reach hiring goal by Jun 28, 2025', score: 'On Track', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                       { title: 'Hiring Forecast', desc: `You will reach hiring goal by ${new Date(new Date().setMonth(new Date().getMonth() + 2)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, score: 'On Track', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                     ].map((item, i) => (
                        <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50">
                           <div className="flex items-center gap-3">
@@ -306,7 +301,12 @@ export default function HRDashboard() {
                  <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-6">
                        <div className="w-14 h-14 rounded-2xl bg-muted border border-border/50 overflow-hidden">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${topCandidate.name}`} alt="Top" className="w-full h-full object-cover" />
+                          <img 
+                              src={topCandidate.profileImage || "/images/default-avatar.png"} 
+                              alt="Top" 
+                              className="w-full h-full object-cover" 
+                              onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                           />
                        </div>
                        <div>
                           <h4 className="text-sm font-black text-foreground uppercase tracking-tight">{topCandidate.name}</h4>

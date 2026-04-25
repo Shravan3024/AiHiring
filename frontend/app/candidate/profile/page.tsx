@@ -159,15 +159,12 @@ export default function CandidateProfilePage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row items-center gap-6 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
           <div className="relative w-24 h-24 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-            {avatarSrc ? (
-              <img
-                src={avatarSrc}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              candidate?.name?.charAt(0) || "U"
-            )}
+            <img
+              src={avatarSrc || "/images/default-avatar.png"}
+              alt="Profile"
+              className="w-full h-full object-cover"
+              onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+            />
 
             {/* Upload avatar */}
             <label

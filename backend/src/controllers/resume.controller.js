@@ -198,9 +198,32 @@ exports.uploadResume = async (req, res) => {
     }
 
     // ---------------- UPDATE DB ----------------
-    const candidate = await Candidate.findOne({
-      where: { user_id: req.user.id },
-    });
+    const { applicationId } = req.body;
+    let candidate = null;
+    let application = null;
+
+    if (applicationId) {
+      application = await Application.findByPk(applicationId, {
+        include: [{ model: Candidate }, { model: Job }]
+      });
+      if (application) {
+        candidate = application.Candidate;
+      }
+    }
+
+    // Fallback for direct candidate profile uploads
+    if (!candidate && req.user.role === "CANDIDATE") {
+      candidate = await Candidate.findOne({
+        where: { user_id: req.user.id },
+      });
+      if (candidate && !application) {
+        application = await Application.findOne({
+          where: { candidate_id: candidate.id },
+          order: [['created_at', 'DESC']],
+          include: { model: Job }
+        });
+      }
+    }
 
     if (candidate) {
       await candidate.update({
@@ -215,101 +238,97 @@ exports.uploadResume = async (req, res) => {
 
     // ========== AI PARSING & SCORING (NEW) ==========
     // ========== AI PARSING & SCORING (NEW) ==========
-    let aiAnalysis = null;
-    let resumeAnalysisRecord = null;
+    // ========== AI PARSING & SCORING (ALL APPLICATIONS) ==========
+    let aiAnalysisSummary = null;
 
     try {
       logger.info(`[Resume AI] Starting AI parsing for resume: ${req.file.filename}`);
-      
       const aiParsedData = await aiService.parseResumeWithAI(req.file.path);
-      logger.info(`[Resume AI] AI parsing completed, score: ${aiParsedData.overall_score || 0}`);
+      aiAnalysisSummary = aiParsedData;
 
-      let application = null;
-      let jdScores = { overall_fit_percentage: 0, matched_skills: [], missing_skills: [] };
+      // Find all applications for this candidate to update their individual analyses
+      const applications = await Application.findAll({
+        where: { candidate_id: candidate.id },
+        include: [{ model: Job }]
+      });
 
-      if (candidate) {
-        application = await Application.findOne({
-          where: { candidate_id: candidate.id },
-          order: [['created_at', 'DESC']],
-          include: { model: Job }
-        });
+      logger.info(`[Resume AI] Updating ${applications.length} applications for candidate ${candidate.id}`);
 
-        if (application && application.Job) {
+      for (const app of applications) {
+        let jdScores = { overall_fit_percentage: 0, matched_skills: [], missing_skills: [] };
+
+        if (app.Job) {
           try {
             const jobRequirements = {
-              title: application.Job.title,
-              description: application.Job.description,
-              required_skills: application.Job.required_skills || [],
-              min_experience: application.Job.min_experience || 0
+              title: app.Job.title,
+              description: app.Job.description,
+              required_skills: app.Job.required_skills || [],
+              min_experience: app.Job.min_experience || 0
             };
-
             jdScores = await aiService.scoreResume(aiParsedData, jobRequirements);
-            logger.info(`[Resume AI] JD match score: ${jdScores.overall_fit_percentage || 0}`);
           } catch (scoreError) {
-            logger.warn(`[Resume AI] JD scoring failed (non-blocking): ${scoreError.message}`);
+            logger.warn(`[Resume AI] JD scoring failed for app ${app.id}: ${scoreError.message}`);
           }
 
-          // ========== ADDING MANUAL SCORING SERVICE FALLBACK/ENHANCEMENT ==========
+          // Manual scoring fallback
           try {
             const manualScoringService = require('../services/manualScoring.service');
-            const manualResults = await manualScoringService.scoreResumeManual(application.id, application.Job.id, aiParsedData);
-            
-            // Merge manual results if JD score is low or remote AI failed
+            const manualResults = await manualScoringService.scoreResumeManual(app.id, app.Job.id, aiParsedData);
             if (jdScores.overall_fit_percentage < 40) {
-               jdScores.overall_fit_percentage = manualResults.overall_fit_percentage;
-               jdScores.matched_skills = manualResults.matched_skills;
-               jdScores.missing_skills = manualResults.missing_skills;
+              jdScores.overall_fit_percentage = manualResults.overall_fit_percentage;
+              jdScores.matched_skills = manualResults.matched_skills;
+              jdScores.missing_skills = manualResults.missing_skills;
             }
-            
-            // Add manual insights
-            aiParsedData.strengths = [...(aiParsedData.strengths || []), ...(manualResults.strengths || [])];
-            aiParsedData.weaknesses = [...(aiParsedData.weaknesses || []), ...(manualResults.weaknesses || [])];
+            aiParsedData.strengths = Array.from(new Set([...(aiParsedData.strengths || []), ...(manualResults.strengths || [])]));
+            aiParsedData.weaknesses = Array.from(new Set([...(aiParsedData.weaknesses || []), ...(manualResults.weaknesses || [])]));
           } catch (mErr) {
-            logger.error(`[Manual Scorer] Failed: ${mErr.message}`);
+            logger.error(`[Manual Scorer] Failed for app ${app.id}: ${mErr.message}`);
           }
         }
-      }
 
-      aiAnalysis = {
-        contact_info: aiParsedData.contact_info || {},
-        education: aiParsedData.education || [],
-        experience: aiParsedData.experience || [],
-        skills: aiParsedData.skills || {},
-        certifications: aiParsedData.certifications || [],
-        ai_summary: aiParsedData.summary || 'No summary available',
-        strengths: Array.from(new Set(aiParsedData.strengths || [])),
-        weaknesses: Array.from(new Set(aiParsedData.weaknesses || [])),
-        recommendations: aiParsedData.recommendations || [],
-        overall_score: aiParsedData.overall_score || parsedData.score,
-        jd_match_score: jdScores.overall_fit_percentage || 0,
-        jd_matched_skills: jdScores.matched_skills || [],
-        jd_missing_skills: jdScores.missing_skills || [],
-        role_fit: aiParsedData.role_fit || {},
-        red_flags: aiParsedData.red_flags || [],
-        green_flags: aiParsedData.green_flags || []
-      };
+        const aiAnalysis = {
+          contact_info: aiParsedData.contact_info || {},
+          education: aiParsedData.education || [],
+          experience: aiParsedData.experience || [],
+          total_years_experience: aiParsedData.experience_years || 0, // FIXED MAPPING
+          skills: aiParsedData.skills || {},
+          certifications: aiParsedData.certifications || [],
+          ai_summary: aiParsedData.summary || 'No summary available',
+          strengths: Array.from(new Set(aiParsedData.strengths || [])),
+          weaknesses: Array.from(new Set(aiParsedData.weaknesses || [])),
+          recommendations: aiParsedData.recommendations || [],
+          overall_score: aiParsedData.overall_score || parsedData.score,
+          jd_match_score: jdScores.overall_fit_percentage || 0,
+          jd_matched_skills: jdScores.matched_skills || [],
+          jd_missing_skills: jdScores.missing_skills || [],
+          role_fit: aiParsedData.role_fit || {},
+          red_flags: aiParsedData.red_flags || [],
+          green_flags: aiParsedData.green_flags || []
+        };
 
-      if (application) {
-        resumeAnalysisRecord = await ResumeAnalysis.create({
-          application_id: application.id,
-          resume_id: 0,
-          ...aiAnalysis
+
+        // Upsert analysis record
+        const [analysisRecord, created] = await ResumeAnalysis.findOrCreate({
+          where: { application_id: app.id },
+          defaults: { ...aiAnalysis, resume_id: 0 }
         });
 
-        const resumeScore = Math.round(aiAnalysis.jd_match_score || aiAnalysis.overall_score);
-        await application.update({
-          resume_score: resumeScore,
-          skills: aiAnalysis.jd_matched_skills || (aiAnalysis.skills ? Object.values(aiAnalysis.skills).flat() : [])
+        if (!created) {
+          await analysisRecord.update(aiAnalysis);
+        }
+
+        // Update application kpis
+        await app.update({
+          resume_score: Math.round(jdScores.overall_fit_percentage || aiParsedData.overall_score || 0),
+          skills: jdScores.matched_skills || []
         });
 
-        logger.info(`[Resume AI] Resume analysis stored for application ${application.id}, score: ${resumeScore}`);
-        await checkAndTriggerAutoRejection(application.id, logger);
+        logger.info(`[Resume AI] Application ${app.id} updated. Score: ${app.resume_score}`);
+        await checkAndTriggerAutoRejection(app.id, logger);
       }
 
     } catch (aiError) {
-      logger.warn(`[Resume AI] AI parsing failed (non-blocking): ${aiError.message}`);
-      // Continue even if AI fails - use fallback scores
-      aiAnalysis = null;
+      logger.error(`[Resume AI] AI processing failed: ${aiError.message}`);
     }
 
     return res.status(200).json({
@@ -317,16 +336,13 @@ exports.uploadResume = async (req, res) => {
       data: {
         parsedData,
         resumeUrl,
-        aiAnalysis: aiAnalysis ? {
-          overall_score: aiAnalysis.overall_score,
-          jd_match_score: aiAnalysis.jd_match_score,
-          strengths: aiAnalysis.strengths,
-          weaknesses: aiAnalysis.weaknesses,
-          summary: aiAnalysis.ai_summary,
-          stored: true
+        aiAnalysisSummary: aiAnalysisSummary ? {
+          score: aiAnalysisSummary.overall_score,
+          summary: aiAnalysisSummary.summary
         } : null
       },
     });
+
 
   } catch (error) {
     logger.error(`[Resume] Upload error: ${error.message}`);

@@ -209,15 +209,17 @@ export default function IndustryReadyAIInsights() {
         </div>
 
         {/* TAB NAVIGATION */}
-        <div className="flex bg-muted/20 p-2 rounded-2xl gap-2 border border-border/40 overflow-x-auto no-scrollbar backdrop-blur-md sticky top-4 z-50 shadow-2xl shadow-black/5">
+        <div className="flex bg-muted/10 p-1 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar shadow-inner backdrop-blur-xl sticky top-4 z-50 shadow-2xl shadow-primary/5">
            {tabs.map((t, i) => (
               <Button 
                 key={i} 
                 variant="ghost" 
                 onClick={() => setActiveTab(t)}
                 className={cn(
-                  "h-10 text-[10px] font-black uppercase tracking-[0.2em] px-8 rounded-xl transition-all whitespace-nowrap",
-                  activeTab === t ? "bg-card text-primary shadow-xl ring-1 ring-border/50" : "text-muted-foreground opacity-50 hover:opacity-100 hover:bg-white/5"
+                  "h-10 text-[10px] font-black uppercase tracking-[0.25em] px-10 rounded-xl transition-all whitespace-nowrap",
+                  activeTab === t 
+                     ? "bg-card text-primary shadow-2xl shadow-primary/20 border border-border/50 scale-[1.02]" 
+                     : "text-muted-foreground opacity-30 hover:opacity-100 hover:bg-white/5"
                )}>{t}</Button>
            ))}
         </div>
@@ -511,7 +513,12 @@ export default function IndustryReadyAIInsights() {
                              <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Match Index</span>
                           </div>
                           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-20 rounded-[2rem] border-4 border-background bg-muted overflow-hidden shadow-2xl group-hover:scale-110 transition-transform duration-500 ring-8 ring-primary/5">
-                             <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
+                             <img 
+                                src={c.img || "/images/default-avatar.png"} 
+                                alt={c.name} 
+                                className="w-full h-full object-cover" 
+                                onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                             />
                           </div>
                        </div>
                        <div className="pt-8 space-y-2">

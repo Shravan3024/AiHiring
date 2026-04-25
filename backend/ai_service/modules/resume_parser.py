@@ -15,7 +15,7 @@ import google.genai as genai
 from google.genai import types
 from dotenv import load_dotenv
 from config import Config
-from utils import extract_text_from_file, clean_text, extract_email, extract_phone, strip_markdown
+from utils import extract_text_from_file, clean_text, extract_email, extract_phone, strip_markdown, llm_manager
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -83,12 +83,7 @@ class ResumeParser:
     
     def __init__(self):
         """Initialize the resume parser with AI"""
-        api_key = Config.GOOGLE_API_KEY or os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY not configured in environment")
-        
-        self.client = genai.Client(api_key=api_key)
-        self.model = Config.GENAI_MODEL or "gemini-2.5-flash"
+        self.model = Config.GENAI_MODEL or "gemini-2.0-flash"
         logger.info(f"ResumeParser initialized with model: {self.model}")
         
         # Load spaCy model
@@ -166,18 +161,11 @@ class ResumeParser:
 }}"""
             
             logger.info(f"Sending prompt to Gemini: {prompt[:100]}...")
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    top_k=40,
-                    top_p=0.95,
-                )
-            )
+            response_text = llm_manager.generate_completion('RESUME_SCORING', prompt)
             
-            # Extract JSON from response
-            response_text = response.text
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                return strip_markdown(json.loads(json_match.group()))
             logger.info(f"Gemini response received: {response_text[:100]}...")
             json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
             # Post-process to ensure 5 items and remove markdown

@@ -30,6 +30,18 @@ router.post(
   aiController.parseResumeWithAI
 );
 
+/**
+ * Re-parse and re-evaluate resume
+ * POST /api/ai/resume/reparse/:applicationId
+ */
+router.post(
+  '/resume/reparse/:applicationId',
+  isAuthenticated,
+  authorize(['hr', 'admin']),
+  auditLog('RESUME_REPARSE'),
+  aiController.reparseResume
+);
+
 // ==================== ASSESSMENT OPERATIONS ====================
 
 /**

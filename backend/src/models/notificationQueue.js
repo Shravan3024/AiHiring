@@ -22,6 +22,7 @@ module.exports = (sequelize) => {
         "RESUME_EVALUATED",
         "ASSESSMENT_AVAILABLE",
         "ASSESSMENT_COMPLETED",
+        "INTERVIEW_AVAILABLE",
         "INTERVIEW_SCHEDULED",
         "INTERVIEW_REMINDER",
         "INTERVIEW_COMPLETED",
