@@ -1,212 +1,220 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { candidateApi } from "@/lib/api";
-import PanelLayout from "@/components/shared/PanelLayout";
+import { useUIStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   FileCheck, Download, CheckCircle, XCircle, 
-  Calendar, CreditCard, User, Building, Loader2 
+  Calendar, CreditCard, User, Building, Loader2,
+  Sparkles, ShieldCheck, Mail, Info, ArrowLeft,
+  ChevronRight, Printer
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function OfferLetterPage() {
   const params = useParams();
   const applicationId = String(params.id);
   const router = useRouter();
+  const { setPageTitle } = useUIStore();
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    setPageTitle("Job Offer");
+  }, []);
 
   const { data: offerData, isLoading, error } = useQuery({
     queryKey: ["offer-details", applicationId],
-    queryFn: () => candidateApi.getOfferDetails(applicationId).then(r => r.data),
+    queryFn: () => candidateApi.getOfferDetails(applicationId).then((r: any) => r.data),
   });
 
   const mutation = useMutation({
     mutationFn: (decision: string) => 
-      candidateApi.respondOffer(applicationId, { decision, candidate_notes: notes }),
+      candidateApi.respondOffer({ application_id: applicationId, decision, candidate_notes: notes }),
     onSuccess: () => {
-      alert("Response recorded successfully!");
+      toast.success("Response recorded successfully!");
       router.push("/candidate");
     },
     onError: (err: any) => {
-      alert("Error: " + (err.response?.data?.message || err.message));
+      toast.error("Error: " + (err.response?.data?.message || err.message));
     }
   });
 
-  if (isLoading) return <PanelLayout title="Job Offer"><div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-blue-600" /></div></PanelLayout>;
+  if (isLoading) return <div className="p-20 text-center animate-pulse text-slate-400 font-bold uppercase tracking-widest">Generating Offer Document...</div>;
   
   const offer = offerData?.offer;
 
   if (!offer) {
     return (
-      <PanelLayout title="Job Offer">
-        <Card className="max-w-2xl mx-auto mt-10">
-          <CardContent className="p-10 text-center">
-            <Badge variant="outline" className="mb-4">No offer found</Badge>
-            <p className="text-gray-500">Your application status has not reached the offer stage yet.</p>
-          </CardContent>
-        </Card>
-      </PanelLayout>
+      <div className="max-w-2xl mx-auto py-20 text-center space-y-6">
+        <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200">
+           <FileCheck className="w-10 h-10" />
+        </div>
+        <div>
+           <h3 className="text-2xl font-bold text-slate-900">No offer found</h3>
+           <p className="text-slate-500 font-medium mt-2 leading-relaxed">Your application status has not reached the offer stage yet. We'll notify you once a decision is made.</p>
+        </div>
+        <Button onClick={() => router.push("/candidate")} className="bg-slate-900 hover:bg-black text-white h-12 px-8 rounded-xl font-bold">Return to Dashboard</Button>
+      </div>
     );
   }
 
   const isResponded = offer.status !== "PENDING";
 
   return (
-    <PanelLayout title="Review Job Offer" allowedRoles={["CANDIDATE"]}>
-      <div className="max-w-4xl mx-auto space-y-6">
-        
-        {/* Banner */}
-        <div className={cn(
-          "rounded-xl p-6 text-white shadow-lg overflow-hidden relative",
-          offer.status === "ACCEPTED" ? "bg-gradient-to-r from-emerald-500 to-green-600" :
-          offer.status === "REJECTED" ? "bg-gradient-to-r from-red-500 to-rose-600" :
-          "bg-gradient-to-r from-blue-600 to-indigo-700"
-        )}>
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-black italic uppercase tracking-tighter">Congratulations!</h1>
-              <p className="text-sm text-white/80 mt-1 font-medium">You have been selected for the position at Mask Polymers.</p>
-            </div>
-            <div className="text-center md:text-right">
-              <p className="text-xs uppercase font-bold tracking-widest text-white/60 mb-1">Status</p>
-              <Badge className="bg-white/20 text-white border-0 text-sm px-4 py-1">{offer.status}</Badge>
-            </div>
-          </div>
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Letter Content */}
-          <Card className="lg:col-span-2 shadow-sm border-gray-100">
-            <CardHeader className="border-b bg-gray-50/50">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileCheck className="w-5 h-5 text-blue-600" />
-                Employment Offer Letter
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 prose prose-sm max-w-none">
-              {/* Render HTML content safely */}
-              <div 
-                className="offer-content space-y-4 text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: offer.offer_letter_content }} 
-              />
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats & Actions */}
-          <div className="space-y-6">
-            <Card className="shadow-sm border-gray-100">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-gray-500">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <Building className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Position</p>
-                    <p className="text-sm font-semibold text-gray-900">{offer.position_title}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Annual Salary (CTC)</p>
-                    <p className="text-sm font-semibold text-gray-900">₹{offer.salary?.toLocaleString()}</p>
-                    {offer.bonus > 0 && <p className="text-xs text-green-600 font-medium">+ ₹{offer.bonus?.toLocaleString()} Bonus</p>}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400">Joining Date</p>
-                    <p className="text-sm font-semibold text-gray-900">{new Date(offer.joining_date).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {!isResponded ? (
-              <Card className="shadow-md border-indigo-100 bg-indigo-50/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold text-indigo-900">Your Response</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500">Notes/Comments (Optional)</label>
-                    <Textarea 
-                      placeholder="Add any message for the hiring team..."
-                      className="text-xs h-20 bg-white"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => mutation.mutate("ACCEPTED")}
-                      disabled={mutation.isPending}
-                    >
-                      {mutation.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                      Accept Offer
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => mutation.mutate("REJECTED")}
-                      disabled={mutation.isPending}
-                    >
-                      Reject Offer
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-gray-400 text-center italic">
-                    By accepting, you confirm your availability to join on the mentioned date.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-sm border-gray-100 bg-gray-50">
-                <CardContent className="p-6 text-center">
-                  {offer.status === "ACCEPTED" ? (
-                    <div className="space-y-3">
-                      <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto text-green-600">
-                        <CheckCircle className="w-8 h-8" />
-                      </div>
-                      <h3 className="font-bold text-green-800">Offer Accepted</h3>
-                      <p className="text-xs text-green-700">Congratulations on joining the team! Our onboarding team will contact you soon.</p>
-                      <Button variant="outline" className="w-full mt-2" onClick={() => window.print()}>
-                        <Download className="w-4 h-4 mr-2" /> Download PDF
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto text-red-600">
-                        <XCircle className="w-8 h-8" />
-                      </div>
-                      <h3 className="font-bold text-red-800">Offer Rejected</h3>
-                      <p className="text-xs text-red-700">You have declined this offer. We wish you the best in your future endeavors.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+    <div className="max-w-6xl mx-auto space-y-10 pb-12">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.push(`/candidate/application/${applicationId}`)} className="gap-2 text-slate-500 hover:text-slate-900 font-bold transition-all px-0">
+          <ArrowLeft className="w-5 h-5" /> Back to Details
+        </Button>
+        <div className="flex gap-4">
+           {isResponded && offer.status === "ACCEPTED" && (
+             <Button variant="outline" onClick={() => window.print()} className="h-12 px-6 rounded-xl font-bold gap-2 border-slate-200">
+                <Printer className="w-4 h-4" /> Print Offer
+             </Button>
+           )}
         </div>
       </div>
-    </PanelLayout>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8 space-y-10">
+           {/* Banner Card */}
+           <Card className={cn(
+             "border-none shadow-sm rounded-[40px] p-10 text-white relative overflow-hidden",
+             offer.status === "ACCEPTED" ? "bg-emerald-600" :
+             offer.status === "REJECTED" ? "bg-red-600" :
+             "bg-blue-600"
+           )}>
+             <div className="relative z-10 space-y-6">
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                   </div>
+                   <Badge className="bg-white/20 text-white border-none font-black text-[10px] uppercase tracking-[0.2em]">Official Release</Badge>
+                </div>
+                <div>
+                   <h1 className="text-4xl font-black tracking-tight leading-tight uppercase italic">Congratulations!</h1>
+                   <p className="text-blue-50/80 font-medium text-lg mt-2">You have been selected to join Mask Polymers.</p>
+                </div>
+             </div>
+             <div className="absolute top-0 right-0 p-12 opacity-10"><ShieldCheck className="w-48 h-48" /></div>
+           </Card>
+
+           {/* Letter Card */}
+           <Card className="border-none shadow-sm rounded-[40px] bg-white overflow-hidden">
+             <div className="p-10 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                   <FileCheck className="w-6 h-6 text-blue-600" /> Offer of Employment
+                </h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document ID: #OFF-{applicationId.slice(-6).toUpperCase()}</p>
+             </div>
+             <div className="p-10 lg:p-14">
+                <div 
+                   className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-h4:text-slate-900"
+                   dangerouslySetInnerHTML={{ __html: offer.offer_letter_content }} 
+                />
+             </div>
+           </Card>
+        </div>
+
+        <div className="lg:col-span-4 space-y-10">
+           {/* Summary Stats */}
+           <Card className="border-none shadow-sm rounded-[40px] bg-white p-10 space-y-8">
+              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Employment Summary</h4>
+              <div className="space-y-6">
+                 {[
+                    { label: "Position", val: offer.position_title, icon: Building, color: "text-blue-600", bg: "bg-blue-50" },
+                    { label: "Annual CTC", val: `₹${offer.salary?.toLocaleString()}`, icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-50" },
+                    { label: "Joining Date", val: new Date(offer.joining_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }), icon: Calendar, color: "text-purple-600", bg: "bg-purple-50" }
+                 ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", item.bg, item.color)}>
+                          <item.icon className="w-5 h-5" />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{item.label}</p>
+                          <p className="font-bold text-slate-900 text-sm">{item.val}</p>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+           </Card>
+
+           {/* Response Section */}
+           {!isResponded ? (
+             <Card className="border-none shadow-sm rounded-[40px] bg-slate-900 p-10 text-white space-y-8">
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Candidate Decision</p>
+                   <h4 className="text-xl font-bold">Review your response</h4>
+                </div>
+                <div className="space-y-4">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Notes for Hiring Team</label>
+                   <Textarea 
+                      placeholder="Add any message or questions..."
+                      className="bg-slate-800 border-none rounded-2xl h-24 text-white text-sm focus:ring-1 focus:ring-blue-600 resize-none"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                   />
+                </div>
+                <div className="flex flex-col gap-3">
+                   <Button 
+                      className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest transition-all"
+                      onClick={() => mutation.mutate("ACCEPTED")}
+                      disabled={mutation.isPending}
+                   >
+                      {mutation.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                      Accept Offer
+                   </Button>
+                   <Button 
+                      variant="ghost" 
+                      className="w-full h-14 text-red-500 hover:bg-red-500/10 hover:text-red-500 rounded-2xl font-bold uppercase tracking-widest text-xs"
+                      onClick={() => mutation.mutate("REJECTED")}
+                      disabled={mutation.isPending}
+                   >
+                      Reject Offer
+                   </Button>
+                </div>
+                <p className="text-[10px] text-slate-500 text-center font-medium leading-relaxed">
+                   By accepting, you confirm your availability to join on the mentioned date.
+                </p>
+             </Card>
+           ) : (
+             <Card className={cn(
+                "border-none shadow-sm rounded-[40px] p-10 text-center space-y-6",
+                offer.status === "ACCEPTED" ? "bg-emerald-50" : "bg-red-50"
+             )}>
+                <div className={cn(
+                   "w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-sm",
+                   offer.status === "ACCEPTED" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                )}>
+                   {offer.status === "ACCEPTED" ? <CheckCircle className="w-10 h-10" /> : <XCircle className="w-10 h-10" />}
+                </div>
+                <div>
+                   <h3 className={cn("text-xl font-black uppercase tracking-tighter", offer.status === "ACCEPTED" ? "text-emerald-900" : "text-red-900")}>
+                      Offer {offer.status}
+                   </h3>
+                   <p className={cn("text-sm font-medium mt-2 leading-relaxed", offer.status === "ACCEPTED" ? "text-emerald-700" : "text-red-700")}>
+                      {offer.status === "ACCEPTED" 
+                         ? "Welcome to the team! Our onboarding team will contact you shortly with the next steps." 
+                         : "You have declined this offer. We wish you success in your future career path."}
+                   </p>
+                </div>
+                {offer.status === "ACCEPTED" && (
+                   <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-emerald-200 text-emerald-700 bg-white" onClick={() => window.print()}>
+                      <Download className="w-4 h-4 mr-2" /> Download Copy
+                   </Button>
+                )}
+             </Card>
+           )}
+        </div>
+      </div>
+    </div>
   );
 }

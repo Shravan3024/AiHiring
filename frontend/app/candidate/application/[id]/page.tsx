@@ -1,15 +1,17 @@
 "use client";
-import React from "react";
+
+import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { candidateApi } from "@/lib/api";
-import PanelLayout from "@/components/shared/PanelLayout";
+import { useUIStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Briefcase, Calendar, FileText, CheckCircle, 
-  ChevronRight, ArrowLeft, Download, Info, Clock, AlertCircle, Video
+  ChevronRight, ArrowLeft, Download, Info, Clock, AlertCircle, Video,
+  MapPin, Globe, Building2, ExternalLink, Activity, Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,216 +19,214 @@ export default function ApplicationDetailPage() {
   const params = useParams();
   const id = String(params.id);
   const router = useRouter();
+  const { setPageTitle } = useUIStore();
 
   const { data: details, isLoading } = useQuery({
     queryKey: ["app-details", id],
     queryFn: () => candidateApi.getApplicationDetails(id).then(r => r.data),
   });
 
+  useEffect(() => {
+    setPageTitle("Application Details");
+  }, []);
+
   const app = details?.application;
   const job = details?.job || app?.job;
   const timeline = details?.timeline || [];
 
-  if (isLoading) return <PanelLayout title="Loading..." allowedRoles={["CANDIDATE"]}><div className="p-20 text-center animate-pulse text-gray-400 font-medium">Loading Application Details...</div></PanelLayout>;
-  if (!app) return <PanelLayout title="Error" allowedRoles={["CANDIDATE"]}><div className="p-20 text-center text-red-500 font-medium">Application not found</div></PanelLayout>;
+  if (isLoading) return <div className="p-20 text-center animate-pulse text-slate-400 font-bold uppercase tracking-widest">Preparing Dossier...</div>;
+  if (!app) return <div className="p-20 text-center text-red-500 font-bold">Application index not found.</div>;
 
   const canViewOffer = app.status === "OFFERED" || app.status === "HIRED";
 
+  const getStatusConfig = (status: string) => {
+    const s = status.toUpperCase();
+    if (s.includes("REJECTED")) return { color: "bg-red-50 text-red-600", label: "Closed" };
+    if (s.includes("HIRED")) return { color: "bg-emerald-50 text-emerald-600", label: "Hired" };
+    if (s.includes("OFFER")) return { color: "bg-purple-50 text-purple-600", label: "Offer Phase" };
+    return { color: "bg-blue-50 text-blue-600", label: "Active" };
+  };
+
+  const statusConfig = getStatusConfig(app.status);
+
   return (
-    <PanelLayout title="Application Details" allowedRoles={["CANDIDATE"]}>
-      <div className="max-w-5xl mx-auto space-y-6">
-        
-        {/* Header Action */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/candidate")} className="gap-2">
-            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+    <div className="max-w-6xl mx-auto space-y-10 pb-12">
+      {/* Top Nav */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.push("/candidate/application")} className="gap-2 text-slate-500 hover:text-slate-900 font-bold transition-all px-0">
+          <ArrowLeft className="w-5 h-5" /> Back to Applications
+        </Button>
+        {canViewOffer && (
+          <Button className="bg-emerald-600 hover:bg-emerald-700 h-12 px-8 rounded-xl font-bold gap-2 shadow-lg shadow-emerald-100" onClick={() => router.push(`/candidate/offer/${id}`)}>
+            <CheckCircle className="w-4 h-4" /> View Offer Letter
           </Button>
-          <div className="flex gap-2">
-            {canViewOffer && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={() => router.push(`/candidate/offer/${id}`)}>
-                <CheckCircle className="w-4 h-4" /> View Offer Letter
-              </Button>
-            )}
-          </div>
-        </div>
+        )}
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Content: Info & Timeline */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Job Summary */}
-            <Card className="shadow-sm overflow-hidden border-blue-100 italic">
-              <div className="h-1 bg-blue-600" />
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row justify-between gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8 space-y-10">
+          {/* Job Summary Card */}
+          <Card className="border-none shadow-sm rounded-[40px] bg-white overflow-hidden p-10">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+               <div className="space-y-6 flex-1">
+                  <div className="flex items-center gap-3">
+                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                        <Briefcase className="w-6 h-6" />
+                     </div>
+                     <Badge className={cn("px-4 py-1.5 rounded-lg border-none font-bold text-[10px] uppercase tracking-widest", statusConfig.color)}>
+                        {statusConfig.label}
+                     </Badge>
+                  </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{job?.title}</h1>
-                    <p className="text-sm text-gray-500 flex items-center gap-1 font-medium">
-                      <Briefcase className="w-4 h-4" /> {job?.department} • {job?.company_name || "Mask Polymers"}
-                    </p>
+                     <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">{job?.title}</h1>
+                     <div className="flex flex-wrap items-center gap-6 mt-4 text-slate-500 font-medium">
+                        <div className="flex items-center gap-2">
+                           <Building2 className="w-4 h-4" />
+                           <span>Mask Polymers Pvt. Ltd.</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <MapPin className="w-4 h-4" />
+                           <span>{job?.location || "Remote / Pune"}</span>
+                        </div>
+                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge className={cn(
-                      "text-sm px-4 py-1 border-0 shadow-sm",
-                      app.status === "REJECTED" || app.status === "AUTO_REJECTED" ? "bg-red-50 text-red-600" :
-                      app.status === "HIRED" ? "bg-emerald-50 text-emerald-600" :
-                      "bg-blue-50 text-blue-600"
-                    )}>
-                      {app.status.replace(/_/g, " ")}
-                    </Badge>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                      Applied on {new Date(app.applied_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+               </div>
+               <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Applied on</p>
+                  <p className="text-lg font-bold text-slate-900">{new Date(app.applied_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+               </div>
+            </div>
+          </Card>
 
-            {/* Application Timeline */}
-            <Card className="shadow-sm">
-              <CardHeader className="border-b pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-gray-400" /> Progress Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-8 relative">
-                  {/* Vertical line connector */}
-                  <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-100" />
-                  
-                  {timeline.length > 0 ? timeline.map((event: any, idx: number) => (
-                    <div key={idx} className="relative pl-10 group">
-                      <div className={cn(
-                        "absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border-2 z-10 bg-white transition-all",
-                        idx === timeline.length - 1 ? "border-blue-600 scale-125 shadow-md shadow-blue-100" : "border-gray-200"
-                      )}>
-                        {idx === timeline.length - 1 ? (
-                          <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                        ) : (
-                          <CheckCircle className="w-3.5 h-3.5 text-gray-300" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
-                          {new Date(event.changed_at || event.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                        </p>
-                        <h4 className="text-sm font-bold text-gray-900 mb-1">{event.label || event.new_status?.replace(/_/g, " ")}</h4>
-                        {event.metadata?.reason && (
-                          <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100 mt-2 italic shadow-inner">
-                            {event.metadata.reason}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="relative pl-10">
-                      <div className="absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-blue-600 bg-white z-10">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
-                          {new Date(app.applied_at).toLocaleDateString()}
-                        </p>
-                        <h4 className="text-sm font-bold text-gray-900">Application Submitted</h4>
-                        <p className="text-xs text-gray-500">Your application is currently being reviewed by our team.</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Timeline Card */}
+          <Card className="border-none shadow-sm rounded-[40px] bg-white p-10">
+             <div className="flex items-center justify-between mb-12">
+                <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                   <Activity className="w-6 h-6 text-blue-600" /> Progress Timeline
+                </h3>
+                <Badge className="bg-slate-50 text-slate-400 px-4 py-1.5 rounded-lg border-none font-bold text-[10px] uppercase">Live Sync Active</Badge>
+             </div>
 
-          {/* Sidebar Area: Docs & Actions */}
-          <div className="space-y-6">
-            
-            {/* Status Card (Action Oriented) */}
-            <Card className="shadow-sm border-blue-50 bg-blue-50/20">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-600 rounded-lg">
-                    <Info className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="font-bold text-gray-900">Current Status</h3>
-                </div>
+             <div className="relative space-y-12">
+                <div className="absolute left-[23px] top-[40px] bottom-[40px] w-0.5 bg-slate-50" />
                 
-                {app.status === "REJECTED" || app.status === "AUTO_REJECTED" ? (
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
-                    <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                    <p className="text-xs font-bold text-red-900">Application Closed</p>
-                    <p className="text-[11px] text-red-700 mt-1">Thank you for your interest. We wish you success in your search.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-3 bg-white rounded-lg border border-blue-100 shadow-sm">
-                      <p className="text-xs font-bold text-blue-900 uppercase tracking-tighter mb-1">Next Step</p>
-                      <p className="text-sm text-gray-700">
-                        {app.status === "TECHNICAL_ROUND_PENDING" ? "Complete Technical Assessment" :
-                         app.status === "INTERVIEW_SCHEDULED" ? "Join AI Interview" :
-                         app.status === "OFFERED" ? "Review and Accept Offer" : "Await further updates"}
-                      </p>
+                {timeline.length > 0 ? timeline.map((event: any, idx: number) => (
+                  <div key={idx} className="relative pl-16 group">
+                    <div className={cn(
+                      "absolute left-0 top-1 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-md z-10 transition-all duration-500",
+                      idx === timeline.length - 1 ? "bg-blue-600 text-white scale-110 shadow-blue-200" : "bg-white text-slate-200 border-slate-50"
+                    )}>
+                      {idx === timeline.length - 1 ? (
+                        <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                      ) : (
+                        <CheckCircle className="w-6 h-6 text-emerald-500" />
+                      )}
                     </div>
-
-                    {app.status === "TECHNICAL_ROUND_PENDING" && (
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700 group" onClick={() => router.push(`/candidate/assessment/${id}`)}>
-                        Start Assessment <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    )}
-                    {app.status === "INTERVIEW_SCHEDULED" && (
-                      <Button className="w-full bg-indigo-600 hover:bg-indigo-700 group" onClick={() => router.push(`/candidate/interview/${id}`)}>
-                        Join Interview <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    )}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-4">
+                         <h4 className="text-lg font-bold text-slate-900">{event.label || event.new_status?.replace(/_/g, " ")}</h4>
+                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(event.changed_at || event.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      </div>
+                      {event.metadata?.reason && (
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 italic text-sm text-slate-500 leading-relaxed font-medium">
+                          "{event.metadata.reason}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div className="relative pl-16">
+                    <div className="absolute left-0 top-1 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-md bg-blue-600 text-white z-10">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-slate-900">Application Submitted</h4>
+                      <p className="text-sm text-slate-500 mt-1 font-medium">Evaluation process initiated by AI recruitment systems.</p>
+                    </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+             </div>
+          </Card>
+        </div>
 
-            {/* Document Management */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-gray-500">My Records</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div 
-                  className="group flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50 hover:bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer"
-                  onClick={() => app.resume_url && window.open(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/${app.resume_url}`, "_blank")}
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-gray-700">My Resume</span>
-                  </div>
-                  <Download className="w-3 h-3 text-gray-400 group-hover:text-blue-600" />
-                </div>
-                
-                <div className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50",
-                  details.assessment ? "hover:bg-white hover:border-blue-300 transition-all cursor-pointer" : "opacity-50 grayscale"
-                )}>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium text-gray-700">Assessment Report</span>
-                  </div>
-                  <Info className="w-3 h-3 text-gray-400" />
-                </div>
+        <div className="lg:col-span-4 space-y-10">
+           {/* Quick Action Card */}
+           <Card className="border-none shadow-sm rounded-[40px] bg-slate-900 p-10 text-white overflow-hidden relative group">
+              <div className="relative z-10 space-y-8">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Next Action Required</p>
+                    <h3 className="text-2xl font-black leading-tight">
+                       {app.status === "TECHNICAL_ROUND_PENDING" ? "Complete Technical Assessment" :
+                        app.status === "INTERVIEW_SCHEDULED" ? "Join AI Interview Session" :
+                        app.status === "OFFERED" ? "Review & Finalize Offer" : "Evaluation in Progress"}
+                    </h3>
+                 </div>
 
-                <div className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50",
-                  details.interview ? "hover:bg-white hover:border-blue-300 transition-all cursor-pointer" : "opacity-50 grayscale"
-                )}>
-                  <div className="flex items-center gap-2">
-                    <Video className="w-4 h-4 text-emerald-600" />
-                    <span className="text-sm font-medium text-gray-700">Interview Transcript</span>
-                  </div>
-                  <Info className="w-3 h-3 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
+                 {app.status === "REJECTED" || app.status === "AUTO_REJECTED" ? (
+                   <p className="text-slate-400 text-sm font-medium leading-relaxed">Thank you for your interest. The evaluation for this role is now closed.</p>
+                 ) : (
+                   <div className="space-y-4">
+                      {app.status === "TECHNICAL_ROUND_PENDING" && (
+                        <Button className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black uppercase tracking-widest transition-all" onClick={() => router.push(`/candidate/assessment/${id}`)}>
+                           Start Assessment <ChevronRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      )}
+                      {app.status === "INTERVIEW_SCHEDULED" && (
+                        <Button className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black uppercase tracking-widest transition-all" onClick={() => router.push(`/candidate/interview/${id}`)}>
+                           Join Interview <ChevronRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      )}
+                      <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest">System generated next step</p>
+                   </div>
+                 )}
+              </div>
+              <Activity className="absolute -right-6 -bottom-6 w-32 h-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
+           </Card>
 
-          </div>
+           {/* Documents Card */}
+           <Card className="border-none shadow-sm rounded-[40px] bg-white p-10">
+              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                 <FileText className="w-5 h-5 text-blue-600" /> Records & Docs
+              </h3>
+              <div className="space-y-4">
+                 {[
+                    { label: "My Resume", icon: FileText, color: "text-blue-600", bg: "bg-blue-50", url: app.resume_url, active: !!app.resume_url },
+                    { label: "Assessment Report", icon: Target, color: "text-purple-600", bg: "bg-purple-50", active: !!details.assessment },
+                    { label: "Interview Transcript", icon: Video, color: "text-emerald-600", bg: "bg-emerald-50", active: !!details.interview }
+                 ].map((doc, i) => (
+                    <div 
+                       key={i} 
+                       onClick={() => doc.url && window.open(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/${doc.url}`, "_blank")}
+                       className={cn(
+                          "flex items-center justify-between p-6 rounded-3xl border-2 transition-all group",
+                          doc.active ? "bg-white border-slate-50 hover:border-blue-100 hover:shadow-sm cursor-pointer" : "bg-slate-50 border-slate-50 opacity-50 grayscale cursor-not-allowed"
+                       )}
+                    >
+                       <div className="flex items-center gap-4">
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", doc.bg, doc.color)}>
+                             <doc.icon className="w-5 h-5" />
+                          </div>
+                          <span className="font-bold text-slate-900 text-sm">{doc.label}</span>
+                       </div>
+                       {doc.active && <Download className="w-4 h-4 text-slate-300 group-hover:text-blue-600" />}
+                    </div>
+                 ))}
+              </div>
+           </Card>
+
+           {/* Need Help? */}
+           <div className="p-8 bg-blue-50/50 rounded-[32px] border border-blue-50 flex flex-col items-center text-center gap-4">
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600">
+                 <Info className="w-6 h-6" />
+              </div>
+              <div>
+                 <h4 className="font-bold text-slate-900">Questions?</h4>
+                 <p className="text-xs text-slate-500 mt-1 font-medium">Reach out to our recruitment team if you have any doubts.</p>
+              </div>
+              <Button variant="link" className="text-blue-600 font-black uppercase text-[10px] tracking-widest p-0">Contact Support</Button>
+           </div>
         </div>
       </div>
-    </PanelLayout>
+    </div>
   );
 }

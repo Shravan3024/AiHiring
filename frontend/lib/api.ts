@@ -265,6 +265,8 @@ getInterviewStatusPhase5: (sessionId: string) =>
   api.get(`/interview/${sessionId}/status`),
 
   // Offer
+  getOfferDetails: (applicationId: string) => 
+    api.get(`/offer/application/${applicationId}`),
   respondOffer: (data: { offer_id?: string; application_id?: string; decision: string; candidate_notes?: string }) => 
     api.post("/offer/respond-to-offer", data),
 
@@ -301,6 +303,10 @@ export const aiApi = {
   // Decision
   makeDecision: (data: { applicationId: number; jobId?: number }) =>
     api.post("/ai/decision/make", data),
+  
+  // Chat
+  chat: (message: string, history: any[] = []) =>
+    api.post("/ai/chat", { message, history }),
 };
 
 // ==================== AI INSIGHTS ====================

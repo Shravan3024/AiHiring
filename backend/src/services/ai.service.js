@@ -526,5 +526,29 @@ module.exports = {
         impact: "Moderate"
       };
     }
+  },
+
+  /**
+   * Module 7: Candidate Chatbot
+   */
+  chatWithAI: async (message, history = []) => {
+    const prompt = `
+      Task: AI Recruitment Assistant for Mask Polymers.
+      Role: Help the candidate with their application, interview, or assessment queries.
+      Context: You are professional, helpful, and concise.
+      
+      Chat History:
+      ${JSON.stringify(history)}
+      
+      User Message: ${message}
+      
+      Response (Plain Text):
+    `;
+    try {
+      return await llmService.generateCompletion('CANDIDATE_CHATBOT', prompt);
+    } catch (err) {
+      logger.error(`[AI Chat] Error: ${err.message}`);
+      return "I apologize, but I'm having trouble connecting to my brain right now. Please try again in a moment.";
+    }
   }
 };

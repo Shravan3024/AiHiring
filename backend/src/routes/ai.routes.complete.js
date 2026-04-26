@@ -171,6 +171,19 @@ router.post(
   aiController.exportAIAnalytics
 );
 
+// ==================== CANDIDATE CHATBOT ====================
+
+/**
+ * Direct AI Chat
+ * POST /api/ai/chat
+ */
+router.post(
+  '/chat',
+  isAuthenticated,
+  authorize(['candidate', 'hr', 'admin']),
+  aiController.chatWithAI
+);
+
 // ==================== ERROR HANDLING ====================
 
 /**

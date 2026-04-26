@@ -47,6 +47,8 @@ interface UIState {
   theme: "light" | "dark";
   toggleTheme: () => void;
   setTheme: (theme: "light" | "dark") => void;
+  pageTitle: string;
+  setPageTitle: (title: string) => void;
   // System Toggles
   features: {
     aiScreening: boolean;
@@ -62,6 +64,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarOpen: true,
       theme: "light",
+      pageTitle: "Candidate Panel",
       features: {
         aiScreening: true,
         proctorShield: true,
@@ -72,6 +75,7 @@ export const useUIStore = create<UIState>()(
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleTheme: () => set((s) => ({ theme: s.theme === "light" ? "dark" : "light" })),
       setTheme: (theme) => set({ theme }),
+      setPageTitle: (title) => set({ pageTitle: title }),
       toggleFeature: (feature) => set((s) => ({
         features: { ...s.features, [feature]: !s.features[feature] }
       })),

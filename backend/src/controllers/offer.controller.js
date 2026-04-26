@@ -159,3 +159,24 @@ exports.respondOffer = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/* =============================
+   GET OFFER DETAILS
+============================= */
+exports.getOfferDetails = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const offer = await Offer.findOne({ 
+      where: { application_id: applicationId },
+      include: [Application] 
+    });
+    
+    if (!offer) {
+      return res.status(404).json({ message: "Offer record not found" });
+    }
+    
+    res.json({ offer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

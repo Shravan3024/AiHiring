@@ -35,5 +35,6 @@ router.post('/interview/speaking-patterns', isAuthenticated, aiController.analyz
 // Candidate comparison and feedback
 router.post('/candidates/compare', isAuthenticated, aiController.compareCandidates);
 router.post('/feedback/generate', isAuthenticated, aiController.generateFeedback);
+router.post('/chat', isAuthenticated, aiController.chatWithAI);
 
 module.exports = router;
