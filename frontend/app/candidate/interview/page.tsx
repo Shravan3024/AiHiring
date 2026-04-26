@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { candidateApi } from "@/lib/api";
 import { useUIStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 export default function CandidateInterview() {
   const { setPageTitle } = useUIStore();
+  const router = useRouter();
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [interviewId, setInterviewId] = useState<string | null>(null);
@@ -120,6 +122,15 @@ export default function CandidateInterview() {
     queryKey: ["interview-config"],
     queryFn: () => candidateApi.getInterviewConfig().then(r => r.data),
   });
+
+  const { data: interviewStatus } = useQuery({
+    queryKey: ["interview-status", applicationId],
+    queryFn: () => candidateApi.getInterviewStatus(applicationId!).then(r => r.data),
+    enabled: !!applicationId && !started,
+    refetchInterval: 30000 // Polling for expiry every 30s
+  });
+
+  const isExpired = interviewStatus?.expires_at && new Date() > new Date(interviewStatus.expires_at);
 
   const firstApp = (overview?.applications || overview?.dashboard?.applications || [])[0];
 
@@ -324,12 +335,34 @@ export default function CandidateInterview() {
                         <p className="text-slate-400 text-sm mt-1">Accept biometric data sync and assessment protocols.</p>
                      </div>
                   </div>
+
+                  {interviewStatus?.expires_at && (
+                    <div className="relative z-10 flex flex-col items-end gap-2 bg-white/5 backdrop-blur-xl p-6 rounded-[24px] border border-white/10 min-w-[280px]">
+                        <div className="flex items-center gap-2 text-rose-400">
+                           <Clock className="w-4 h-4" />
+                           <span className="text-[10px] font-black uppercase tracking-widest">Attempt Window Closing</span>
+                        </div>
+                        <p className={cn(
+                           "text-2xl font-black tabular-nums",
+                           isExpired ? "text-rose-500" : "text-white"
+                        )}>
+                           {isExpired ? "EXPIRED" : new Date(interviewStatus.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                           Locks on {new Date(interviewStatus.expires_at).toLocaleDateString()}
+                        </p>
+                    </div>
+                  )}
+
                   <Button 
-                     disabled={!agreed || startMutation.isPending}
+                     disabled={!agreed || startMutation.isPending || isExpired}
                      onClick={handleStart}
-                     className="relative z-10 bg-white hover:bg-slate-50 text-slate-900 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all disabled:opacity-20"
+                     className={cn(
+                        "relative z-10 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all shadow-2xl",
+                        isExpired ? "bg-rose-500 text-white cursor-not-allowed" : "bg-white hover:bg-slate-50 text-slate-900"
+                     )}
                   >
-                     {startMutation.isPending ? "Configuring..." : "Start Interview"}
+                     {isExpired ? "Session Locked" : startMutation.isPending ? "Configuring..." : "Start Interview"}
                   </Button>
                   <div className="absolute top-0 right-0 p-12 opacity-5"><Sparkles className="w-48 h-48 text-white" /></div>
                </div>
@@ -486,7 +519,7 @@ export default function CandidateInterview() {
                      <p className="text-sm font-bold">{faceDetectionStatus}</p>
                   </div>
                </div>
-               <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Please ensure you are in a quiet, well-lit environment. Technical issues? <button className="text-blue-400 font-bold">Contact Support</button></p>
+               <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Please ensure you are in a quiet, well-lit environment. Technical issues? <button onClick={() => router.push("/contact")} className="text-blue-400 font-bold">Contact Support</button></p>
             </Card>
           </div>
         </div>

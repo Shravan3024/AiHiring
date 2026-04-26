@@ -103,9 +103,11 @@ export default function CandidateSidebar() {
               <p className="text-[10px] text-slate-500">We're here to help you</p>
             </div>
           </div>
-          <Button size="sm" variant="outline" className="w-full bg-white text-blue-600 border-blue-200 hover:bg-blue-50 text-[10px] font-bold">
-            Contact Support
-          </Button>
+          <Link href="/contact" className="w-full">
+            <Button size="sm" variant="outline" className="w-full bg-white text-blue-600 border-blue-200 hover:bg-blue-50 text-[10px] font-bold">
+              Contact Support
+            </Button>
+          </Link>
         </div>
       )}
 

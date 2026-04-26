@@ -191,24 +191,61 @@ const testAIConfig = async (req, res) => {
       });
     }
 
-    // Simulate testing
+    const { Job } = require("../models/index.js");
+    const job = await Job.findOne({ where: { id: config.jobId } });
+    
+    // Comprehensive Validation
+    const errors = [];
+    const warnings = [];
+
+    // 1. Job existence
+    if (!job) errors.push(`Linked Job (ID: ${config.jobId}) does not exist in the database.`);
+
+    // 2. Weight validation
+    const totalWeight = config.resumeWeight + config.mcqWeight + config.technicalWeight + config.interviewWeight;
+    if (Math.abs(totalWeight - 1.0) > 0.001) {
+      errors.push(`Critical: Stage weights sum to ${totalWeight.toFixed(2)}, but must be exactly 1.0.`);
+    }
+
+    // 3. Threshold sanity checks
+    if (config.passingThreshold < 0.1 || config.passingThreshold > 0.9) {
+      warnings.push("Passing threshold is unusually high or low (recommended: 0.5 - 0.7)");
+    }
+    if (config.autoEscalateThreshold <= config.passingThreshold) {
+      errors.push("Auto-escalate threshold must be higher than passing threshold.");
+    }
+
+    // 4. Governance checks
+    if (!config.confidenceWeighting || config.confidenceWeighting.HIGH < config.confidenceWeighting.LOW) {
+      errors.push("Confidence weighting factors are misconfigured (HIGH should be > LOW).");
+    }
+
+    const isSuccess = errors.length === 0;
+
     const testResult = {
       configId,
-      status: "TESTED",
+      status: isSuccess ? "VERIFIED" : "FAILED",
       timestamp: new Date(),
-      weights: {
-        resume: config.resumeWeight,
-        mcq: config.mcqWeight,
-        technical: config.technicalWeight,
-        interview: config.interviewWeight,
+      validation: {
+        errors,
+        warnings,
+        totalWeight: totalWeight.toFixed(2),
+        linkedJob: job?.title || "Unknown"
       },
-      threshold: config.passingThreshold,
-      result: "Configuration is valid and ready",
+      result: isSuccess 
+        ? "Configuration is valid and ready for production deployment." 
+        : `Configuration has ${errors.length} critical errors. See validation details.`,
     };
+
+    if (isSuccess) {
+       await config.update({ status: "ACTIVE" });
+    } else {
+       await config.update({ status: "INACTIVE" });
+    }
 
     res.json({
       success: true,
-      message: "AI configuration test completed",
+      message: isSuccess ? "AI configuration test passed" : "AI configuration test failed",
       data: testResult,
     });
   } catch (error) {

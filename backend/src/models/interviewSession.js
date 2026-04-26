@@ -101,6 +101,11 @@ module.exports = (sequelize) => {
   confidence_timeline: {
     type: DataTypes.JSON,
     allowNull: true
+  },
+  expires_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: "Automatically locks session after this time"
   }
   }, {
     timestamps: true,

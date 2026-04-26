@@ -398,32 +398,37 @@ export default function HighFidelityRiskMonitorV3() {
         </div>
 
         {/* MITIGATION ACTIONS (VERY BOTTOM) */}
-        <div className="space-y-4 pb-12">
-           <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Mitigation Actions</h2>
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {[
-                 { title: "Review High Risk", sub: `${kpis.highRisk} candidates`, btn: "Review Now", icon: ShieldAlert, color: "text-rose-500" },
-                 { title: "Verify Backgrounds", sub: `${kpis.backgroundAlerts} pending`, btn: "Verify Now", icon: Fingerprint, color: "text-orange-500" },
-                 { title: "Check Compliance", sub: `${kpis.complianceIssues} issues`, btn: "Review Now", icon: Gavel, color: "text-purple-500" },
-                 { title: "Re-assess Candidates", sub: "18 recommended", btn: "Re-assess", icon: UserPlus, color: "text-blue-500" },
-                 { title: "Update Policies", sub: "3 outdated", btn: "Update Now", icon: ShieldCheck, color: "text-emerald-500" },
-              ].map((ma, i) => (
-                 <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden p-6 group hover:border-primary/30 transition-all">
-                    <div className="flex items-center gap-3 mb-4">
-                       <div className={cn("p-1.5 rounded-lg bg-muted border border-border/50 group-hover:bg-primary/10 transition-colors", ma.color)}>
-                          <ma.icon className="w-4 h-4" />
-                       </div>
-                       <h3 className="text-[10px] font-black text-foreground uppercase tracking-tight leading-tight">{ma.title}</h3>
-                    </div>
-                    <p className="text-[9px] font-medium text-muted-foreground leading-relaxed mb-4">{ma.sub}</p>
-                    <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit text-primary flex items-center gap-1 group">
-                       {ma.btn} <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                 </Card>
-              ))}
-           </div>
-        </div>
-
+         <div className="space-y-4 pb-12">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Mitigation Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+               {[
+                  { title: "Review High Risk", sub: `${kpis.highRisk} candidates`, btn: "Review Now", icon: ShieldAlert, color: "text-rose-500", filter: "High" },
+                  { title: "Verify Backgrounds", sub: `${kpis.backgroundAlerts} pending`, btn: "Verify Now", icon: Fingerprint, color: "text-orange-500", filter: "Background" },
+                  { title: "Check Compliance", sub: `${kpis.complianceIssues} issues`, btn: "Review Now", icon: Gavel, color: "text-purple-500", filter: "Compliance" },
+                  { title: "Re-assess Candidates", sub: "18 recommended", btn: "Re-assess", icon: UserPlus, color: "text-blue-500", filter: "Assessment" },
+                  { title: "Update Policies", sub: "3 outdated", btn: "Update Now", icon: ShieldCheck, color: "text-emerald-500", filter: "All" },
+               ].map((ma, i) => (
+                  <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden p-6 group hover:border-primary/30 transition-all cursor-pointer bg-gradient-to-br from-card to-background/50">
+                     <div className="flex items-center gap-3 mb-4">
+                        <div className={cn("p-1.5 rounded-lg bg-muted border border-border/50 group-hover:bg-primary/10 transition-colors", ma.color)}>
+                           <ma.icon className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-[10px] font-black text-foreground uppercase tracking-tight leading-tight">{ma.title}</h3>
+                     </div>
+                     <p className="text-[9px] font-medium text-muted-foreground leading-relaxed mb-4">{ma.sub}</p>
+                     <Button 
+                        onClick={() => {
+                           setRiskType(ma.filter);
+                           setPage(1);
+                           window.scrollTo({ top: 300, behavior: 'smooth' });
+                        }}
+                        variant="link" className="text-[9px] font-black uppercase p-0 h-fit text-primary flex items-center gap-1 group">
+                        {ma.btn} <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                     </Button>
+                  </Card>
+               ))}
+            </div>
+         </div>
       </div>
     </PanelLayout>
   );

@@ -249,8 +249,8 @@ class CandidateProfileController {
             aggregate: aggregateScore,
           },
 
-          evaluationProsCons: buildProsCons(
-            { resumeScore, technicalScore, interviewScore, malpracticeScore: malpractice.length || 0 }, 
+          evaluationProsCons: await buildProsCons(
+            { jobId: application.job_id, resumeScore, technicalScore, interviewScore, malpracticeScore: malpractice.length || 0 }, 
             { 
               resumeAnalysis: application.ResumeAnalysis, 
               assessmentAnalysis: application.AssessmentAnalysis, 
@@ -341,7 +341,6 @@ class CandidateProfileController {
               timestamp: log.created_at
             })))
           },
-          assessment_attempts: application.assessment_attempts || [],
           interview_session: application.interview_session || null
         }
       });
@@ -511,9 +510,10 @@ class CandidateProfileController {
 
 const scoringService = require('../services/scoring.service');
 
-function buildProsCons({ resumeScore, technicalScore, interviewScore, malpracticeScore = 0 }, { resumeAnalysis, assessmentAnalysis, interviewAnalysis }) {
+async function buildProsCons({ jobId, resumeScore, technicalScore, interviewScore, malpracticeScore = 0 }, { resumeAnalysis, assessmentAnalysis, interviewAnalysis }) {
   // 1. Compute ML Regression Final Score & Classification
-  const prediction = scoringService.predictFinalScore({
+  const prediction = await scoringService.predictFinalScore({
+    jobId,
     resumeScore: resumeScore || 0,
     assessmentScore: technicalScore || 0,
     interviewScore: interviewScore || 0,

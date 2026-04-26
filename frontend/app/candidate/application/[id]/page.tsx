@@ -223,7 +223,7 @@ export default function ApplicationDetailPage() {
                  <h4 className="font-bold text-slate-900">Questions?</h4>
                  <p className="text-xs text-slate-500 mt-1 font-medium">Reach out to our recruitment team if you have any doubts.</p>
               </div>
-              <Button variant="link" className="text-blue-600 font-black uppercase text-[10px] tracking-widest p-0">Contact Support</Button>
+              <Button onClick={() => router.push("/contact")} variant="link" className="text-blue-600 font-black uppercase text-[10px] tracking-widest p-0">Contact Support</Button>
            </div>
         </div>
       </div>

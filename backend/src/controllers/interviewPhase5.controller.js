@@ -130,11 +130,14 @@ exports.scheduleInterviewPhase5 = async (req, res) => {
       return res.status(400).json({ error: 'Cannot schedule interview in the past' });
     }
 
+    const expiresAt = new Date(scheduledDateTime.getTime() + (10 * 60 * 60 * 1000)); // 10 hours window
+
     const interviewSession = await InterviewSession.create({
       application_id: applicationId,
       interview_type: interview_type || 'VIDEO',
       status: 'SCHEDULED',
       scheduled_date: scheduledDateTime,
+      expires_at: expiresAt,
       questions_asked: [],
       scheduled_by: userId,
       metadata: {
@@ -167,7 +170,7 @@ exports.scheduleInterviewPhase5 = async (req, res) => {
         application_id: application.id,
         notification_type: 'INTERVIEW_SCHEDULED',
         title: 'Interview Scheduled 🎥',
-        message: `Your AI interview has been scheduled for ${scheduledDateTime.toLocaleString()}. Please be ready on time.`,
+        message: `Your AI interview has been scheduled for ${scheduledDateTime.toLocaleString()}. Note: The link will expire automatically 10 hours after the scheduled time.`,
         action_url: `/candidate/interview/${applicationId}`,
         send_email: true
       });
@@ -238,6 +241,17 @@ exports.startInterviewPhase5 = async (req, res) => {
 
     if (!interviewSession) {
       return res.status(400).json({ error: 'Interview not scheduled or completed.' });
+    }
+
+    // 🔥 Expiry Check (10-hour window)
+    if (interviewSession.expires_at && new Date() > new Date(interviewSession.expires_at)) {
+      if (interviewSession.status === 'SCHEDULED') {
+        await interviewSession.update({ status: 'FAILED', notes: 'Auto-locked: 10-hour window exceeded.' });
+      }
+      return res.status(403).json({ 
+        error: 'Interview session has expired.',
+        message: 'The 10-hour window to attempt this interview has passed. Please contact HR.'
+      });
     }
 
     if (interviewSession.status === 'IN_PROGRESS' && interviewSession.questions_asked?.length > 0) {
@@ -599,10 +613,46 @@ exports.getInterviewStatusPhase5 = async (req, res) => {
       time_remaining_ms: timeRemaining,
       time_limit_minutes: INTERVIEW_CONFIG.DURATION_MINUTES,
       started_at: interviewSession.started_at,
+      expires_at: interviewSession.expires_at,
       submitted_at: interviewSession.submitted_at
     });
   } catch (error) {
     console.error('Get Interview Status Error:', error);
+    res.status(500).json({ error: 'Failed to get interview status' });
+  }
+};
+
+/**
+ * Get Interview Status by Application ID
+ */
+exports.getInterviewStatusByApplicationId = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const candidateId = req.candidate.id;
+
+    const interviewSession = await InterviewSession.findOne({
+      where: {
+        application_id: applicationId,
+        status: { [Op.ne]: 'CANCELLED' }
+      }
+    });
+
+    if (!interviewSession) {
+      return res.json({ success: true, exists: false });
+    }
+
+    res.json({
+      success: true,
+      exists: true,
+      session_id: interviewSession.id,
+      status: interviewSession.status,
+      scheduled_at: interviewSession.scheduled_at,
+      expires_at: interviewSession.expires_at,
+      questions_answered: (interviewSession.questions_asked || []).filter(q => q.answered_at).length,
+      total_questions: INTERVIEW_CONFIG.TOTAL_QUESTIONS
+    });
+  } catch (error) {
+    console.error('Get Interview Status By App Error:', error);
     res.status(500).json({ error: 'Failed to get interview status' });
   }
 };
@@ -873,7 +923,8 @@ async function runGeminiInterviewAnalysis(questionsAsked) {
     logger.warn(`Interview AI analysis failed, falling back to ML Regression: ${error.message}`);
     
     // Fallback: ML Weighted Regression Simulation
-    const prediction = scoringService.predictFinalScore({
+    const prediction = await scoringService.predictFinalScore({
+      jobId: questionsAsked[0]?.jobId, // Attempt to get jobId if available
       cosineScore: mlCosineScore,
       aiAvailable: false,
       interviewScore: mlCosineScore // Use similarity as base
@@ -967,6 +1018,7 @@ module.exports = {
   startInterviewPhase5: exports.startInterviewPhase5,
   submitResponsePhase5: exports.submitResponsePhase5,
   getInterviewStatusPhase5: exports.getInterviewStatusPhase5,
+  getInterviewStatusByApplicationId: exports.getInterviewStatusByApplicationId,
   getInterviewResultsPhase5: exports.getInterviewResultsPhase5,
   getInterviewAnalysis: exports.getInterviewAnalysis,
   getInterviewConfig: exports.getInterviewConfig,

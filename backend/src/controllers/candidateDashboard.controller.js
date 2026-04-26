@@ -72,7 +72,8 @@ exports.getDashboardOverview = async (req, res) => {
           skills: candidate.skills,
           cgpa: candidate.cgpa,
           year_of_passout: candidate.year_of_passout,
-          summary: candidate.summary || candidate.ai_summary
+          summary: candidate.summary || candidate.ai_summary,
+          updated_at: candidate.updated_at
         },
         applications: applications.map(app => ({
           _id: String(app.id),

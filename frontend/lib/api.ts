@@ -117,6 +117,7 @@ export const adminApi = {
   forceLogoutHR: (id: string) => api.post(`/admin/hrs/${id}/force-logout`),
 
   // Approval Rules
+  getApprovalRules: () => api.get("/admin/approval-rules"),
   createApprovalRule: (data: object) => api.post("/admin/approval-rules", data),
 
   // Notifications & Global Toggles
@@ -263,6 +264,9 @@ submitResponsePhase5: (sessionId: string, data: any) =>
 
 getInterviewStatusPhase5: (sessionId: string) =>
   api.get(`/interview/${sessionId}/status`),
+
+getInterviewStatus: (applicationId: string) =>
+  api.get(`/interview/application/${applicationId}/status`),
 
   // Offer
   getOfferDetails: (applicationId: string) => 

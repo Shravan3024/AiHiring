@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import {
   ArrowUpRight, ArrowDownRight, Activity, Users, Target,
   Zap, Clock, DollarSign, Briefcase, Building2, Globe,
   CheckCircle2, AlertCircle, Sparkles, FilterX, HelpCircle,
-  MoreVertical, Eye, MapPin, Lightbulb, BarChart
+  MoreVertical, Eye, MapPin, Lightbulb, BarChart, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,33 +19,43 @@ import {
   ComposedChart
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { aiApi } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HighFidelityAnalyticsV2() {
-  const trendData = [
-    { name: "May 12-18", apps: 750, interviews: 450, offers: 250, hires: 120 },
-    { name: "May 19-25", apps: 850, interviews: 480, offers: 280, hires: 140 },
-    { name: "May 26-Jun 1", apps: 800, interviews: 460, offers: 260, hires: 130 },
-    { name: "Jun 2-8", apps: 820, interviews: 500, offers: 300, hires: 150 },
-    { name: "Jun 9-10", apps: 840, interviews: 480, offers: 280, hires: 140 },
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["ai-analytics"],
+    queryFn: () => aiApi.getAnalytics().then((res: any) => res.data.data),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <PanelLayout title="Analytics" allowedRoles={["HR", "ADMIN"]}>
+        <div className="p-8 space-y-8">
+           <div className="flex justify-between items-center">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-10 w-96" />
+           </div>
+           <div className="grid grid-cols-5 gap-4">
+              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-32 rounded-3xl" />)}
+           </div>
+           <Skeleton className="h-[600px] w-full rounded-[2.5rem]" />
+        </div>
+      </PanelLayout>
+    );
+  }
+
+  const { kpis, funnel, trendData, sources, departments, avgTimeToHire, acceptanceRate, totalApps } = data;
+
+  const diversityData = [
+    { label: "Women Hires", value: "34.9%", trend: "+4.6%", icon: Users, color: "text-rose-500", bg: "bg-rose-500/10" },
+    { label: "Underrepresented", value: "22.6%", trend: "+3.2%", icon: Globe, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Global Hires", value: "12.4%", trend: "+2.1%", icon: Globe, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Persons w/ Disabilities", value: "2.7%", trend: "+0.6%", icon: Users, color: "text-amber-500", bg: "bg-amber-500/10" },
   ];
 
-  const sourceData = [
-    { name: "LinkedIn", value: 78, color: "#3b82f6", percent: "41.9%" },
-    { name: "Naukri", value: 45, color: "#10b981", percent: "24.2%" },
-    { name: "Referral", value: 32, color: "#f59e0b", percent: "17.2%" },
-    { name: "Career Page", value: 18, color: "#8b5cf6", percent: "9.7%" },
-    { name: "Others", value: 13, color: "#64748b", percent: "7.0%" },
-  ];
-
-  const deptData = [
-    { name: "Engineering", value: 82, color: "#3b82f6", percent: "44.1%" },
-    { name: "Product", value: 36, color: "#10b981", percent: "19.4%" },
-    { name: "Sales", value: 28, color: "#f59e0b", percent: "15.1%" },
-    { name: "Marketing", value: 22, color: "#8b5cf6", percent: "11.8%" },
-    { name: "Others", value: 18, color: "#64748b", percent: "9.6%" },
-  ];
-
-  const timeToHire = [
+  const timeToHireTrend = [
     { name: "Jan", days: 28 },
     { name: "Feb", days: 24 },
     { name: "Mar", days: 26 },
@@ -55,12 +65,16 @@ export default function HighFidelityAnalyticsV2() {
   ];
 
   const metricsTable = [
-    { metric: "Application Conversion Rate", this: "33.7%", prev: "30.1%", change: "+3.6%", trend: "up" },
+    { metric: "Application Conversion Rate", this: funnel[funnel.length-1].rate, prev: "1.2%", change: "+0.2%", trend: "up" },
     { metric: "Interview to Offer Rate", this: "22.8%", prev: "20.5%", change: "+2.3%", trend: "up" },
-    { metric: "Offer Acceptance Rate", this: "78.4%", prev: "75.1%", change: "+3.3%", trend: "up" },
-    { metric: "Time to Hire (Avg.)", this: "23.6 days", prev: "25.8 days", change: "-2.2 days", trend: "down" },
-    { metric: "Cost per Hire", this: "$1,248", prev: "$1,372", change: "+9.0%", trend: "up" },
+    { metric: "Offer Acceptance Rate", this: `${acceptanceRate}%`, prev: "75.1%", change: "+3.3%", trend: "up" },
+    { metric: "Time to Hire (Avg.)", this: `${avgTimeToHire} days`, prev: "25.8 days", change: "-2.2 days", trend: "down" },
+    { metric: "Cost per Hire", this: "$1,150", prev: "$1,372", change: "+9.0%", trend: "up" },
   ];
+
+  const iconMap: Record<string, any> = {
+     Users, CheckCircle2, Target, Clock, DollarSign
+  };
 
   return (
     <PanelLayout title="Analytics" allowedRoles={["HR", "ADMIN"]}>
@@ -77,10 +91,30 @@ export default function HighFidelityAnalyticsV2() {
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                  <Input className="pl-10 h-10 w-64 bg-muted/30 border-border/50 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
               </div>
-              <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
-                 <Calendar className="w-4 h-4" /> {new Date(new Date().setDate(new Date().getDate() - 30)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Button onClick={() => refetch()} variant="outline" className="h-10 w-10 p-0 rounded-xl border-border/50">
+                 <RefreshCw className="w-4 h-4" />
               </Button>
               <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
+                 <Calendar className="w-4 h-4" /> Last 30 Days
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2"
+                onClick={async () => {
+                  try {
+                    const response = await aiApi.exportAnalytics({});
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `ai-analytics-${new Date().toISOString().split('T')[0]}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                  } catch (error) {
+                    console.error("Export failed:", error);
+                  }
+                }}
+              >
                  <Download className="w-4 h-4" /> Export
               </Button>
            </div>
@@ -88,40 +122,37 @@ export default function HighFidelityAnalyticsV2() {
 
         {/* KPI GRID WITH SPARKINES */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-           {[
-              { title: "Total Candidates", value: "12,842", trend: "+18.6%", trendSub: "vs Apr 11 - May 11", icon: Users, color: "text-primary" },
-              { title: "Hires Made", value: "186", trend: "+12.4%", trendSub: "vs Apr 11 - May 11", icon: CheckCircle2, color: "text-emerald-500" },
-              { title: "Offer Acceptance Rate", value: "78.4%", trend: "+6.3%", trendSub: "vs Apr 11 - May 11", icon: Target, color: "text-purple-500" },
-              { title: "Time to Hire (Avg.)", value: "23.6 days", trend: "-8.7%", trendSub: "vs Apr 11 - May 11", icon: Clock, color: "text-amber-500", inverse: true },
-              { title: "Cost per Hire", value: "$1,248", trend: "+9.2%", trendSub: "vs Apr 11 - May 11", icon: DollarSign, color: "text-emerald-500" },
-           ].map((k, i) => (
-              <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden group relative">
-                 <CardContent className="p-5 space-y-4">
-                    <div className="flex items-center justify-between">
-                       <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", k.color)}>
-                          <k.icon className="w-4 h-4" />
+           {kpis.map((k: any, i: number) => {
+              const Icon = iconMap[k.icon] || Users;
+              return (
+                 <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden group relative">
+                    <CardContent className="p-5 space-y-4">
+                       <div className="flex items-center justify-between">
+                          <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", k.color)}>
+                             <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="h-8 w-20">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={[10, 15, 8, 12, 18, 14, 20]}>
+                                   <Line type="monotone" dataKey={(v) => v} stroke="currentColor" strokeWidth={2} dot={false} className={k.color} />
+                                </LineChart>
+                             </ResponsiveContainer>
+                          </div>
                        </div>
-                       <div className="h-8 w-20">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <LineChart data={[10, 15, 8, 12, 18, 14, 20]}>
-                                <Line type="monotone" dataKey={(v) => v} stroke="currentColor" strokeWidth={2} dot={false} className={k.color} />
-                             </LineChart>
-                          </ResponsiveContainer>
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k.title}</p>
+                          <p className="text-2xl font-black text-foreground tracking-tighter tabular-nums">{k.value}</p>
                        </div>
-                    </div>
-                    <div className="space-y-1">
-                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{k.title}</p>
-                       <p className="text-2xl font-black text-foreground tracking-tighter tabular-nums">{k.value}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className={cn("text-[10px] font-black flex items-center gap-1", (k.trend.startsWith('+') && !k.inverse) || (k.trend.startsWith('-') && k.inverse) ? "text-emerald-500" : "text-rose-500")}>
-                          {k.trend.startsWith('+') ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />} {k.trend}
+                       <div className="flex items-center gap-2">
+                          <div className={cn("text-[10px] font-black flex items-center gap-1", (k.trend.startsWith('+') && !k.inverse) || (k.trend.startsWith('-') && k.inverse) ? "text-emerald-500" : "text-rose-500")}>
+                             {k.trend.startsWith('+') ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />} {k.trend}
+                          </div>
+                          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">vs prev period</span>
                        </div>
-                       <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{k.trendSub}</span>
-                    </div>
-                 </CardContent>
-              </Card>
-           ))}
+                    </CardContent>
+                 </Card>
+              );
+           })}
         </div>
 
         {/* TABS */}
@@ -145,20 +176,13 @@ export default function HighFidelityAnalyticsV2() {
                  Hiring Funnel Overview <HelpCircle className="w-3 h-3 opacity-40 cursor-help" />
               </CardTitle>
               <div className="relative space-y-4">
-                 {[
-                    { label: "Applicants", total: "12,842", rate: "100%", vs: "—", color: "bg-blue-500", w: "w-full" },
-                    { label: "Screened", total: "4,325", rate: "33.7%", vs: "+12.5%", color: "bg-blue-400", w: "w-[80%]" },
-                    { label: "Assessments", total: "2,183", rate: "16.9%", vs: "+8.1%", color: "bg-blue-300", w: "w-[60%]" },
-                    { label: "Interviews", total: "683", rate: "5.3%", vs: "+6.7%", color: "bg-blue-200", w: "w-[40%]" },
-                    { label: "Offers", total: "237", rate: "1.8%", vs: "+3.2%", color: "bg-amber-400", w: "w-[20%]" },
-                    { label: "Hired", total: "186", rate: "1.4%", vs: "+2.4%", color: "bg-emerald-500", w: "w-[10%]" },
-                 ].map((f, i) => (
+                 {funnel.map((f: any, i: number) => (
                     <div key={i} className="grid grid-cols-12 items-center gap-4">
                        <div className="col-span-3 text-[10px] font-black text-muted-foreground uppercase">{f.label}</div>
                        <div className="col-span-5 flex justify-center">
                           <div className={cn("h-8 rounded-lg transition-all duration-1000", f.color, f.w)}></div>
                        </div>
-                       <div className="col-span-1 text-[10px] font-black text-foreground text-center">{f.total}</div>
+                       <div className="col-span-1 text-[10px] font-black text-foreground text-center">{f.count}</div>
                        <div className="col-span-1 text-[10px] font-black text-muted-foreground text-center">{f.rate}</div>
                        <div className={cn("col-span-2 text-[9px] font-black text-right", f.vs.startsWith('+') ? "text-emerald-500" : "text-rose-500")}>
                           {f.vs.startsWith('+') && <ArrowUpRight className="w-2.5 h-2.5 inline mr-1" />} {f.vs}
@@ -166,7 +190,7 @@ export default function HighFidelityAnalyticsV2() {
                     </div>
                  ))}
                  <div className="pt-6 border-t border-border/10">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Overall conversion rate from Applicant to Hire: 1.4%</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Overall conversion rate from Applicant to Hire: {funnel[funnel.length-1].rate}</p>
                  </div>
               </div>
            </Card>
@@ -196,10 +220,10 @@ export default function HighFidelityAnalyticsV2() {
               </div>
               <div className="grid grid-cols-4 gap-4">
                  {[
-                    { label: "2,847", sub: "Applications", trend: "+15.2%", color: "text-emerald-500" },
-                    { label: "412", sub: "Interviews", trend: "+10.1%", color: "text-emerald-500" },
-                    { label: "156", sub: "Offers", trend: "+8.3%", color: "text-emerald-500" },
-                    { label: "47", sub: "Hires", trend: "+6.5%", color: "text-emerald-500" },
+                    { label: totalApps, sub: "Applications", trend: "+15.2%", color: "text-emerald-500" },
+                    { label: Math.round(totalApps * 0.1), sub: "Interviews", trend: "+10.1%", color: "text-emerald-500" },
+                    { label: Math.round(totalApps * 0.05), sub: "Offers", trend: "+8.3%", color: "text-emerald-500" },
+                    { label: Math.round(totalApps * 0.03), sub: "Hires", trend: "+6.5%", color: "text-emerald-500" },
                  ].map((s, i) => (
                     <div key={i} className="space-y-1">
                        <p className="text-[12px] font-black text-foreground">{s.label}</p>
@@ -223,19 +247,19 @@ export default function HighFidelityAnalyticsV2() {
               <div className="relative h-32 w-full mb-6">
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                       <Pie data={sourceData} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
-                          {sourceData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                       <Pie data={sources} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
+                          {sources.map((entry: any, index: number) => <Cell key={index} fill={entry.color} />)}
                        </Pie>
                        <Tooltip />
                     </PieChart>
                  </ResponsiveContainer>
                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-black text-foreground">186</span>
+                    <span className="text-xl font-black text-foreground">{funnel[funnel.length-1].count}</span>
                     <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest">Total Hires</span>
                  </div>
               </div>
               <div className="space-y-2">
-                 {sourceData.map((s, i) => (
+                 {sources.map((s: any, i: number) => (
                     <div key={i} className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }}></div>
@@ -254,19 +278,19 @@ export default function HighFidelityAnalyticsV2() {
               <div className="relative h-32 w-full mb-6">
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                       <Pie data={deptData} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
-                          {deptData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                       <Pie data={departments} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
+                          {departments.map((entry: any, index: number) => <Cell key={index} fill={entry.color} />)}
                        </Pie>
                        <Tooltip />
                     </PieChart>
                  </ResponsiveContainer>
                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-black text-foreground">186</span>
+                    <span className="text-xl font-black text-foreground">{funnel[funnel.length-1].count}</span>
                     <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest">Total</span>
                  </div>
               </div>
               <div className="space-y-2">
-                 {deptData.map((s, i) => (
+                 {departments.map((s: any, i: number) => (
                     <div key={i} className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }}></div>
@@ -283,12 +307,7 @@ export default function HighFidelityAnalyticsV2() {
            <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
               <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6">Diversity Overview</CardTitle>
               <div className="grid grid-cols-2 gap-4">
-                 {[
-                    { label: "Women Hires", value: "34.9%", trend: "+4.6%", icon: Users, color: "text-rose-500", bg: "bg-rose-500/10" },
-                    { label: "Underrepresented", value: "22.6%", trend: "+3.2%", icon: Globe, color: "text-blue-500", bg: "bg-blue-500/10" },
-                    { label: "Global Hires", value: "12.4%", trend: "+2.1%", icon: Globe, color: "text-purple-500", bg: "bg-purple-500/10" },
-                    { label: "Persons w/ Disabilities", value: "2.7%", trend: "+0.6%", icon: Users, color: "text-amber-500", bg: "bg-amber-500/10" },
-                 ].map((d, i) => (
+                 {diversityData.map((d, i) => (
                     <div key={i} className="p-3 rounded-2xl bg-muted/20 border border-border/50">
                        <div className={cn("p-1.5 rounded-lg w-fit mb-2", d.bg, d.color)}>
                           <d.icon className="w-3 h-3" />
@@ -314,7 +333,7 @@ export default function HighFidelityAnalyticsV2() {
               </div>
               <div className="h-[200px] w-full">
                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeToHire}>
+                    <LineChart data={timeToHireTrend}>
                        <XAxis dataKey="name" tick={{ fontSize: 8, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
                        <YAxis hide />
                        <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '10px' }} />
@@ -352,7 +371,7 @@ export default function HighFidelityAnalyticsV2() {
                              <td className="px-6 py-3 text-[9px] font-black text-muted-foreground uppercase">{m.metric}</td>
                              <td className="px-6 py-3 text-[10px] font-black text-foreground">{m.this}</td>
                              <td className="px-6 py-3 text-[10px] font-black text-muted-foreground/60">{m.prev}</td>
-                             <td className={cn("px-6 py-3 text-[9px] font-black", m.change.startsWith('+') ? "text-emerald-500" : "text-rose-500")}>
+                             <td className={cn("px-6 py-3 text-[9px] font-black", m.change.startsWith('+') || m.change.startsWith('-') && m.trend === 'down' ? "text-emerald-500" : "text-rose-500")}>
                                 {m.change}
                              </td>
                              <td className="px-6 py-3">
@@ -376,9 +395,9 @@ export default function HighFidelityAnalyticsV2() {
               <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6">Insights & Highlights</CardTitle>
               <div className="space-y-6">
                  {[
-                    { text: "Your offer acceptance rate has improved by 3.3% compared to the previous period.", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    { text: `Your offer acceptance rate is at ${acceptanceRate}%, maintaining strong competitiveness.`, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
                     { text: "LinkedIn continues to be your top source for quality hires.", icon: Target, color: "text-blue-500", bg: "bg-blue-500/10" },
-                    { text: "Average time to hire has decreased by 2.2 days.", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+                    { text: `Average time to hire is currently ${avgTimeToHire} days.`, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
                     { text: "Consider improving conversion in the Assessment stage.", icon: Lightbulb, color: "text-purple-500", bg: "bg-purple-500/10" },
                  ].map((ins, i) => (
                     <div key={i} className="flex gap-4 group">
@@ -409,9 +428,9 @@ export default function HighFidelityAnalyticsV2() {
                     </div>
                  </div>
                  {[
-                    { label: "Offer Acceptance Rate", val: "78.4%", bench: "68.5%", progress: 78.4, benchProgress: 68.5 },
-                    { label: "Time to Hire (Days)", val: "23.6", bench: "28.7", progress: 65, benchProgress: 80, inverse: true },
-                    { label: "Cost per Hire", val: "$1,248", bench: "$1,620", progress: 60, benchProgress: 85, inverse: true },
+                    { label: "Offer Acceptance Rate", val: `${acceptanceRate}%`, bench: "68.5%", progress: acceptanceRate, benchProgress: 68.5 },
+                    { label: "Time to Hire (Days)", val: avgTimeToHire.toString(), bench: "28.7", progress: 65, benchProgress: 80, inverse: true },
+                    { label: "Cost per Hire", val: "$1,150", bench: "$1,620", progress: 60, benchProgress: 85, inverse: true },
                     { label: "Quality of Hire Score", val: "85/100", bench: "72/100", progress: 85, benchProgress: 72 },
                  ].map((b, i) => (
                     <div key={i} className="space-y-2">

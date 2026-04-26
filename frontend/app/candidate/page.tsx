@@ -202,7 +202,7 @@ export default function CandidateDashboard() {
             <div className="mt-12 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                <div className="flex items-center gap-4 text-slate-500">
                   <HelpCircle className="w-5 h-5" />
-                  <p className="text-[11px] font-medium leading-tight">Need assistance with your application? <button className="text-blue-600 font-bold hover:underline">Contact Support</button></p>
+                  <p className="text-[11px] font-medium leading-tight">Need assistance with your application? <button onClick={() => router.push("/contact")} className="text-blue-600 font-bold hover:underline">Contact Support</button></p>
                </div>
             </div>
           </Card>

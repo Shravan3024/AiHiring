@@ -496,38 +496,46 @@ export default function IndustryReadyAIInsights() {
                  <RefreshCw className="w-4 h-4" /> Refresh Talent Pool
               </Button>
            </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+           <div className="flex flex-wrap items-stretch justify-center gap-8">
               {data.topCandidates.map((c: any, i: number) => (
-                 <Card key={i} className="border-border/40 glass shadow-2xl rounded-[3rem] overflow-hidden group hover:scale-105 hover:border-primary/40 transition-all duration-500 cursor-pointer bg-gradient-to-b from-card to-background relative">
-                    <div className="absolute top-6 right-6">
+                 <Card key={i} className="w-full md:w-[calc(33.33%-2rem)] lg:w-[calc(20%-2rem)] min-w-[280px] border-border/40 glass shadow-2xl rounded-[3rem] overflow-hidden group hover:scale-105 hover:border-primary/40 transition-all duration-500 cursor-pointer bg-gradient-to-b from-card to-background relative">
+                    <div className="absolute top-6 right-6 z-10">
                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
                     </div>
-                    <CardContent className="p-10 space-y-8 text-center">
-                       <div className="relative mx-auto w-32 h-32">
-                          <svg className="w-full h-full transform -rotate-90">
-                             <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-muted/10" />
-                             <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={377} strokeDashoffset={377 * (1 - parseFloat(c.score)/100)} className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-1000" strokeLinecap="round" />
+                    <CardContent className="p-8 pt-12 space-y-8 text-center flex flex-col items-center">
+                       <div className="relative w-44 h-44 mb-4 flex items-center justify-center">
+                          {/* Neural Gauge */}
+                          <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                             <circle cx="88" cy="88" r="80" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-muted/5" />
+                             <circle cx="88" cy="88" r="80" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={502} strokeDashoffset={502 * (1 - parseFloat(c.score)/100)} className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)] transition-all duration-1000" strokeLinecap="round" />
                           </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                             <span className="text-2xl font-black text-foreground tracking-tighter">{c.score}</span>
-                             <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Match Index</span>
-                          </div>
-                          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-20 rounded-[2rem] border-4 border-background bg-muted overflow-hidden shadow-2xl group-hover:scale-110 transition-transform duration-500 ring-8 ring-primary/5">
+                          
+                          {/* Avatar Core */}
+                          <div className="relative w-32 h-32 rounded-full border-4 border-background bg-muted overflow-hidden shadow-2xl z-10 ring-8 ring-primary/5">
                              <img 
                                 src={c.img || "/images/default-avatar.png"} 
                                 alt={c.name} 
                                 className="w-full h-full object-cover" 
                                 onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
                              />
+                             {/* Score Overlay Badge */}
+                             <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-md py-1.5 border-t border-white/10">
+                                <span className="text-sm font-black text-white tracking-tighter tabular-nums">{c.score}</span>
+                             </div>
                           </div>
+
+                          {/* Neural Match Label Floating */}
+                          <Badge variant="outline" className="absolute -top-2 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-xl border-border/50 text-[7px] font-black uppercase tracking-[0.3em] px-3 py-1 shadow-xl z-20 whitespace-nowrap">Neural Match</Badge>
                        </div>
-                       <div className="pt-8 space-y-2">
-                          <h4 className="text-[15px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{c.name}</h4>
-                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{c.role}</p>
+                       
+                       <div className="space-y-1.5">
+                          <h4 className="text-[14px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-1">{c.name}</h4>
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.15em] line-clamp-1 opacity-60">{c.role}</p>
                        </div>
-                       <div className="flex flex-col gap-2.5 pt-4">
-                          <Badge className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black border-none py-2 uppercase tracking-widest rounded-xl justify-center">Technical Elite</Badge>
-                          <Badge className="bg-primary/10 text-primary text-[9px] font-black border-none py-2 uppercase tracking-widest rounded-xl justify-center">High Potential</Badge>
+
+                       <div className="flex flex-wrap justify-center gap-2 pt-2 w-full">
+                          <Badge className="bg-emerald-500/5 text-emerald-500 text-[8px] font-black border border-emerald-500/20 py-1.5 px-3 uppercase tracking-widest rounded-xl">Technical Elite</Badge>
+                          <Badge className="bg-primary/5 text-primary text-[8px] font-black border border-primary/20 py-1.5 px-3 uppercase tracking-widest rounded-xl">High Potential</Badge>
                        </div>
                     </CardContent>
                  </Card>

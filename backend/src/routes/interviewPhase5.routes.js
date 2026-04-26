@@ -44,6 +44,13 @@ router.get(
   interviewController.getInterviewStatusPhase5
 );
 
+router.get(
+  '/application/:applicationId/status',
+  authMiddleware,
+  roleMiddleware(['CANDIDATE']),
+  interviewController.getInterviewStatusByApplicationId
+);
+
 /**
  * Submit Interview Response
  * POST /interview/:sessionId/response

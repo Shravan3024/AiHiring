@@ -17,9 +17,9 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   },
   logging: false, // Set to console.log to debug SQL queries
   pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
+    max: 20,
+    min: 2,
+    acquire: 60000,
     idle: 10000
   }
 });

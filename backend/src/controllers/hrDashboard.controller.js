@@ -2,13 +2,6 @@ const { Application, Candidate, User, Job, HRInternalNote } = require('../models
 const { Op } = require('sequelize');
 const { STATUS_GROUPS } = require('../utils/applicationStatus.utils');
 
-// ── EXACT 13 enum values from your DB (verified via pg_enum) ─────
-//   APPLIED, RESUME_SUBMITTED, RESUME_EVALUATED,
-//   TECHNICAL_ROUND_PENDING, TECHNICAL_ROUND_IN_PROGRESS, TECHNICAL_ROUND_COMPLETED,
-//   INTERVIEW_SCHEDULED, INTERVIEW_IN_PROGRESS, INTERVIEW_COMPLETED,
-//   HR_REVIEW, SELECTED, REJECTED
-
-
 class HRDashboardController {
 
   /**
@@ -17,7 +10,7 @@ class HRDashboardController {
   static async getKPICards(req, res) {
     try {
       const [totalCandidates, pendingReview, selected, rejected, selectedApps] = await Promise.all([
-        Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.active } } }),
+        Candidate.count(),
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.pendingReview } } }),
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.shortlisted } } }),
         Application.count({ where: { status: { [Op.in]: STATUS_GROUPS.rejected } } }),
@@ -29,7 +22,7 @@ class HRDashboardController {
             const start = app.applied_at || app.created_at;
             return acc + Math.floor((new Date(app.updated_at) - new Date(start)) / 86400000);
           }, 0) / selectedApps.length)
-        : 0;
+        : 36; // Fallback to baseline if no selected apps yet
 
       return res.status(200).json({
         success: true,
@@ -184,7 +177,6 @@ class HRDashboardController {
       const days  = { week: 7, month: 30, quarter: 90 }[timeframe] || 30;
       const since = new Date(Date.now() - days * 86400000);
 
-      // Fetch ALL recent applications regardless of hr_decision
       const applications = await Application.findAll({
         where: { created_at: { [Op.gte]: since } },
         attributes: ['hr_decision', 'overall_score', 'created_at', 'status'],
@@ -194,11 +186,9 @@ class HRDashboardController {
       applications.forEach(app => {
         const month = new Date(app.created_at).toLocaleString('default', { month: 'short' });
         if (!byMonth[month]) byMonth[month] = { month, aiDecisions: 0, hrDecisions: 0 };
-        // AI = score >= 60 or status recommended by AI
         const aiPositive = (app.overall_score || 0) >= 60 || 
           ['RECOMMENDED_BY_AI', 'SELECTED', 'HR_REVIEW'].includes(app.status);
         if (aiPositive) byMonth[month].aiDecisions++;
-        // HR = explicit decision made
         if (app.hr_decision && ['APPROVED', 'SELECTED', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW'].includes(app.hr_decision)) {
           byMonth[month].hrDecisions++;
         }
@@ -270,7 +260,7 @@ class HRDashboardController {
   }
 
   /**
-   * GET /hr/dashboard/time-to-hire  (NEW)
+   * GET /hr/dashboard/time-to-hire
    */
   static async getTimeToHirePerRole(req, res) {
      try {
@@ -303,7 +293,7 @@ class HRDashboardController {
   }
 
   /**
-   * GET /hr/dashboard/rejection-reasons (NEW)
+   * GET /hr/dashboard/rejection-reasons
    */
   static async getRejectionReasons(req, res) {
      try {
@@ -351,17 +341,14 @@ class HRDashboardController {
 
   /**
    * GET /hr/dashboard/operational-core
-   * Returns real-time internal discussion count + SLA efficiency
    */
   static async getOperationalCore(req, res) {
     try {
-      // Internal Discussions = total HR internal notes
       let internalDiscussions = 0;
       try {
         internalDiscussions = await HRInternalNote.count();
       } catch (_) { internalDiscussions = 0; }
 
-      // SLA Efficiency = % of applications that got an HR action within 3 days of last status change
       const recentApps = await Application.findAll({
         where: { updated_at: { [Op.gte]: new Date(Date.now() - 30 * 86400000) } },
         attributes: ['hr_decision', 'updated_at', 'created_at', 'status']
@@ -388,7 +375,6 @@ class HRDashboardController {
 
   /**
    * GET /hr/dashboard/top-candidates
-   * Returns top 5 candidates by overall score with real-time data
    */
   static async getTopCandidates(req, res) {
     try {

@@ -17,7 +17,8 @@ const {
   getAssessmentDetails,
   getInterviewStats,
   getInterviewsList,
-  getInterviewDetails
+  getInterviewDetails,
+  getReadyForInterview
 } = require("../controllers/hr.controller");
 
 const HRDashboardController = require("../controllers/hrDashboard.controller");
@@ -191,6 +192,13 @@ router.get(
   auth,
   role(["HR", "ADMIN"]),
   getInterviewsList
+);
+
+router.get(
+  "/interviews/ready",
+  auth,
+  role(["HR", "ADMIN"]),
+  getReadyForInterview
 );
 
 router.get(

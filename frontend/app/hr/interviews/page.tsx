@@ -22,10 +22,13 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
  * Interview Audit Modal Component
@@ -164,10 +167,183 @@ function InterviewAuditModal({ interviewId }: { interviewId: string | number | n
   );
 }
 
+/**
+ * Schedule Interview Modal Component
+ */
+function ScheduleInterviewModal({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: (open: boolean) => void }) {
+  const queryClient = useQueryClient();
+  const [selectedAppId, setSelectedAppId] = useState<string>("");
+  const [interviewDate, setInterviewDate] = useState<string>("");
+  const [interviewTime, setInterviewTime] = useState<string>("");
+  const [interviewType, setInterviewType] = useState<string>("VIDEO");
+  const [interviewer, setInterviewer] = useState<string>("AI Neural Core");
+
+  // Fetch ready candidates
+  const { data: readyApps = [] } = useQuery({
+    queryKey: ['ready-for-interview'],
+    queryFn: async () => {
+      const res = await api.get('/hr/interviews/ready');
+      return res.data.data;
+    },
+    enabled: isOpen
+  });
+
+  const scheduleMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      return api.post(`/hr/schedule-interview/${payload.applicationId}`, payload);
+    },
+    onSuccess: () => {
+      toast.success("Interview scheduled successfully");
+      queryClient.invalidateQueries({ queryKey: ['interviews-list'] });
+      queryClient.invalidateQueries({ queryKey: ['interview-stats'] });
+      onOpenChange(false);
+      // Reset form
+      setSelectedAppId("");
+      setInterviewDate("");
+      setInterviewTime("");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to schedule interview");
+    }
+  });
+
+  const handleSchedule = () => {
+    if (!selectedAppId || !interviewDate || !interviewTime) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    scheduleMutation.mutate({
+      applicationId: selectedAppId,
+      interview_date: interviewDate,
+      interview_time: interviewTime,
+      interview_type: interviewType,
+      interviewer: interviewer
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] rounded-3xl border-border/40 glass shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border/10 bg-primary/5">
+           <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-xl bg-primary/20 text-primary border border-primary/20">
+                 <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                 <DialogTitle className="text-xl font-black uppercase tracking-tight text-foreground">Schedule AI Interview</DialogTitle>
+                 <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Set up a new neural evaluation session</DialogDescription>
+              </div>
+           </div>
+        </DialogHeader>
+        
+        <div className="p-8 space-y-6">
+           {/* Candidate Selection */}
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pl-1">Target Candidate</label>
+              <Select value={selectedAppId} onValueChange={setSelectedAppId}>
+                 <SelectTrigger className="rounded-xl border-border/50 h-12 text-xs font-bold uppercase tracking-widest bg-muted/20">
+                    <SelectValue placeholder="Select Candidate" />
+                 </SelectTrigger>
+                 <SelectContent className="rounded-xl border-border/40 shadow-xl max-h-[300px]">
+                    {readyApps.length > 0 ? readyApps.map((app: any) => (
+                       <SelectItem key={app.id} value={app.id.toString()}>
+                          <div className="flex flex-col py-1">
+                             <span className="font-black text-foreground">{app.candidateName}</span>
+                             <span className="text-[8px] text-muted-foreground">{app.jobTitle}</span>
+                          </div>
+                       </SelectItem>
+                    )) : (
+                       <div className="py-6 px-2 text-center">
+                          <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-[10px] font-black text-muted-foreground uppercase">No candidates ready</p>
+                       </div>
+                    )}
+                 </SelectContent>
+              </Select>
+           </div>
+
+           <div className="grid grid-cols-2 gap-4">
+              {/* Date */}
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pl-1">Interview Date</label>
+                 <Input 
+                   type="date" 
+                   value={interviewDate}
+                   onChange={(e) => setInterviewDate(e.target.value)}
+                   className="rounded-xl border-border/50 h-12 text-xs font-bold bg-muted/20" 
+                 />
+              </div>
+              {/* Time */}
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pl-1">Start Time</label>
+                 <Input 
+                   type="time" 
+                   value={interviewTime}
+                   onChange={(e) => setInterviewTime(e.target.value)}
+                   className="rounded-xl border-border/50 h-12 text-xs font-bold bg-muted/20" 
+                 />
+              </div>
+           </div>
+
+           <div className="grid grid-cols-2 gap-4">
+              {/* Type */}
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pl-1">Interview Mode</label>
+                 <Select value={interviewType} onValueChange={setInterviewType}>
+                    <SelectTrigger className="rounded-xl border-border/50 h-12 text-xs font-bold uppercase tracking-widest bg-muted/20">
+                       <SelectValue placeholder="Mode" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border/40 shadow-xl">
+                       <SelectItem value="VIDEO">AI Video Round</SelectItem>
+                       <SelectItem value="AUDIO">AI Audio Round</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+              {/* Interviewer */}
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pl-1">Evaluating Core</label>
+                 <Input 
+                   value={interviewer}
+                   onChange={(e) => setInterviewer(e.target.value)}
+                   className="rounded-xl border-border/50 h-12 text-xs font-bold bg-muted/20" 
+                   placeholder="e.g. AI Neural Core"
+                 />
+              </div>
+           </div>
+
+           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex gap-3">
+              <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <p className="text-[9px] font-medium text-muted-foreground leading-relaxed">
+                 <span className="font-black text-primary uppercase">Security Protocol:</span> The interview link will remain active for exactly <span className="text-foreground font-black">10 hours</span> from the scheduled start time. After this window, the session will be automatically locked.
+              </p>
+           </div>
+        </div>
+
+        <DialogFooter className="p-8 pt-0 flex items-center justify-between gap-4">
+           <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-[10px] font-black uppercase tracking-widest">Discard</Button>
+           <Button 
+             onClick={handleSchedule} 
+             disabled={scheduleMutation.isPending}
+             className="rounded-xl industrial-gradient text-white text-[10px] font-black uppercase tracking-widest px-8 h-12 shadow-xl shadow-primary/20 flex-1"
+           >
+              {scheduleMutation.isPending ? (
+                 <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    Processing...
+                 </div>
+              ) : "Initialize Schedule"}
+           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function HighFidelityInterviewsV2() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInterviewId, setSelectedInterviewId] = useState<string | number | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   // FETCH STATS
   const { data: statsData } = useQuery({
@@ -205,7 +381,7 @@ export default function HighFidelityInterviewsV2() {
       int.round,
       int.status,
       int.score,
-      new Date(int.dateTime).toLocaleDateString()
+      int.dateTime ? new Date(int.dateTime).toLocaleDateString() : "N/A"
     ]);
     
     const csvContent = "data:text/csv;charset=utf-8," + 
@@ -254,10 +430,17 @@ export default function HighFidelityInterviewsV2() {
                    placeholder="Search candidates, roles..." 
                  />
               </div>
-              <Button variant="outline" className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2">
+              <Button 
+                onClick={() => setIsScheduleModalOpen(true)}
+                variant="outline" 
+                className="h-10 rounded-xl border-border/50 text-xs font-black uppercase tracking-widest gap-2"
+              >
                  <Calendar className="w-4 h-4" /> Schedule
               </Button>
-              <Button className="h-10 rounded-xl industrial-gradient text-white text-xs font-black uppercase tracking-widest gap-2 shadow-xl shadow-primary/20">
+              <Button 
+                onClick={() => setIsScheduleModalOpen(true)}
+                className="h-10 rounded-xl industrial-gradient text-white text-xs font-black uppercase tracking-widest gap-2 shadow-xl shadow-primary/20"
+              >
                  <Plus className="w-4 h-4" /> New Interview
               </Button>
            </div>
@@ -393,7 +576,7 @@ export default function HighFidelityInterviewsV2() {
                                    </td>
                                    <td className="px-6 py-4">
                                       <p className="text-[10px] font-black text-muted-foreground uppercase">{int.role}</p>
-                                      <p className="text-[8px] font-bold text-primary/50 uppercase">{new Date(int.dateTime).toLocaleDateString()}</p>
+                                      <p className="text-[8px] font-bold text-primary/50 uppercase">{int.dateTime && !isNaN(new Date(int.dateTime).getTime()) ? new Date(int.dateTime).toLocaleDateString() : "PENDING"}</p>
                                    </td>
                                    <td className="px-6 py-4 text-[9px] font-black text-muted-foreground uppercase">{int.round}</td>
                                    <td className="px-6 py-4 text-center">
@@ -555,6 +738,8 @@ export default function HighFidelityInterviewsV2() {
            </Card>
 
         </div>
+
+        <ScheduleInterviewModal isOpen={isScheduleModalOpen} onOpenChange={setIsScheduleModalOpen} />
 
       </div>
     </PanelLayout>

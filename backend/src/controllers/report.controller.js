@@ -1016,7 +1016,7 @@ exports.getRecentDownloads = async (req, res) => {
         candidate: r.Application?.Candidate?.User?.name || 'Candidate',
         reportName: r.file_name,
         timeAgo: r.viewed_at,
-        img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${r.Application?.Candidate?.User?.name || 'User'}`
+        img: `/images/default-avatar.png`
       }))
     });
   } catch (error) {

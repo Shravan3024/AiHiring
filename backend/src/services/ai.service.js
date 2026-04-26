@@ -414,6 +414,7 @@ module.exports = {
    */
   getFinalCandidateDecision: async (metrics) => {
     const { 
+        jobId,
         assessmentScore, 
         interviewScore, 
         integrityScore, 
@@ -422,7 +423,28 @@ module.exports = {
         candidateName = "this candidate"
     } = metrics;
     
-    const finalScore = (assessmentScore * 0.4) + (interviewScore * 0.4) + (integrityScore * 0.1) + (behavioralScore * 0.1);
+    // Default weights
+    let weights = { assessment: 0.4, interview: 0.4, integrity: 0.1, behavioral: 0.1 };
+
+    if (jobId) {
+      try {
+        const { AIConfig } = require('../models');
+        const dbConfig = await AIConfig.findOne({ where: { jobId: String(jobId), status: 'ACTIVE' } });
+        if (dbConfig) {
+          // Map AI Config weights (Resume, MCQ, Tech, Interview) to the final 4 metrics
+          // Since this function focuses on Post-Interview decision, we re-weight
+          const totalBase = (dbConfig.mcqWeight + dbConfig.technicalWeight + dbConfig.interviewWeight) || 1;
+          weights.assessment = (dbConfig.mcqWeight + dbConfig.technicalWeight) / totalBase * 0.8;
+          weights.interview = dbConfig.interviewWeight / totalBase * 0.8;
+          weights.integrity = 0.1;
+          weights.behavioral = 0.1;
+        }
+      } catch (e) {
+        logger.warn(`Failed to fetch AI weights for job ${jobId}, using defaults.`);
+      }
+    }
+    
+    const finalScore = (assessmentScore * weights.assessment) + (interviewScore * weights.interview) + (integrityScore * weights.integrity) + (behavioralScore * weights.behavioral);
     
     const prompt = `
       Task: Generate Final Hiring Decision for Mask Polymers Recruitment System.

@@ -317,7 +317,7 @@ export default function CandidatesPage() {
                              <td className="px-8 py-5">
                                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                                    <Clock className="w-3 h-3 opacity-30" />
-                                   {new Date(app.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                   {app.createdAt && !isNaN(new Date(app.createdAt).getTime()) ? new Date(app.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}
                                 </div>
                              </td>
                              <td className="px-8 py-5 text-right">

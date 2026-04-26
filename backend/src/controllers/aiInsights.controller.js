@@ -223,19 +223,46 @@ class AIInsightsController {
   static async getTopRecommended(apps) {
     const { Candidate, User } = require('../models');
     const topApps = await Application.findAll({
+      where: {
+        overall_score: { [Op.gt]: 0 },
+        status: { [Op.notIn]: ['REJECTED', 'AUTO_REJECTED'] }
+      },
       order: [['overall_score', 'DESC']],
-      limit: 5,
       include: [
         { model: Job, attributes: ['title'] },
-        { model: Candidate, attributes: ['id', 'profile_image_path'], include: [{ model: User, attributes: ['name'] }] }
+        { 
+          model: Candidate, 
+          attributes: ['id', 'profile_image_path'], 
+          include: [{ model: User, attributes: ['name'] }] 
+        }
       ]
     });
-    return topApps.map(app => ({
-      name: app.Candidate?.User?.name || "Candidate",
-      role: app.Job?.title || "Specialist",
-      score: `${app.overall_score || 0}%`,
-      img: app.Candidate?.profile_image_path || `https://api.dicebear.com/7.x/avataaars/svg?seed=${app.id}`
-    }));
+
+    // Unique by candidate_id, take top 5
+    const uniqueCandidates = [];
+    const seenCandidates = new Set();
+
+    for (const app of topApps) {
+      if (uniqueCandidates.length >= 5) break;
+      if (!seenCandidates.has(app.candidate_id)) {
+        seenCandidates.add(app.candidate_id);
+        uniqueCandidates.push(app);
+      }
+    }
+
+    return uniqueCandidates.map(app => {
+      const profilePath = app.Candidate?.profile_image_path;
+      const fullImageUrl = profilePath 
+        ? `http://localhost:5000${profilePath.startsWith('/') ? '' : '/'}${profilePath}`
+        : `/images/default-avatar.png`;
+        
+      return {
+        name: app.Candidate?.User?.name || "Candidate",
+        role: app.Job?.title || "Specialist",
+        score: `${app.overall_score || 0}%`,
+        img: fullImageUrl
+      };
+    });
   }
 
   /**

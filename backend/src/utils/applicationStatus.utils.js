@@ -45,6 +45,10 @@ const STATUS_GROUPS = {
     'RECOMMENDED_BY_AI',
     'SELECTED',
     'OFFERED',
+    'HIRED',
+    'REJECTED',
+    'AUTO_REJECTED',
+    'OFFER_REJECTED'
   ],
   funnel: [
     { key: 'Applied', statuses: ['APPLIED', 'RESUME_SUBMITTED'] },

@@ -71,6 +71,8 @@ exports.getAllApplications = async (req, res) => {
         stage: j.status,
         aiScore: j.overall_score,
         appliedAt: j.applied_at,
+        createdAt: j.created_at,
+        updatedAt: j.updated_at,
         resumeUrl: j.resume_url,
         skills: j.skills,
         cgpa: j.cgpa,
@@ -169,7 +171,9 @@ exports.getAssessmentStats = async (req, res) => {
           task: act.Application?.Job?.title || 'Technical Assessment',
           score: act.final_score ? `${act.final_score}%` : null,
           time: act.created_at,
-          img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${act.Application?.Candidate?.User?.name || 'User'}`
+          img: act.Application?.Candidate?.profile_image_path 
+            ? `http://localhost:5000/${act.Application.Candidate.profile_image_path}` 
+            : `/images/default-avatar.png`
         })),
         performanceData
       }
@@ -177,6 +181,69 @@ exports.getAssessmentStats = async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching assessment stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Get applications ready for interview scheduling
+ */
+exports.getReadyForInterview = async (req, res) => {
+  try {
+    const { Application, Candidate, User, Job, InterviewSession } = require('../models');
+    const { Op } = require('sequelize');
+
+    const applications = await Application.findAll({
+      where: {
+        status: { [Op.in]: [
+          'INTERVIEW_UNLOCKED', 
+          'HR_REVIEW', 
+          'PROCEED_TO_HR', 
+          'RE_INTERVIEW_REQUESTED', 
+          'RECOMMENDED_BY_AI', 
+          'TECHNICAL_ROUND_COMPLETED'
+        ] }
+      },
+      include: [
+        { model: Job, attributes: ['title'] },
+        { 
+          model: Candidate, 
+          include: [{ model: User, attributes: ['name', 'email'] }] 
+        },
+        {
+          model: InterviewSession,
+          as: 'interview_sessions',
+          required: false,
+          where: { status: { [Op.ne]: 'CANCELLED' } }
+        }
+      ]
+    });
+
+    // Filter out applications that already have an active session
+    // Exception: If status is RE_INTERVIEW_REQUESTED, we allow scheduling even if a COMPLETED session exists
+    const readyApps = applications.filter(app => {
+      if (app.status === 'RE_INTERVIEW_REQUESTED') {
+        // Only block if there's a currently SCHEDULED or IN_PROGRESS session
+        const hasCurrentActive = (app.interview_sessions || []).find(s => ['SCHEDULED', 'IN_PROGRESS'].includes(s.status));
+        return !hasCurrentActive;
+      }
+      
+      const activeSession = (app.interview_sessions || []).find(s => ['SCHEDULED', 'IN_PROGRESS', 'SUBMITTED', 'COMPLETED'].includes(s.status));
+      return !activeSession;
+    });
+
+    res.json({
+      success: true,
+      data: readyApps.map(app => ({
+        id: app.id,
+        candidateName: app.Candidate?.User?.name || 'Unknown',
+        candidateEmail: app.Candidate?.User?.email,
+        jobTitle: app.Job?.title || 'Unknown',
+        candidateId: app.candidate_id
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching ready for interview:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -587,19 +654,25 @@ exports.scheduleInterview = async (req, res) => {
     application.status = "INTERVIEW_SCHEDULED";
     await application.save();
 
-    // Store interview details (if InterviewSession model exists)
+    // Store interview details
     try {
       const { InterviewSession } = require("../models");
+      const scheduledDateTime = new Date(`${interview_date}T${interview_time}`);
+      
+      // Calculate 10 hour expiration
+      const expiresAt = new Date(scheduledDateTime.getTime() + (10 * 60 * 60 * 1000));
+
       await InterviewSession.create({
         application_id: applicationId,
-        scheduled_date: interview_date,
-        scheduled_time: interview_time,
-        interviewer: interviewer || "HR Team",
-        interview_type: interview_type || "telephonic",
+        candidate_id: application.candidate_id,
+        scheduled_at: scheduledDateTime,
+        expires_at: expiresAt,
+        interviewer: interviewer || "AI Neural Core",
+        interview_type: interview_type || "VIDEO",
         status: "SCHEDULED"
       });
     } catch (e) {
-      console.log("Interview session creation skipped");
+      console.log("Interview session creation failed:", e.message);
     }
 
     // Notify candidate
@@ -759,7 +832,9 @@ exports.getInterviewStats = async (req, res) => {
         highlights: recentHighlights.map(h => ({
           name: h.Application?.Candidate?.User?.name || 'Candidate',
           insight: h.ai_analysis?.overall_feedback || "Demonstrated strong technical potential and cultural alignment.",
-          img: h.Application?.Candidate?.profile_image_path ? `http://localhost:5000${h.Application?.Candidate?.profile_image_path.startsWith('/') ? '' : '/'}${h.Application?.Candidate?.profile_image_path}` : "/images/default-avatar.png"
+          img: h.Application?.Candidate?.profile_image_path 
+            ? `http://localhost:5000/${h.Application.Candidate.profile_image_path}` 
+            : `/images/default-avatar.png`
         }))
       }
     });

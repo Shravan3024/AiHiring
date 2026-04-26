@@ -32,7 +32,16 @@ import {
   Settings,
   LogIn
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface AuditLog {
   auditId: string;
@@ -81,6 +90,7 @@ export default function AuditPage() {
   const [activeTab, setActiveTab] = useState("logs");
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Query: Audit Logs
   const { data: logsResponse, isLoading: logsLoading } = useQuery({
@@ -110,7 +120,7 @@ export default function AuditPage() {
   };
 
   // Query: System Health
-  const { data: healthResponse } = useQuery({
+  const { data: healthResponse, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
     queryKey: ["system-health"],
     queryFn: () => adminApi.getSystemHealth().then(r => r.data),
   });
@@ -118,7 +128,8 @@ export default function AuditPage() {
     resumeParsingFailures: 0,
     interviewAiCrashes: 0,
     emailFailures: 0,
-    longRunningApprovals: 0
+    longRunningApprovals: 0,
+    uptime_hours: 0
   };
 
   // Mutations
@@ -132,7 +143,10 @@ export default function AuditPage() {
 
   const retryAiMutation = useMutation({
     mutationFn: (data: { applicationId: string; taskType: string }) => adminApi.triggerAiRetry(data),
-    onSuccess: () => toast.success("Retry pipeline triggered"),
+    onSuccess: () => {
+      toast.success("Retry pipeline triggered");
+      refetchHealth();
+    },
     onError: () => toast.error("Retry failed")
   });
 
@@ -181,7 +195,7 @@ export default function AuditPage() {
         </Card>
         <Card className="bg-green-50/50 border-green-100">
            <CardContent className="pt-4 flex justify-between items-center">
-              <div><p className="text-sm font-medium text-green-600">System Status</p><h3 className="text-2xl font-bold text-green-900">HEALTHY</h3></div>
+              <div><p className="text-sm font-medium text-green-600">System Status</p><h3 className="text-2xl font-bold text-green-900">{(health.total_errors || 0) < 5 ? "HEALTHY" : "DEGRADED"}</h3></div>
               <CheckCircle className="w-8 h-8 text-green-200" />
            </CardContent>
         </Card>
@@ -299,7 +313,9 @@ export default function AuditPage() {
            <Card>
               <CardHeader className="bg-gray-50 flex flex-row items-center justify-between">
                  <div><CardTitle>Real-time Diagnostics & Recovery</CardTitle><CardDescription>Monitor technical bottlenecks and recovery from pipeline failures.</CardDescription></div>
-                 <Button variant="outline" size="sm" className="gap-2"><RefreshCw className="w-3 h-3"/> Re-run Health Check</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => refetchHealth()}>
+                    <RefreshCw className={cn("w-3 h-3", isHealthLoading && "animate-spin")}/> Re-run Health Check
+                 </Button>
               </CardHeader>
               <CardContent className="p-0">
                  <table className="w-full text-left">
@@ -308,17 +324,17 @@ export default function AuditPage() {
                     </thead>
                     <tbody className="divide-y">
                        {[
-                         { name: "Resume Parsing Pipeline", status: "Operational", err: health.resumeParsingFailures, load: "Medium", type: "RESUME_PARSING" },
-                         { name: "Gemini Analysis Engine", status: "High Priority", err: health.interviewAiCrashes, load: "High", type: "FINAL_DECISION" },
+                         { name: "Resume Parsing Pipeline", status: health.resumeParsingFailures > 0 ? "Degraded" : "Operational", err: health.resumeParsingFailures, load: "Medium", type: "RESUME_PARSING" },
+                         { name: "Gemini Analysis Engine", status: health.interviewAiCrashes > 0 ? "Attention" : "High Priority", err: health.interviewAiCrashes, load: "High", type: "FINAL_DECISION" },
                          { name: "Email Delivery MTA", status: "Active", err: health.emailFailures, load: "Low", type: "EMAIL" },
                        ].map(srv => (
                          <tr key={srv.name} className="hover:bg-gray-50/50">
                             <td className="p-4"><div className="font-bold text-sm">{srv.name}</div><div className="text-[10px] text-gray-400">Load: {srv.load}</div></td>
-                            <td className="p-4"><Badge className="bg-green-100 text-green-700 hover:bg-green-100">{srv.status}</Badge></td>
+                            <td className="p-4"><Badge className={cn(srv.err > 0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700")}>{srv.status}</Badge></td>
                             <td className="p-4"><span className={`font-bold text-sm ${srv.err > 0 ? "text-red-600" : "text-gray-400"}`}>{srv.err} Errors</span></td>
                             <td className="p-4 text-right">
                                <Button size="sm" disabled={srv.err === 0} variant={srv.err > 0 ? "default" : "outline"} className="gap-2 text-[11px]" onClick={() => retryAiMutation.mutate({ applicationId: "FAILED_QUEUE", taskType: srv.type })}>
-                                  <RefreshCw className={`w-3 h-3 ${retryAiMutation.isPending ? "animate-spin" : ""}`} /> Retry Failed
+                                  <RefreshCw className={cn("w-3 h-3", retryAiMutation.isPending && "animate-spin")} /> Retry Failed
                                </Button>
                             </td>
                          </tr>
@@ -337,11 +353,33 @@ export default function AuditPage() {
                           <Switch defaultChecked />
                        </div>
                     </div>
-                    <div className="bg-blue-600 rounded-lg p-6 text-white flex flex-col justify-between">
-                       <h4 className="font-bold text-lg mb-2">Technical Health Summary</h4>
-                       <p className="text-xs text-blue-100 leading-relaxed mb-4">Total Approval Latency: <b>{health.averageApprovalTime || "4.2"} hours</b>. All systems performing within SLA thresholds.</p>
-                       <Button variant="outline" className="text-slate-900 border-white bg-slate-100 hover:bg-slate-100">View Detailed Reports</Button>
-                    </div>
+                    <div className="bg-blue-600 rounded-lg p-6 text-white flex flex-col justify-between shadow-lg shadow-blue-500/20">
+                        <h4 className="font-bold text-lg mb-2">Technical Health Summary</h4>
+                        <p className="text-xs text-blue-100 leading-relaxed mb-4">
+                           Total Approval Latency: <b>{health.averageApprovalTime || "4.2"} hours</b>. 
+                           System encountered <b>{health.total_errors || 0} critical failures</b> in the last 24h. 
+                           Status: <span className="font-bold border-b border-blue-300">{(health.total_errors || 0) < 5 ? "STABLE" : "DEGRADED"}</span>
+                        </p>
+                        
+                        <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="text-slate-900 border-white bg-slate-100 hover:bg-slate-200 transition-all font-bold">View Detailed Reports</Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>System Health Breakdown</DialogTitle>
+                              <DialogDescription>Detailed metrics for the last 24 hours.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="flex justify-between border-b pb-2"><span className="text-sm font-medium">Resume Parsing Failures</span><span className="text-sm font-bold text-red-600">{health.resumeParsingFailures}</span></div>
+                              <div className="flex justify-between border-b pb-2"><span className="text-sm font-medium">AI Analysis Crashes</span><span className="text-sm font-bold text-red-600">{health.interviewAiCrashes}</span></div>
+                              <div className="flex justify-between border-b pb-2"><span className="text-sm font-medium">Average Latency</span><span className="text-sm font-bold">{health.averageApprovalTime}h</span></div>
+                              <div className="flex justify-between border-b pb-2"><span className="text-sm font-medium">Database Status</span><Badge className="bg-green-100 text-green-700">ONLINE</Badge></div>
+                              <div className="flex justify-between border-b pb-2"><span className="text-sm font-medium">System Uptime</span><span className="text-sm font-bold">{health.uptime_hours || 0}h</span></div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                     </div>
                  </div>
               </CardContent>
            </Card>

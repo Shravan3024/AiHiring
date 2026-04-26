@@ -111,10 +111,25 @@ class ScoringService {
   }
 
   /**
+   * Fetch AI Config for a specific job
+   */
+  async getConfigForJob(jobId) {
+    try {
+      const { AIConfig } = require("../models");
+      const config = await AIConfig.findOne({ where: { jobId: String(jobId), status: "ACTIVE" } });
+      return config;
+    } catch (e) {
+      console.warn(`[ScoringService] Failed to fetch config for job ${jobId}: ${e.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Regression Model Decision Engine
    */
-  predictFinalScore(features) {
+  async predictFinalScore(features) {
     const {
+      jobId = null,
       resumeScore = 0,
       assessmentScore = 0,
       interviewScore = 0,
@@ -123,25 +138,42 @@ class ScoringService {
       skillWeights = {} 
     } = features;
 
-    // 1. Determine Weights
-    const weights = {
-      resume: skillWeights.resume || this.regressionCoefficients.resumeWeight,
-      assessment: skillWeights.assessment || this.regressionCoefficients.assessmentWeight,
-      interview: skillWeights.interview || this.regressionCoefficients.interviewWeight,
-      malpractice: skillWeights.malpractice || this.regressionCoefficients.malpracticePenalty
+    // 1. Determine Weights (Prioritize DB Config -> Manual Overrides -> Defaults)
+    let weights = {
+      resume: this.regressionCoefficients.resumeWeight,
+      assessment: this.regressionCoefficients.assessmentWeight,
+      interview: this.regressionCoefficients.interviewWeight,
+      malpractice: this.regressionCoefficients.malpracticePenalty
     };
+
+    let passingThreshold = 50; // Default 50%
+
+    if (jobId) {
+      const dbConfig = await this.getConfigForJob(jobId);
+      if (dbConfig) {
+        weights.resume = dbConfig.resumeWeight;
+        weights.assessment = (dbConfig.mcqWeight + dbConfig.technicalWeight) / 2; // Average for assessment
+        weights.interview = dbConfig.interviewWeight;
+        passingThreshold = dbConfig.passingThreshold * 100;
+      }
+    }
+
+    // Apply manual overrides if present
+    if (skillWeights.resume) weights.resume = skillWeights.resume;
+    if (skillWeights.assessment) weights.assessment = skillWeights.assessment;
+    if (skillWeights.interview) weights.interview = skillWeights.interview;
 
     // 2. ML Regression Calculation
     const { intercept } = this.regressionCoefficients;
     
     let mlScore = intercept + 
-                  (resumeScore * weights.resume * 0.8) + // Weighted contribution
-                  (assessmentScore * weights.assessment * 1.2) + // Heavily weight assessment
+                  (resumeScore * weights.resume * 0.8) + 
+                  (assessmentScore * weights.assessment * 1.2) + 
                   (interviewScore * weights.interview) + 
                   (Math.min(malpracticeScore, 10) * weights.malpractice);
 
     // Normalize to 100
-    mlScore = Math.max(0, Math.min(100, (mlScore / 10.5) * 100)); // Scaled intercept impact
+    mlScore = Math.max(0, Math.min(100, (mlScore / 10.5) * 100)); 
 
     // 2. Hybrid Logic Implementation
     let finalScore;
@@ -161,16 +193,17 @@ class ScoringService {
 
     finalScore = Math.round(finalScore);
 
-    // 3. Classification
+    // 3. Classification based on Threshold
     let classification = 'REJECT';
-    if (finalScore >= 75) classification = 'HIRE';
-    else if (finalScore >= 50) classification = 'HOLD';
-
+    if (finalScore >= passingThreshold + 15) classification = 'HIRE'; // High pass
+    else if (finalScore >= passingThreshold) classification = 'HOLD'; // Marginal pass
+    
     return {
       finalScore,
       decision: classification,
       methodUsed: method,
       confidence,
+      passingThreshold,
       insights: this.generateInsights(features, finalScore, classification)
     };
   }

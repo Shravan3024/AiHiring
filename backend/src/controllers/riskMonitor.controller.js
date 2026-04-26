@@ -58,7 +58,10 @@ class RiskMonitorController {
 
       // Filter by Risk Type (Mapped to Malpractice Event Types or Scores)
       if (riskType !== "All") {
-        if (riskType === "Fraud") {
+        const type = riskType.toLowerCase();
+        if (type.includes("high")) {
+          candidateWhere.integrity_score = { [Op.lt]: 50 };
+        } else if (type.includes("fraud")) {
           candidateWhere.id = { 
             [Op.in]: candidates.filter(c => 
               (c.Applications || []).some(app => 
@@ -66,9 +69,22 @@ class RiskMonitorController {
               )
             ).map(c => c.id) 
           };
-        } else if (riskType === "Behavioral") {
-           // Mock behavioral risk based on integrity score
+        } else if (type.includes("behavioral")) {
            candidateWhere.integrity_score = { [Op.lt]: 70 };
+        } else if (type.includes("compliance") || type.includes("background")) {
+           candidateWhere.id = { 
+            [Op.in]: candidates.filter(c => 
+              (c.Applications || []).some(app => (app.MalpracticeEvents || []).length > 0)
+            ).map(c => c.id) 
+          };
+        } else if (type.includes("assessment")) {
+          candidateWhere.id = { 
+            [Op.in]: candidates.filter(c => 
+              (c.Applications || []).some(app => 
+                (app.MalpracticeEvents || []).some(e => e.type.includes('TAB') || e.type.includes('FOCUS'))
+              )
+            ).map(c => c.id) 
+          };
         }
       }
 

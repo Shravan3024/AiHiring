@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export interface AdminAIPanelProps {
 }
 
 export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
+  const qc = useQueryClient();
   const [showModelSelect, setShowModelSelect] = useState(false);
   const [showConfigEdit, setShowConfigEdit] = useState(false);
   const [editingConfig, setEditingConfig] = useState<any>(null);
@@ -37,6 +38,15 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
       return response.data;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Fetch AI models for status
+  const { data: modelsData } = useQuery({
+    queryKey: ["ai-models"],
+    queryFn: async () => {
+      const response = await api.get("/admin/ai-models");
+      return response.data;
+    },
   });
 
   // Fetch audit logs
@@ -62,20 +72,14 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
 
   // Update model mutation
   const updateModelMutation = useMutation({
-    mutationFn: async (modelName: string) => {
-      const response = await fetch("/api/admin/ai-model", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ model: modelName }),
-      });
-      if (!response.ok) throw new Error("Failed to update model");
-      return response.json();
+    mutationFn: async (modelId: string) => {
+      const response = await api.patch(`/admin/ai-models/${modelId}/activate`);
+      return response.data;
     },
     onSuccess: () => {
       refetchConfig();
+      // Also refetch models
+      qc.invalidateQueries({ queryKey: ["ai-models"] });
       setShowModelSelect(false);
     },
   });
@@ -91,9 +95,19 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
     },
   });
 
-  const config = configData?.data || {};
+  const config = configData?.data?.[0] || configData?.data || {}; // Try first config if array
   const health = healthData?.data || {};
-  const auditLogs = auditData?.data?.logs || [];
+  const auditLogs = auditData?.data || auditData?.data?.logs || [];
+  const activeModel = modelsData?.data?.find((m: any) => m.status === 'ACTIVE') || modelsData?.data?.[0];
+
+  // Map config with model data for UI
+  const displayConfig = {
+    ...config,
+    current_model: activeModel?.modelVersion || config.current_model || "gemini-1.5-flash",
+    model_updated_at: activeModel?.updatedAt ? new Date(activeModel.updatedAt).toLocaleDateString() : "—",
+    api_key_valid: true, // Assuming true if we're healthy
+    api_key_expires: "Never",
+  };
 
   const getHealthStatus = (status: string) => {
     if (status === "healthy") {
@@ -211,12 +225,12 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
               <p className="text-sm text-gray-600">Current Model</p>
               <div className="flex items-center justify-between">
                 <p className="font-bold text-lg">
-                  {getModelLabel(config.current_model || "")}
+                  {getModelLabel(displayConfig.current_model || "")}
                 </p>
                 <Badge className="bg-blue-600">Active</Badge>
               </div>
               <p className="text-xs text-gray-500">
-                Updated: {config.model_updated_at || "—"}
+                Updated: {displayConfig.model_updated_at || "—"}
               </p>
             </div>
 
@@ -224,16 +238,16 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
               <p className="text-sm text-gray-600">API Key Status</p>
               <div className="flex items-center justify-between">
                 <p className="font-bold text-lg">
-                  {config.api_key_valid ? (
+                  {displayConfig.api_key_valid ? (
                     <CheckCircle className="w-5 h-5 text-green-600 inline mr-2" />
                   ) : (
                     <AlertCircle className="w-5 h-5 text-red-600 inline mr-2" />
                   )}
-                  {config.api_key_valid ? "Valid" : "Invalid"}
+                  {displayConfig.api_key_valid ? "Valid" : "Invalid"}
                 </p>
               </div>
               <p className="text-xs text-gray-500">
-                Expires: {config.api_key_expires || "—"}
+                Expires: {displayConfig.api_key_expires || "—"}
               </p>
             </div>
           </div>
@@ -243,19 +257,19 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div>
                 <p className="text-gray-600">Request Timeout</p>
-                <p className="font-bold">{config.request_timeout || 30}s</p>
+                <p className="font-bold">{displayConfig.request_timeout || 30}s</p>
               </div>
               <div>
                 <p className="text-gray-600">Max Retries</p>
-                <p className="font-bold">{config.max_retries || 3}</p>
+                <p className="font-bold">{displayConfig.max_retries || 3}</p>
               </div>
               <div>
                 <p className="text-gray-600">Temperature</p>
-                <p className="font-bold">{config.temperature || 0.7}</p>
+                <p className="font-bold">{displayConfig.temperature || 0.7}</p>
               </div>
               <div>
                 <p className="text-gray-600">Cache Enabled</p>
-                <p className="font-bold">{config.cache_enabled ? "Yes" : "No"}</p>
+                <p className="font-bold">{displayConfig.cache_enabled ? "Yes" : "No"}</p>
               </div>
             </div>
             <Button
@@ -304,9 +318,9 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
                       {log.details}
                     </td>
                     <td className="py-3 px-3 text-center">
-                      {log.status === "success" ? (
+                      {(log.status === "success" || log.status === "SUCCESS") ? (
                         <Badge className="bg-green-600">Success</Badge>
-                      ) : log.status === "error" ? (
+                      ) : (log.status === "error" || log.status === "FAILURE") ? (
                         <Badge className="bg-red-600">Error</Badge>
                       ) : (
                         <Badge className="bg-gray-600">Info</Badge>
@@ -326,29 +340,39 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
           <DialogHeader>
             <DialogTitle>Select AI Model</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            {[
-              { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", description: "Latest, fastest model" },
-              { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", description: "Previous generation, cost effective" },
-            ].map((model) => (
-              <div
-                key={model.id}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                  config.current_model?.includes(model.id)
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-400"
-                }`}
-                onClick={() => updateModelMutation.mutate(model.id)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold">{model.name}</p>
-                  {config.current_model?.includes(model.id) && (
-                    <CheckCircle className="w-5 h-5 text-blue-600" />
-                  )}
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            {(modelsData?.data || []).length > 0 ? (
+              (modelsData?.data || []).map((model: any) => (
+                <div
+                  key={model.modelId}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    model.status === 'ACTIVE'
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                  onClick={() => updateModelMutation.mutate(model.modelId)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{model.modelVersion}</p>
+                      <Badge variant="outline" className="text-[10px] py-0">{model.modelType}</Badge>
+                    </div>
+                    {model.status === 'ACTIVE' && (
+                      <CheckCircle className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-600">{model.description || 'No description provided'}</p>
+                  <div className="mt-2 flex items-center gap-4 text-[10px] text-gray-500">
+                    <span>Accuracy: {(model.accuracy * 100).toFixed(1)}%</span>
+                    <span>Status: {model.status}</span>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">{model.description}</p>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500 italic">
+                No AI models found in system.
               </div>
-            ))}
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -23,9 +23,9 @@ router.post('/assessment', auth, (req, res) => {
 });
 
 // POST /api/score/final
-router.post('/final', auth, (req, res) => {
+router.post('/final', auth, async (req, res) => {
   const features = req.body; // { aiScore, resumeScore, assessmentScore, interviewScore, malpracticeScore }
-  const result = scoringService.predictFinalScore(features);
+  const result = await scoringService.predictFinalScore(features);
   res.json({ success: true, data: result });
 });
 

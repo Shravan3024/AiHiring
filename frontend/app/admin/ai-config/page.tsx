@@ -35,6 +35,18 @@ interface AIConfig {
   status: string;
 }
 
+interface TestResult {
+  status: 'VERIFIED' | 'FAILED';
+  timestamp: string;
+  result: string;
+  validation: {
+    errors: string[];
+    warnings: string[];
+    totalWeight: string;
+    linkedJob: string;
+  };
+}
+
 interface Job {
   _id: string;
   id: number;
@@ -65,7 +77,7 @@ export default function AIConfigPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AIConfig | null>(null);
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<TestResult | string | null>(null);
 
   const { data: configs = [] } = useQuery({
     queryKey: ["ai-configs"],
@@ -89,7 +101,7 @@ export default function AIConfigPage() {
 
   const testMutation = useMutation({
     mutationFn: (id: string) => adminApi.testAIConfig(id),
-    onSuccess: (r) => setTestResult(r.data?.data?.result || "Test passed"),
+    onSuccess: (r) => setTestResult(r.data?.data || "Test passed"),
   });
 
   const totalWeight = () => {
@@ -186,8 +198,56 @@ export default function AIConfigPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              {testResult && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+              {testResult && typeof testResult === 'object' && (
+                <div className={`mb-6 p-4 rounded-lg border shadow-sm ${testResult.status === 'VERIFIED' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className={`font-bold text-sm ${testResult.status === 'VERIFIED' ? 'text-green-800' : 'text-red-800'}`}>
+                      Test Result: {testResult.status}
+                    </h3>
+                    <span className="text-[10px] opacity-60 uppercase font-bold tracking-tighter">
+                      {new Date(testResult.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className={`text-sm mb-3 ${testResult.status === 'VERIFIED' ? 'text-green-700' : 'text-red-700'}`}>
+                    {testResult.result}
+                  </p>
+                  
+                  {testResult.validation?.errors?.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">Critical Errors</p>
+                      {testResult.validation.errors.map((err: string, i: number) => (
+                        <p key={i} className="text-xs text-red-600 flex items-start gap-1">
+                          <span className="mt-1 block w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" /> {err}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {testResult.validation?.warnings?.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Optimization Warnings</p>
+                      {testResult.validation.warnings.map((warn: string, i: number) => (
+                        <p key={i} className="text-xs text-amber-600 flex items-start gap-1">
+                          <span className="mt-1 block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" /> {warn}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-3 border-t border-black/5 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Target Job</p>
+                      <p className="text-xs font-medium">{testResult.validation?.linkedJob}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Total Weight</p>
+                      <p className="text-xs font-medium">{testResult.validation?.totalWeight}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {testResult && typeof testResult === 'string' && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
                   {testResult}
                 </div>
               )}

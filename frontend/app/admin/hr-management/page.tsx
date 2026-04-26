@@ -41,6 +41,13 @@ export default function HRManagementPage() {
 
   const hrs = Array.isArray(hrsData) ? hrsData : [];
 
+  const { data: rulesData = [] } = useQuery({
+    queryKey: ["admin-approval-rules"],
+    queryFn: () => adminApi.getApprovalRules().then((r: any) => r.data),
+  });
+
+  const activeRule = Array.isArray(rulesData) ? rulesData[rulesData.length - 1] : null;
+
   const createHRMutation = useMutation({
     mutationFn: (data: typeof form) => adminApi.createHR(data),
     onSuccess: () => {
@@ -256,12 +263,12 @@ export default function HRManagementPage() {
                      </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {[
-                      { icon: Shield, label: "Required Quorum", val: "1 ADMIN", color: "text-indigo-400" },
-                      { icon: Zap, label: "Avg Threshold", val: "67%", color: "text-amber-400" },
-                      { icon: Clock, label: "SLA Timeout", val: "48H", color: "text-rose-400" },
-                      { icon: Users, label: "Escalation", val: "SR. HR", color: "text-purple-400" },
+                      { icon: Shield, label: "Required Quorum", val: activeRule ? `${activeRule.approvalsRequired} HRs` : "1 ADMIN", color: "text-indigo-400" },
+                      { icon: Zap, label: "Avg Threshold", val: activeRule ? `${Math.round(activeRule.approvalThreshold * 100)}%` : "67%", color: "text-amber-400" },
+                      { icon: Clock, label: "SLA Timeout", val: activeRule ? `${activeRule.slaHours}H` : "48H", color: "text-rose-400" },
+                      { icon: Users, label: "Escalation", val: activeRule?.role || "SR. HR", color: "text-purple-400" },
                     ].map((stat, i) => (
                       <div key={i} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-200 space-y-4 hover:border-slate-200 transition-all">
                          <div className={cn("p-3 rounded-xl bg-white shadow-sm w-fit", stat.color)}>

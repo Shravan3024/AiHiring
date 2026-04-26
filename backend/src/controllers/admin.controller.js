@@ -184,14 +184,29 @@ exports.getApprovalRules = async (req, res) => {
 
 exports.createApprovalRule = async (req, res) => {
   try {
-    const { stage, threshold, slaHours, role } = req.body;
+    const { stage, threshold, timeoutHours, role, minRole } = req.body;
+
+    // Map frontend stages to DB ENUM
+    const stageMap = {
+      "Screening": "RESUME",
+      "Assessment": "TECHNICAL",
+      "Interview": "INTERVIEW",
+      "FinalDecision": "FINAL"
+    };
+
+    const dbStage = stageMap[stage] || "TECHNICAL";
+
+    // Count active HR users for dynamic quorum
+    const hrCount = await User.count({ where: { role: "HR", status: "ACTIVE" } });
+    const effectiveThreshold = threshold / 100;
+    const approvalsNeeded = Math.max(1, Math.ceil(hrCount * effectiveThreshold));
 
     const rule = await HRApprovalRule.create({
       ruleId: `rule_${Date.now()}`,
-      stage,
-      approvalsRequired: threshold ? Math.ceil(threshold / 100 * 3) : 1,
-      approvalThreshold: threshold ? threshold / 100 : 1.0,
-      slaHours: slaHours || 24,
+      stage: dbStage,
+      approvalsRequired: approvalsNeeded,
+      approvalThreshold: effectiveThreshold,
+      slaHours: timeoutHours || 24,
       role: role || null,
       isActive: true,
       createdBy: req.user.id
@@ -201,7 +216,7 @@ exports.createApprovalRule = async (req, res) => {
       entityType: "HR_APPROVAL_RULE",
       entityId: String(rule.id),
       newValue: rule,
-      description: `New approval rule created for stage ${stage}`,
+      description: `New governance rule deployed for stage ${dbStage}. Quorum set to ${approvalsNeeded} (${threshold}%).`,
     });
 
     res.status(201).json({ success: true, data: rule });
