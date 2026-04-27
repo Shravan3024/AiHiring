@@ -367,8 +367,8 @@ export default function HRApplicationDetailsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             
-            {/* Manual Decision Logic for Initial Stages */}
-            {['APPLIED', 'SCREENING', 'HR_REVIEW', 'INTERVIEW_UNLOCKED', 'ASSESSMENT_UNLOCKED'].includes(appData.status) && (
+            {/* Manual Decision Logic - Always visible for HR control */}
+            {true && (
               <div className="p-6 bg-white rounded-2xl border border-blue-100 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-black uppercase tracking-widest text-slate-800">Manual Review & Pipeline Movement</h4>

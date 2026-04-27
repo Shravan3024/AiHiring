@@ -67,31 +67,37 @@ export default function HRDashboard() {
   const { data: kpiData } = useQuery({
     queryKey: ["hr-kpi"],
     queryFn: () => hrApi.getKPICards().then(r => r.data?.data || {}),
+    refetchInterval: 5000,
   });
 
   const { data: funnelDataRaw } = useQuery({
     queryKey: ["hr-funnel"],
     queryFn: () => hrApi.getHiringFunnel().then(r => r.data?.data || []),
+    refetchInterval: 5000,
   });
 
   const { data: distributionRaw } = useQuery({
     queryKey: ["hr-distribution"],
     queryFn: () => hrApi.getStatusDistribution().then(r => r.data?.data || []),
+    refetchInterval: 5000,
   });
 
   const { data: pendingRaw } = useQuery({
     queryKey: ["hr-pending"],
     queryFn: () => hrApi.getPendingActions().then(r => r.data?.data || []),
+    refetchInterval: 5000,
   });
 
   const { data: topCandidatesRaw } = useQuery({
     queryKey: ["hr-top-candidates"],
     queryFn: () => hrApi.getTopCandidates().then(r => r.data?.data || []),
+    refetchInterval: 5000,
   });
 
   const { data: opsCore } = useQuery({
     queryKey: ["hr-ops-core"],
     queryFn: () => hrApi.getOperationalCore().then(r => r.data?.data || {}),
+    refetchInterval: 5000,
   });
 
   // --- MOCK / PROCESSED DATA ---

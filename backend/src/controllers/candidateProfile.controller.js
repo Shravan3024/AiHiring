@@ -60,13 +60,27 @@ class CandidateProfileController {
           { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary', 'total_years_experience', 'jd_match_score', 'contact_info', 'education', 'skills'] },
 
           { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score'] },
-          { model: InterviewAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'qa_pairs', 'detailed_evaluation', 'interview_session_id'] },
+          { 
+            model: InterviewAnalysis, 
+            required: false, 
+            attributes: [
+              'id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'qa_pairs', 
+              'detailed_evaluation', 'interview_session_id', 'technical_knowledge_score',
+              'problem_solving_score', 'communication_score', 'soft_skills_score', 'cultural_fit_score',
+              'confidence_level', 'communication_style', 'pace', 'clarity', 'hesitation_level',
+              'vocabulary_level', 'predicted_on_job_performance', 'team_fit_assessment', 'growth_trajectory',
+              'hire_recommendation', 'time_to_productivity_months', 'retention_probability_percentage'
+            ] 
+          },
           { model: Job,           required: false, attributes: ['id', 'title', 'department'] },
           { 
             model: require('../models').InterviewSession, 
             as: 'interview_session',
             required: false, 
-            attributes: ['id', 'recording_path', 'answers_provided', 'ai_analysis'] 
+            // Include questions_asked so response_text is available in the trace table
+            attributes: ['id', 'recording_path', 'answers_provided', 'ai_analysis',
+                         'questions_asked', 'started_at', 'ended_at', 'status', 'highlights',
+                         'overall_score', 'hire_recommendation'] 
           },
           { 
             model: require('../models').MalpracticeEvent,
@@ -134,39 +148,74 @@ class CandidateProfileController {
 
       const questionMap = {};
       if (allQIds.size > 0) {
-        const ids = Array.from(allQIds);
+        const ids = Array.from(allQIds).map(id => String(id).trim());
         
-        // 1. TechnicalQuestionBank
+        // 1. TechnicalQuestionBank - Fetch by both questionId and ID
         const techQuestions = await TechnicalQuestionBank.findAll({
+          where: {
+            [Op.or]: [
+              { questionId: { [Op.in]: ids } },
+              { questionId: { [Op.in]: ids.map(id => id.toLowerCase()) } }
+            ]
+          },
           attributes: ['questionId', 'question', 'correct_answer', 'expected_answer']
         });
+
         techQuestions.forEach(q => {
+          const qData = { text: q.question || "N/A", correct: q.correct_answer || q.expected_answer || "N/A" };
           if (q.questionId) {
-            const qtext = q.question || "N/A";
-            const qcorr = q.correct_answer || q.expected_answer || "N/A";
-            questionMap[q.questionId.trim()] = { text: qtext, correct: qcorr };
-            questionMap[q.questionId.toLowerCase().trim()] = { text: qtext, correct: qcorr };
+            questionMap[q.questionId.trim()] = qData;
+            questionMap[q.questionId.toLowerCase().trim()] = qData;
+            questionMap[String(q.questionId).trim()] = qData;
           }
         });
 
-        // 2. MCQQuestion (Uses 'id')
-        const mcqQuestions = await MCQQuestion.findAll({
-          attributes: ['id', 'question', 'correct_option']
-        });
-        mcqQuestions.forEach(q => {
-          questionMap[String(q.id)] = { text: q.question, correct: q.correct_option };
-        });
+        // 2. MCQQuestion - Fetch by ID
+        const mcqIds = ids.filter(id => !isNaN(parseInt(id, 10)));
+        if (mcqIds.length > 0) {
+          const mcqQuestions = await MCQQuestion.findAll({
+            where: { id: { [Op.in]: mcqIds.map(id => parseInt(id, 10)) } },
+            attributes: ['id', 'question', 'correct_option']
+          });
+          mcqQuestions.forEach(q => {
+            const qData = { text: q.question, correct: q.correct_option };
+            questionMap[String(q.id)] = qData;
+          });
+        }
 
-        // 3. InterviewQuestionBank
+        // 3. InterviewQuestionBank - Fetch by questionId
         const intQuestions = await InterviewQuestionBank.findAll({
+          where: {
+            [Op.or]: [
+              { questionId: { [Op.in]: ids } },
+              { questionId: { [Op.in]: ids.map(id => id.toLowerCase()) } }
+            ]
+          },
           attributes: ['questionId', 'question', 'expectedAnswer']
         });
         intQuestions.forEach(q => {
+          const qData = { text: q.question, correct: q.expectedAnswer };
           if (q.questionId) {
-            questionMap[q.questionId.trim()] = { text: q.question, correct: q.expectedAnswer };
-            questionMap[q.questionId.toLowerCase().trim()] = { text: q.question, correct: q.expectedAnswer };
+            questionMap[q.questionId.trim()] = qData;
+            questionMap[q.questionId.toLowerCase().trim()] = qData;
           }
         });
+      }
+
+      // Enrich Interview Analysis Q&A with Question Bank data
+      if (application.InterviewAnalysis && application.InterviewAnalysis.qa_pairs) {
+        const enrichedQA = application.InterviewAnalysis.qa_pairs.map((pair) => {
+          const qId = pair.question_id || pair.id;
+          if (qId && questionMap[qId]) {
+             return {
+               ...pair,
+               question_text: questionMap[qId].text,
+               expected_answer: questionMap[qId].correct
+             };
+          }
+          return pair;
+        });
+        application.InterviewAnalysis.qa_pairs = enrichedQA;
       }
 
       enrichedAttempts = rawAttempts.map(att => {
@@ -264,28 +313,39 @@ class CandidateProfileController {
           technicalData: technical ? { id: technical.id, score: technical.score, status: technical.status, feedback: technical.ai_feedback } : null,
           interviewData: interview ? { score: interview.ai_score, summary: interview.ai_summary, recommendation: interview.hire_recommendation, status: interview.status } : null,
           interviewAnalysis: application.InterviewAnalysis ? {
+            ...application.InterviewAnalysis.get({ plain: true }),
             id: application.InterviewAnalysis.id,
-            overall_score: application.InterviewAnalysis.overall_score,
-            strengths: application.InterviewAnalysis.strengths,
-            weaknesses: application.InterviewAnalysis.weaknesses,
-            qa_pairs: application.InterviewAnalysis.qa_pairs,
-            detailed_evaluation: application.InterviewAnalysis.detailed_evaluation,
-            ai_model_used: application.InterviewAnalysis.ai_model_used
           } : null,
           offerData: application.offer ? { salary: application.offer.salary, joiningDate: application.offer.joining_date, status: application.offer.status } : null,
           
-          interviewHighlights: application.InterviewSession ? (() => {
-            const firstWithVideo = (application.InterviewSession.questions_asked || []).find(q => q.recording_path);
-            const recordingBase = application.InterviewSession.recording_path || firstWithVideo?.recording_path;
+          // Use the aliased association 'interview_session' (lowercase)
+          interviewHighlights: application.interview_session ? (() => {
+            const session = application.interview_session;
+            const questionsWithRecording = (session.questions_asked || []).filter(q => q.recording_path);
+            const firstWithVideo = questionsWithRecording[0];
+            const recordingBase = session.recording_path || firstWithVideo?.recording_path;
             return {
               videoUrl: recordingBase ? `http://localhost:5000${recordingBase}` : null,
-              highlights: (application.InterviewSession.questions_asked || []).map((ans, idx) => ({
+              sessionId: session.id,
+              status: session.status,
+              overallScore: session.overall_score,
+              hireRecommendation: session.hire_recommendation,
+              startedAt: session.started_at,
+              endedAt: session.ended_at,
+              // Per-question highlights with timestamps and recorded clips
+              highlights: (session.questions_asked || []).map((ans, idx) => ({
                 question: ans.question_text || ans.question || `Question ${idx + 1}`,
                 timestamp: ans.answered_at ? new Date(ans.answered_at).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' }) : '00:00',
                 duration: ans.response_duration_seconds || 45,
                 score: ans.analysis?.relevance ? Math.round(ans.analysis.relevance * 100) : 0,
-                confidence: ans.analysis?.confidence ? (ans.analysis.confidence > 0.7 ? 'High' : 'Medium') : 'N/A'
-              }))
+                confidence: ans.analysis?.confidence ? (ans.analysis.confidence > 0.7 ? 'High' : 'Medium') : 'N/A',
+                sentiment: ans.analysis?.sentiment ? (ans.analysis.sentiment > 0.6 ? 'Positive' : 'Neutral') : 'N/A',
+                responseText: ans.response_text || '',
+                recordingPath: ans.recording_path ? `http://localhost:5000${ans.recording_path}` : null,
+                keywords: ans.analysis?.keywords || []
+              })),
+              // Session-level highlights from AI analysis
+              aiHighlights: session.highlights || []
             };
           })() : null,
 

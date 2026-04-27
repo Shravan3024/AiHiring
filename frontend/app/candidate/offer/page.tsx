@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   FileText, CheckCircle2, XCircle, Clock, 
   ChevronRight, Download, Eye, Briefcase,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 export default function JobOffersPage() {
   const { setPageTitle } = useUIStore();
+  const router = useRouter();
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -109,27 +111,29 @@ export default function JobOffersPage() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Joining Date</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-xs font-bold">{new Date(app.offer.startDate).toLocaleDateString()}</span>
+                          <span className="text-xs font-bold">
+                            {app.offer.startDate ? new Date(app.offer.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "TBD"}
+                          </span>
                         </div>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-2xl">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Location</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-xs font-bold">Mumbai, India</span>
+                          <span className="text-xs font-bold">{app.jobId?.location || "Remote"}</span>
                         </div>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-2xl">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Role Type</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <Briefcase className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-xs font-bold">Full Time</span>
+                          <span className="text-xs font-bold">{app.jobId?.type || "Full Time"}</span>
                         </div>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-2xl">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Bonus</p>
                         <div className="flex items-center gap-2 text-slate-700">
-                          <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                          <DollarSign className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-xs font-bold">₹{app.offer.bonus || 0}</span>
                         </div>
                       </div>
@@ -143,12 +147,16 @@ export default function JobOffersPage() {
                         View & Respond
                       </Button>
                     </Link>
-                    <Button variant="outline" className="w-full rounded-2xl border-slate-200 bg-white h-12 text-slate-600 hover:bg-slate-50 font-bold flex items-center justify-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => router.push(`/print-offer/${app.id}`)}
+                      className="w-full rounded-2xl border-slate-200 bg-white h-12 text-slate-600 hover:bg-slate-50 font-bold flex items-center justify-center gap-2"
+                    >
                       <Download className="w-4 h-4" />
                       Download PDF
                     </Button>
                     <p className="text-[10px] text-center text-slate-400 font-medium px-4 mt-2">
-                      Offer expires on {new Date(app.offer.expiresAt).toLocaleDateString()}
+                      Offer expires on {app.offer.expiresAt ? new Date(app.offer.expiresAt).toLocaleDateString() : "30 days"}
                     </p>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ const {
   AssessmentAttempt,
   AssessmentAnalysis
 } = require("../models");
+const emailService = require("../services/email.service");
 
 /* =============================
    GET ALL APPLICATIONS
@@ -542,13 +543,24 @@ exports.sendOfferLetter = async (req, res) => {
 
     // Notify candidate
     try {
+      // 1. In-app notification
       await Notification.create({
         user_id: application.Candidate.user_id,
         role: "CANDIDATE",
         message: `Congratulations! You have received an offer for ${application.Job?.title} position. Please check your email for details.`
       });
+
+      // 2. Email Notification (Centralized)
+      await emailService.sendOfferLetterEmail(
+        application.Candidate.User.email,
+        application.Candidate.User.name,
+        application.Job?.title,
+        salary,
+        joining_date
+      );
+
     } catch (e) {
-      console.log("Notification failed");
+      console.error("Selection notification/email failed:", e.message);
     }
 
     res.json({
@@ -600,13 +612,22 @@ exports.sendRejectionEmail = async (req, res) => {
 
     // Notify candidate
     try {
+      // 1. In-app notification
       await Notification.create({
         user_id: application.Candidate.user_id,
         role: "CANDIDATE",
         message: `Thank you for your interest in ${application.Job?.title} position. Unfortunately, your application has not been selected to move forward at this time.`
       });
+
+      // 2. Email Notification
+      await emailService.sendRejectionEmail(
+        application.Candidate.User.email,
+        application.Candidate.User.name,
+        application.Job?.title
+      );
+
     } catch (e) {
-      console.log("Notification failed");
+      console.error("Rejection notification/email failed:", e.message);
     }
 
     res.json({

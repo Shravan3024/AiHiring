@@ -19,6 +19,7 @@ const adminNav = [
   { label: "AI Config", icon: Bot, href: "/admin/ai-config" },
   { label: "HR Management", icon: Users, href: "/admin/hr-management" },
   { label: "Approvals", icon: ClipboardList, href: "/admin/approvals" },
+  { label: "Offer Templates", icon: Briefcase, href: "/hr/offers" },
   { label: "Audit Log", icon: Shield, href: "/admin/audit" },
 ];
 
@@ -31,6 +32,7 @@ const hrNav = [
   { label: "Reports", href: "/hr/reports", icon: FileText },
   { label: "AI Insights", href: "/hr/ai-insights", icon: Sparkles },
   { label: "Talent Pool", href: "/hr/talent-pool", icon: Layers },
+  { label: "Offer Center", href: "/hr/offers", icon: Briefcase },
   { label: "Risk Monitor", href: "/hr/risk-monitor", icon: Shield },
   { label: "Analytics", href: "/hr/analytics", icon: BarChart3 },
 ];

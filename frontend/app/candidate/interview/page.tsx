@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Video, Mic, MicOff, CheckCircle, Clock, Target, 
   ShieldCheck, Play, ArrowRight, Info, AlertTriangle,
-  UserCheck, Activity, Sparkles, ChevronRight, X
+  UserCheck, Activity, Sparkles, ChevronRight, X, AlertOctagon
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,15 @@ export default function CandidateInterview() {
   const [faceDetectionStatus, setFaceDetectionStatus] = useState("Initializing...");
   const [audioLevel, setAudioLevel] = useState(0);
 
+  const [isFullScreen, setIsFullScreen] = useState(typeof document !== 'undefined' ? !!document.fullscreenElement : false);
+  const [warningCount, setWarningCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [mediaError, setMediaError] = useState<"PERMISSION_DENIED" | "DEVICE_NOT_FOUND" | "UNKNOWN_ERROR" | null>(null);
+  const [currentEmotion, setCurrentEmotion] = useState("Neutral");
+  const [proctoringScore, setProctoringScore] = useState(100);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -45,6 +54,13 @@ export default function CandidateInterview() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
 
+  const logMalpracticeMutation = useMutation({
+    mutationFn: async (data: any) => {
+       if (!interviewId) return;
+       await candidateApi.logMalpractice(String(interviewId), data);
+    },
+  });
+
   useEffect(() => {
     setPageTitle("AI Interview");
   }, []);
@@ -54,19 +70,180 @@ export default function CandidateInterview() {
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
     script.async = true;
-    script.onload = () => {
+    script.onload = async () => {
       faceApiLoaded.current = true;
-      setFaceDetectionStatus("Biometric System Ready");
+      try {
+        const faceapi = (window as any).faceapi;
+        const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+        ]);
+        setFaceDetectionStatus("Biometric System Ready");
+      } catch (e) {
+        console.error("Face API model load failed", e);
+        setFaceDetectionStatus("Biometric Engine Error");
+      }
     };
     document.head.appendChild(script);
     scriptRef.current = script;
     return () => { if (scriptRef.current) document.head.removeChild(scriptRef.current); };
   }, []);
 
+  useEffect(() => {
+    const handleFSChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    const handleVisibility = () => {
+      if (started && !completed && document.visibilityState === "hidden") {
+        setWarningCount(v => v + 1);
+        logMalpracticeMutation.mutate({ type: "TAB_SWITCH", meta: { timestamp: new Date(), question: currentQ + 1 } });
+        toast.error("Warning: Tab switching is monitored.");
+      }
+    };
+
+    const blockAction = (e: Event) => {
+        if (started && !completed) {
+          e.preventDefault();
+          toast.warning("Action restricted during interview.");
+        }
+    };
+
+    const handleKeys = (e: KeyboardEvent) => {
+        if (started && !completed && (e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
+            e.preventDefault();
+            logMalpracticeMutation.mutate({ type: "COPY_ATTEMPT", meta: { key: e.key, question: currentQ + 1 } });
+        }
+    };
+
+    document.addEventListener("fullscreenchange", handleFSChange);
+    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("copy", blockAction);
+    document.addEventListener("paste", blockAction);
+    document.addEventListener("contextmenu", blockAction);
+    document.addEventListener("keydown", handleKeys);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFSChange);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("copy", blockAction);
+      document.removeEventListener("paste", blockAction);
+      document.removeEventListener("contextmenu", blockAction);
+      document.removeEventListener("keydown", handleKeys);
+    };
+  }, [started, completed, currentQ, interviewId]);
+
+  // 1. Biometric & Audio Monitoring Loop
+  useEffect(() => {
+    if (!started || completed) return;
+
+    let interval: NodeJS.Timeout;
+    let noiseCounter = 0;
+
+    const runMonitoring = async () => {
+      const faceapi = (window as any).faceapi;
+      if (faceapi && faceApiLoaded.current && videoRef.current && videoRef.current.readyState === 4) {
+        try {
+          const results = await faceapi.detectAllFaces(
+            videoRef.current, 
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+          ).withFaceLandmarks().withFaceExpressions();
+
+          if (results.length > 1) {
+            setFaceDetectionStatus(`WARNING: ${results.length} People Detected`);
+            logMalpracticeMutation.mutate({ 
+              type: "MULTIPLE_PERSONS_DETECTED", 
+              meta: { count: results.length, timestamp: new Date() } 
+            });
+            toast.error("Multiple people detected in frame!");
+          } else if (results.length === 0) {
+            setFaceDetectionStatus("CRITICAL: Face Not Found");
+            logMalpracticeMutation.mutate({ 
+              type: "FACE_NOT_VISIBLE", 
+              meta: { timestamp: new Date() } 
+            });
+            toast.warning("Please stay visible to the camera.");
+          } else {
+            const data = results[0];
+            const landmarks = data.landmarks;
+            const expressions = data.expressions;
+
+            // 1. Gaze/Head Pose Analysis
+            const nose = landmarks.getNose();
+            const leftEye = landmarks.getLeftEye();
+            const rightEye = landmarks.getRightEye();
+            
+            // Calculate horizontal nose center relative to eyes
+            const eyeMidX = (leftEye[0].x + rightEye[3].x) / 2;
+            const noseX = nose[3].x;
+            const horizontalOffset = noseX - eyeMidX;
+            const faceWidth = rightEye[3].x - leftEye[0].x;
+            const gazeRatio = horizontalOffset / faceWidth;
+
+            if (Math.abs(gazeRatio) > 0.25) {
+               setFaceDetectionStatus(gazeRatio > 0 ? "WARNING: Looking Right" : "WARNING: Looking Left");
+               logMalpracticeMutation.mutate({ 
+                 type: "LOOKING_AWAY_FROM_SCREEN", 
+                 meta: { direction: gazeRatio > 0 ? "RIGHT" : "LEFT", ratio: gazeRatio } 
+               });
+               setProctoringScore(prev => Math.max(0, prev - 1));
+            } else {
+               setFaceDetectionStatus("Biometrics: Candidate Verified");
+            }
+
+            // 2. Emotion Detection
+            const sorted = Object.entries(expressions as Record<string, number>).sort((a, b) => b[1] - a[1]);
+            setCurrentEmotion(sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1));
+
+            // 3. Lip Sync Anomaly
+            const mouth = landmarks.getMouth();
+            const topLip = mouth[14].y;
+            const bottomLip = mouth[18].y;
+            const lipDist = bottomLip - topLip;
+            const isSpeakingLips = lipDist > (faceWidth * 0.15);
+
+            if (isSpeakingLips && audioLevel < 5) {
+               // Potential voice-over or muted cheating?
+               // logMalpracticeMutation.mutate({ type: "LIP_SYNC_ANOMALY", meta: { lips: "OPEN", audio: "SILENT" } });
+            }
+          }
+        } catch (e) { /* Silent fail for frame issues */ }
+      }
+
+      // 2. Audio Anomaly Detection
+      // If audio level is consistently very high (>70) for 10 seconds, it might be background noise or cheating
+      if (audioLevel > 70) {
+        noiseCounter++;
+        if (noiseCounter > 3) { // ~9-12 seconds of high noise
+          logMalpracticeMutation.mutate({ 
+            type: "HIGH_BACKGROUND_NOISE", 
+            meta: { level: audioLevel, timestamp: new Date() } 
+          });
+          noiseCounter = 0;
+        }
+      } else {
+        noiseCounter = 0;
+      }
+    };
+
+    interval = setInterval(runMonitoring, 1000);
+    return () => clearInterval(interval);
+  }, [started, completed, audioLevel, interviewId]);
+
   const speakQuestion = (text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Pause recognition while speaking to prevent self-transcription
+    utterance.onstart = () => stopSpeech();
+    utterance.onend = () => {
+      startSpeech();
+      setRecordStartTime(Date.now()); // Reset record timer to start when they can actually talk
+    };
+
     window.speechSynthesis.speak(utterance);
   };
 
@@ -200,30 +377,65 @@ export default function CandidateInterview() {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
     recognition.onresult = (e: any) => {
-      let final = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      let fullTranscript = "";
+      for (let i = 0; i < e.results.length; i++) {
+        fullTranscript += e.results[i][0].transcript + " ";
       }
-      if (final) setAnswer((prev) => (prev + " " + final).trim());
+      setAnswer(fullTranscript.trim());
     };
-    recognition.start();
-    recognitionRef.current = recognition;
-    setListening(true);
+    recognition.onerror = (e: any) => {
+      // 'aborted' usually happens when we intentionally stop speech, ignore it to reduce log noise
+      if (e.error === 'aborted') return;
+      
+      console.error("Speech Recognition Error", e);
+      if (e.error === 'not-allowed') {
+        setMediaError("PERMISSION_DENIED");
+        toast.error("Microphone permission denied.");
+      }
+    };
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setListening(true);
+    } catch (e) {
+      console.error("Recognition start failed", e);
+    }
   };
 
   const stopSpeech = () => {
     setListening(false);
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
+    if (recognitionRef.current) { 
+      try { recognitionRef.current.stop(); } catch(e) {}
+      recognitionRef.current = null; 
+    }
   };
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setMediaError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 1280, height: 720 }, 
+        audio: true 
+      });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Ensure it actually plays
+        await videoRef.current.play().catch(e => console.error("Video play failed", e));
+      }
       startRecording();
-    } catch (_) {
+      return true;
+    } catch (err: any) {
+      console.error("Camera access error:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setMediaError("PERMISSION_DENIED");
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setMediaError("DEVICE_NOT_FOUND");
+      } else {
+        setMediaError("UNKNOWN_ERROR");
+      }
       toast.error("Camera and microphone access required.");
+      return false;
     }
   };
 
@@ -232,13 +444,37 @@ export default function CandidateInterview() {
     streamRef.current = null;
   };
 
+  const handleFullScreen = () => {
+    if (containerRef.current?.requestFullscreen) {
+      containerRef.current.requestFullscreen().catch(() => {
+         toast.error("Fullscreen mode was blocked by your browser settings.");
+      });
+    }
+  };
+
   const handleStart = async () => {
-    try { await startCamera(); if (applicationId) startMutation.mutate(applicationId); } catch (e) { console.error(e); }
+    try { 
+      const cameraSuccess = await startCamera(); 
+      if (!cameraSuccess) return;
+
+      if (applicationId) {
+        setIsInitializing(true);
+        handleFullScreen();
+        startMutation.mutate(applicationId); 
+        startSpeech(); // Automate speech start
+        setTimeout(() => setIsInitializing(false), 2000);
+      }
+    } catch (e) { 
+      console.error(e); 
+      setIsInitializing(false);
+    }
   };
 
   const handleSubmitAnswer = () => {
     if (!answer.trim()) { toast.warning("Please provide a verbal response."); return; }
+    setIsSubmitting(true);
     stopRecording();
+    stopSpeech(); // Stop speech before transition
     const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
     const formData = new FormData();
     formData.append("video_blob", blob);
@@ -248,7 +484,13 @@ export default function CandidateInterview() {
       response_duration_seconds: recordStartTime ? Math.floor((Date.now() - recordStartTime) / 1000) : 30, 
       question_number: currentQ + 1 
     }));
-    submitResponseMutation.mutate({ applicationId, sessionId: interviewId, data: formData });
+    submitResponseMutation.mutate({ applicationId, sessionId: interviewId, data: formData }, {
+      onSettled: () => {
+        setIsSubmitting(false);
+        // Restart speech for next question if not complete
+        if (!completed) startSpeech();
+      }
+    });
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -270,260 +512,300 @@ export default function CandidateInterview() {
     );
   }
 
+  if (started && !isFullScreen && !completed && !isInitializing) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center font-mono p-12 text-white">
+         <div className="text-center">
+            <AlertOctagon className="w-24 h-24 text-red-500 mx-auto mb-8 animate-bounce" />
+            <h2 className="text-5xl font-black uppercase tracking-tighter">Isolation Breach</h2>
+            <p className="text-slate-400 mt-4 font-bold uppercase tracking-widest">Interview Locked: Fullscreen is mandatory</p>
+            <Button onClick={handleFullScreen} className="mt-10 bg-white text-black font-black uppercase px-16 h-20 rounded-3xl hover:bg-slate-200 transition-all">Re-Enable Shield</Button>
+         </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-12">
-      {!started ? (
-        <div className="flex items-center justify-center min-h-[70vh]">
-          <Card className="max-w-4xl w-full bg-white border-none shadow-sm rounded-[40px] overflow-hidden">
-            <div className="p-16 space-y-12">
-               <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 bg-blue-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-blue-100">
-                     <Video className="text-white w-8 h-8" />
-                  </div>
-                  <div>
-                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">AI Technical Interview</h2>
-                     <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Phase 5: Cognitive Evaluation</p>
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[
-                    { label: "Duration", val: `${interviewConfig?.DURATION_MINUTES || 60}m`, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" },
-                    { label: "Questions", val: `${interviewConfig?.TOTAL_QUESTIONS || 10} Units`, icon: Target, color: "text-purple-500", bg: "bg-purple-50" }
-                  ].map((stat, i) => (
-                    <div key={i} className="p-8 rounded-[32px] bg-slate-50 border border-slate-50 flex items-center gap-6">
-                      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm", stat.bg, stat.color)}><stat.icon className="w-6 h-6" /></div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <p className="text-2xl font-black text-slate-900">{stat.val}</p>
-                      </div>
+    <div ref={containerRef} className="min-h-screen bg-slate-50/30">
+      <div className="max-w-7xl mx-auto space-y-10 pb-12 pt-8">
+        {!started ? (
+          <div className="flex items-center justify-center min-h-[70vh]">
+            <Card className="max-w-4xl w-full bg-white border-none shadow-sm rounded-[40px] overflow-hidden">
+              <div className="p-16 space-y-12">
+                 <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-blue-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-blue-100">
+                       <Video className="text-white w-8 h-8" />
                     </div>
-                  ))}
-               </div>
+                    <div>
+                       <h2 className="text-3xl font-black text-slate-900 tracking-tight">AI Technical Interview</h2>
+                       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Phase 5: Cognitive Evaluation</p>
+                    </div>
+                 </div>
 
-               <div className="space-y-6">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
-                     <ShieldCheck className="w-5 h-5 text-emerald-500" /> Compliance Protocols
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                       "Region-optimized AI engine will facilitate the session.",
-                       "Environment monitoring will ensure assessment integrity.",
-                       "Session locking is active to prevent navigation breaches."
-                    ].map((t, i) => (
-                      <div key={i} className="flex gap-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-50">
-                        <span className="text-blue-600 font-black">0{i + 1}.</span>
-                        <span className="text-slate-600 text-sm font-medium leading-relaxed">{t}</span>
+                      { label: "Duration", val: `${interviewConfig?.DURATION_MINUTES || 60}m`, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" },
+                      { label: "Questions", val: `${interviewConfig?.TOTAL_QUESTIONS || 10} Units`, icon: Target, color: "text-purple-500", bg: "bg-purple-50" }
+                    ].map((stat, i) => (
+                      <div key={i} className="p-8 rounded-[32px] bg-slate-50 border border-slate-50 flex items-center gap-6">
+                        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm", stat.bg, stat.color)}><stat.icon className="w-6 h-6" /></div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                          <p className="text-2xl font-black text-slate-900">{stat.val}</p>
+                        </div>
                       </div>
                     ))}
-                  </div>
-               </div>
+                 </div>
 
-               <div className="bg-slate-900 rounded-[32px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-                  <div className="relative z-10 flex items-start gap-6 max-w-xl">
-                     <div 
-                        onClick={() => setAgreed(!agreed)}
-                        className={cn(
-                           "w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all shrink-0",
-                           agreed ? "bg-blue-600 border-blue-600" : "border-slate-700 hover:border-slate-600"
-                        )}
-                     >
-                        {agreed && <CheckCircle className="w-6 h-6 text-white" />}
-                     </div>
-                     <div>
-                        <h4 className="text-white font-bold text-lg">I acknowledge the professional constraints</h4>
-                        <p className="text-slate-400 text-sm mt-1">Accept biometric data sync and assessment protocols.</p>
-                     </div>
-                  </div>
-
-                  {interviewStatus?.expires_at && (
-                    <div className="relative z-10 flex flex-col items-end gap-2 bg-white/5 backdrop-blur-xl p-6 rounded-[24px] border border-white/10 min-w-[280px]">
-                        <div className="flex items-center gap-2 text-rose-400">
-                           <Clock className="w-4 h-4" />
-                           <span className="text-[10px] font-black uppercase tracking-widest">Attempt Window Closing</span>
+                  {mediaError ? (
+                    <div className="p-10 rounded-[32px] bg-red-50 border border-red-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                          <AlertOctagon className="w-6 h-6" />
                         </div>
-                        <p className={cn(
-                           "text-2xl font-black tabular-nums",
-                           isExpired ? "text-rose-500" : "text-white"
-                        )}>
-                           {isExpired ? "EXPIRED" : new Date(interviewStatus.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                           Locks on {new Date(interviewStatus.expires_at).toLocaleDateString()}
-                        </p>
+                        <div>
+                          <h3 className="font-black text-red-900 uppercase tracking-tight">Access Restricted</h3>
+                          <p className="text-red-700/70 text-xs font-bold uppercase tracking-widest">
+                            {mediaError === "PERMISSION_DENIED" ? "Camera & Mic Permission Denied" : "Media Device Not Found"}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 text-sm leading-relaxed">
+                        {mediaError === "PERMISSION_DENIED" 
+                          ? "We need access to your camera and microphone to conduct the AI interview. Please click the camera icon in your browser address bar and select 'Allow'." 
+                          : "We couldn't find a working camera or microphone on your device. Please ensure they are connected and active."}
+                      </p>
+                      <Button onClick={handleStart} variant="outline" className="bg-white border-red-200 text-red-600 hover:bg-red-50 rounded-2xl h-14 px-8 font-black uppercase tracking-widest">
+                        Try Again
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
+                          <ShieldCheck className="w-5 h-5 text-emerald-500" /> Compliance Protocols
+                       </h3>
+                       <div className="grid grid-cols-1 gap-4">
+                         {[
+                            "Region-optimized AI engine will facilitate the session.",
+                            "Environment monitoring will ensure assessment integrity.",
+                            "Session locking is active to prevent navigation breaches.",
+                            "Exiting fullscreen mode will be logged as a strike."
+                         ].map((t, i) => (
+                           <div key={i} className="flex gap-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-50">
+                             <span className="text-blue-600 font-black">0{i + 1}.</span>
+                             <span className="text-slate-600 text-sm font-medium leading-relaxed">{t}</span>
+                           </div>
+                         ))}
+                       </div>
                     </div>
                   )}
 
-                  <Button 
-                     disabled={!agreed || startMutation.isPending || isExpired}
-                     onClick={handleStart}
-                     className={cn(
-                        "relative z-10 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all shadow-2xl",
-                        isExpired ? "bg-rose-500 text-white cursor-not-allowed" : "bg-white hover:bg-slate-50 text-slate-900"
-                     )}
-                  >
-                     {isExpired ? "Session Locked" : startMutation.isPending ? "Configuring..." : "Start Interview"}
-                  </Button>
-                  <div className="absolute top-0 right-0 p-12 opacity-5"><Sparkles className="w-48 h-48 text-white" /></div>
-               </div>
-            </div>
-          </Card>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Main Question Area */}
-          <div className="lg:col-span-8 space-y-8">
-            {questions[currentQ] && (
-              <Card className="bg-white border-none shadow-sm rounded-[40px] overflow-hidden flex flex-col min-h-[600px]">
-                <div className="p-10 lg:p-14 border-b border-slate-50 relative">
-                   <div className="flex items-center justify-between mb-8">
-                      <Badge className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-lg border-none font-black text-[10px] uppercase tracking-widest">Question {currentQ + 1} of {interviewConfig?.TOTAL_QUESTIONS || 10}</Badge>
-                      {timeLeft !== null && (
-                         <div className="flex items-center gap-3">
-                            <Clock className={cn("w-5 h-5", timeLeft < 300 ? "text-red-500 animate-pulse" : "text-slate-300")} />
-                            <span className="text-2xl font-black text-slate-900 font-mono tracking-tighter">{formatTime(timeLeft)}</span>
-                         </div>
-                      )}
-                   </div>
-                   <h3 className="text-3xl font-bold text-slate-900 leading-tight">
-                      {questions[currentQ].question}
-                   </h3>
-                </div>
-
-                <div className="flex-1 p-10 lg:p-14 flex flex-col bg-slate-50/30">
-                   <div className="flex-1 rounded-[32px] bg-white border-2 border-slate-50 p-12 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                      {!answer ? (
-                         <div className="space-y-6">
-                            <div className="flex justify-center items-center gap-2 h-16">
-                               {[...Array(12)].map((_, i) => (
-                                 <div
-                                   key={i}
-                                   className={cn(
-                                     "w-2 rounded-full transition-all duration-150",
-                                     audioLevel > 5 ? "bg-blue-500" : "bg-slate-100"
-                                   )}
-                                   style={{ 
-                                      height: audioLevel > 5 
-                                         ? `${Math.random() * 40 + 10}px` 
-                                         : "8px" 
-                                   }}
-                                 />
-                               ))}
-                            </div>
-                            <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px]">
-                               {audioLevel > 5 ? "AI Capture Active" : "Waiting for audio..."}
-                            </p>
-                         </div>
-                      ) : (
-                         <div className="max-w-3xl">
-                            <p className="text-slate-700 text-2xl font-medium leading-relaxed italic">
-                               "{answer}"
-                            </p>
-                         </div>
-                      )}
-                      {listening && <div className="absolute top-6 right-6 flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">
-                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                         <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Recording</span>
-                      </div>}
-                   </div>
-
-                   <div className="mt-12 flex items-center justify-between">
-                      <div className="flex gap-4">
-                         <Button 
-                            onClick={listening ? stopSpeech : startSpeech} 
-                            className={cn(
-                               "h-20 w-20 rounded-[28px] shadow-xl transition-all duration-300 relative group",
-                               listening ? "bg-red-500 hover:bg-red-600 text-white" : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-100"
-                            )}
-                         >
-                            {listening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
-                         </Button>
-                         <Button 
-                            onClick={() => setAnswer("")}
-                            variant="ghost"
-                            className="h-20 px-8 rounded-[28px] text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-red-500"
-                         >
-                            Reset Answer
-                         </Button>
-                      </div>
-                      <Button 
-                         onClick={handleSubmitAnswer}
-                         disabled={submitResponseMutation.isPending || !answer.trim()}
-                         className="h-20 px-16 rounded-[28px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-2xl transition-all disabled:opacity-20"
-                      >
-                         {submitResponseMutation.isPending ? "Syncing..." : "Submit Response"}
-                      </Button>
-                   </div>
-                </div>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-8">
-            <Card className="aspect-video bg-black rounded-[40px] border-none shadow-lg overflow-hidden relative group">
-               <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
-               <div className="absolute top-6 left-6 flex items-center gap-3">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">AI Interview Link</span>
-               </div>
-               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
-                  <Badge className="bg-blue-600 text-white border-none font-bold text-[9px] uppercase px-3 py-1">Biometrics Active</Badge>
-                  <Activity className="w-5 h-5 text-white/30" />
-               </div>
-            </Card>
-
-            <Card className="bg-white border-none shadow-sm rounded-[40px] p-10 space-y-10">
-               <div className="space-y-2">
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Real-time Analysis</h4>
-                  <div className="flex items-center justify-between">
-                     <p className="text-2xl font-bold text-slate-900">Cognitive Metrics</p>
-                     <Activity className="w-6 h-6 text-blue-500/50" />
-                  </div>
-               </div>
-
-               <div className="space-y-8">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                      <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Alignment</span>
-                      <span className="text-3xl font-black text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
+                 <div className="bg-slate-900 rounded-[32px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                    <div className="relative z-10 flex items-start gap-6 max-w-xl">
+                       <div 
+                          onClick={() => setAgreed(!agreed)}
+                          className={cn(
+                             "w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all shrink-0",
+                             agreed ? "bg-blue-600 border-blue-600" : "border-slate-700 hover:border-slate-600"
+                          )}
+                       >
+                          {agreed && <CheckCircle className="w-6 h-6 text-white" />}
+                       </div>
+                       <div>
+                          <h4 className="text-white font-bold text-lg">I acknowledge the professional constraints</h4>
+                          <p className="text-slate-400 text-sm mt-1">Accept biometric data sync and assessment protocols.</p>
+                       </div>
                     </div>
-                    <Progress value={currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)} className="h-2 bg-slate-100 [&>div]:bg-blue-600" />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sentiment</p>
-                        <p className="font-bold text-slate-900">{currentAnalysis ? (currentAnalysis.sentiment > 0.6 ? "Positive" : "Balanced") : "Syncing"}</p>
-                     </div>
-                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
-                        <p className="font-bold text-blue-600">{currentAnalysis ? (currentAnalysis.confidence > 0.7 ? "High" : "Normal") : "Syncing"}</p>
-                     </div>
-                  </div>
-               </div>
+                    {interviewStatus?.expires_at && (
+                      <div className="relative z-10 flex flex-col items-end gap-2 bg-white/5 backdrop-blur-xl p-6 rounded-[24px] border border-white/10 min-w-[280px]">
+                          <div className="flex items-center gap-2 text-rose-400">
+                             <Clock className="w-4 h-4" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Attempt Window Closing</span>
+                          </div>
+                          <p className={cn(
+                             "text-2xl font-black tabular-nums",
+                             isExpired ? "text-rose-500" : "text-white"
+                          )}>
+                             {isExpired ? "EXPIRED" : new Date(interviewStatus.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                             Locks on {new Date(interviewStatus.expires_at).toLocaleDateString()}
+                          </p>
+                      </div>
+                    )}
 
-               <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
-                  <Info className="w-5 h-5 text-blue-600 shrink-0" />
-                  <p className="text-[10px] font-medium text-slate-500 leading-relaxed">Cognitive evaluation is powered by GPT-4 and behavioral biometric mapping.</p>
-               </div>
-            </Card>
-
-            <Card className="bg-slate-900 rounded-[40px] p-8 text-white">
-               <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
-                     <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Environment</p>
-                     <p className="text-sm font-bold">{faceDetectionStatus}</p>
-                  </div>
-               </div>
-               <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Please ensure you are in a quiet, well-lit environment. Technical issues? <button onClick={() => router.push("/contact")} className="text-blue-400 font-bold">Contact Support</button></p>
+                    <Button 
+                       disabled={!agreed || startMutation.isPending || isExpired}
+                       onClick={handleStart}
+                       className={cn(
+                          "relative z-10 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all shadow-2xl",
+                          isExpired ? "bg-rose-500 text-white cursor-not-allowed" : "bg-white hover:bg-slate-50 text-slate-900"
+                       )}
+                    >
+                       {isExpired ? "Session Locked" : startMutation.isPending ? "Configuring..." : "Start Interview"}
+                    </Button>
+                    <div className="absolute top-0 right-0 p-12 opacity-5"><Sparkles className="w-48 h-48 text-white" /></div>
+                 </div>
+              </div>
             </Card>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* Main Question Area */}
+            <div className="lg:col-span-8 space-y-8">
+              {questions[currentQ] && (
+                <Card className="bg-white border-none shadow-sm rounded-[40px] overflow-hidden flex flex-col min-h-[600px]">
+                  <div className="p-10 lg:p-14 border-b border-slate-50 relative">
+                     <div className="flex items-center justify-between mb-8">
+                        <Badge className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-lg border-none font-black text-[10px] uppercase tracking-widest">Question {currentQ + 1} of {interviewConfig?.TOTAL_QUESTIONS || 10}</Badge>
+                        {timeLeft !== null && (
+                           <div className="flex items-center gap-3">
+                              <Clock className={cn("w-5 h-5", timeLeft < 300 ? "text-red-500 animate-pulse" : "text-slate-300")} />
+                              <span className="text-2xl font-black text-slate-900 font-mono tracking-tighter">{formatTime(timeLeft)}</span>
+                           </div>
+                        )}
+                     </div>
+                     <h3 className="text-3xl font-bold text-slate-900 leading-tight">
+                        {questions[currentQ].question}
+                     </h3>
+                  </div>
+
+                  <div className="flex-1 p-10 lg:p-14 flex flex-col bg-slate-50/30">
+                     <div className="flex-1 rounded-[32px] bg-white border-2 border-slate-50 p-12 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                        {!answer ? (
+                           <div className="space-y-6">
+                              <div className="flex justify-center items-center gap-2 h-16">
+                                 {[...Array(12)].map((_, i) => (
+                                   <div
+                                     key={i}
+                                     className={cn(
+                                       "w-2 rounded-full transition-all duration-150",
+                                       audioLevel > 5 ? "bg-blue-500" : "bg-slate-100"
+                                     )}
+                                     style={{ 
+                                        height: audioLevel > 5 
+                                           ? `${Math.random() * 40 + 10}px` 
+                                           : "8px" 
+                                     }}
+                                   />
+                                 ))}
+                              </div>
+                              <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px]">
+                                 {audioLevel > 5 ? "AI Capture Active" : "Waiting for audio..."}
+                              </p>
+                           </div>
+                        ) : (
+                           <div className="max-w-3xl">
+                              <p className="text-slate-700 text-2xl font-medium leading-relaxed italic">
+                                 "{answer}"
+                              </p>
+                           </div>
+                        )}
+                        {listening && <div className="absolute top-6 right-6 flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">
+                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                           <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Recording</span>
+                        </div>}
+                     </div>
+
+                     <div className="mt-12 flex items-center justify-between">
+                        <div className="flex gap-4">
+                           <Button 
+                              onClick={listening ? stopSpeech : startSpeech} 
+                              className={cn(
+                                 "h-20 w-20 rounded-[28px] shadow-xl transition-all duration-300 relative group",
+                                 listening ? "bg-red-500 hover:bg-red-600 text-white" : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-100"
+                              )}
+                           >
+                              {listening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                           </Button>
+                           <Button 
+                              onClick={() => setAnswer("")}
+                              variant="ghost"
+                              className="h-20 px-8 rounded-[28px] text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-red-500"
+                           >
+                              Reset Answer
+                           </Button>
+                        </div>
+                        <Button 
+                           onClick={handleSubmitAnswer}
+                           disabled={isSubmitting || !answer.trim()}
+                           className="h-20 px-16 rounded-[28px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-2xl transition-all disabled:opacity-20"
+                        >
+                           {isSubmitting ? "Syncing..." : "Submit Response"}
+                        </Button>
+                     </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-4 space-y-8">
+              <Card className="aspect-video bg-black rounded-[40px] border-none shadow-lg overflow-hidden relative group">
+                 <video ref={videoRef} autoPlay muted playsInline width="1280" height="720" className="w-full h-full object-cover scale-x-[-1]" />
+                 <div className="absolute top-6 left-6 flex items-center gap-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">AI Interview Link</span>
+                 </div>
+                 <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
+                    <Badge className="bg-blue-600 text-white border-none font-bold text-[9px] uppercase px-3 py-1">Biometrics Active</Badge>
+                    <Activity className="w-5 h-5 text-white/30" />
+                 </div>
+              </Card>
+
+              <Card className="bg-white border-none shadow-sm rounded-[40px] p-10 space-y-10">
+                 <div className="space-y-2">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Real-time Analysis</h4>
+                    <div className="flex items-center justify-between">
+                       <p className="text-2xl font-bold text-slate-900">Cognitive Metrics</p>
+                       <Activity className="w-6 h-6 text-blue-500/50" />
+                    </div>
+                 </div>
+
+                 <div className="space-y-8">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Alignment</span>
+                        <span className="text-3xl font-black text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
+                      </div>
+                      <Progress value={currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)} className="h-2 bg-slate-100 [&>div]:bg-blue-600" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sentiment</p>
+                           <p className="font-bold text-slate-900">{currentEmotion || (currentAnalysis ? (currentAnalysis.sentiment > 0.6 ? "Positive" : "Balanced") : "Syncing")}</p>
+                        </div>
+                       <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
+                          <p className="font-bold text-blue-600">{currentAnalysis ? (currentAnalysis.confidence > 0.7 ? "High" : "Normal") : "Syncing"}</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
+                    <Info className="w-5 h-5 text-blue-600 shrink-0" />
+                    <p className="text-[10px] font-medium text-slate-500 leading-relaxed">Cognitive evaluation is powered by GPT-4 and behavioral biometric mapping.</p>
+                 </div>
+              </Card>
+
+              <Card className="bg-slate-900 rounded-[40px] p-8 text-white">
+                 <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
+                       <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Environment</p>
+                       <p className="text-sm font-bold">{faceDetectionStatus}</p>
+                    </div>
+                 </div>
+                 <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Please ensure you are in a quiet, well-lit environment. Technical issues? <button onClick={() => router.push("/contact")} className="text-blue-400 font-bold">Contact Support</button></p>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

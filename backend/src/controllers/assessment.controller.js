@@ -224,19 +224,59 @@ exports.saveAnswer = async (req, res) => {
   }
 };
 
-// ================= SUBMIT ASSESSMENT =================
+// ================= SUBMIT ASSESSMENT (FAST) =================
 exports.submitAssessment = async (req, res) => {
   try {
     const { attemptId } = req.params;
     const candidateId = req.candidate.id;
 
     const attempt = await AssessmentAttempt.findByPk(attemptId, { 
-      include: [{ model: Application, include: [Job] }] 
+      include: [{ model: Application }] 
     });
 
     if (!attempt || attempt.status !== 'IN_PROGRESS') {
       return res.status(400).json({ error: 'Invalid attempt' });
     }
+
+    // Fast submission without AI analysis
+    await attempt.update({
+      status: 'SUBMITTED',
+      submitted_at: new Date()
+    });
+
+    const application = attempt.Application;
+    await application.update({
+      status: 'TECHNICAL_ROUND_COMPLETED'
+    });
+
+    await ApplicationStatusLog.create({
+      application_id: application.id,
+      previous_status: 'TECHNICAL_ROUND_IN_PROGRESS',
+      new_status: 'TECHNICAL_ROUND_COMPLETED',
+      changed_by: candidateId,
+      reason: 'Candidate submitted assessment'
+    });
+
+    res.json({ success: true, message: "Assessment submitted successfully. HR will analyze your results soon." });
+
+  } catch (error) {
+    logger.error('Submit error:', error);
+    res.status(500).json({ error: 'Submission failed' });
+  }
+};
+
+// ================= ANALYZE ASSESSMENT (ON-DEMAND BY HR) =================
+exports.analyzeAssessment = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    
+    const attempt = await AssessmentAttempt.findOne({
+      where: { application_id: applicationId },
+      include: [{ model: Application, include: [Job] }]
+    });
+
+    if (!attempt) return res.status(404).json({ error: 'Assessment attempt not found' });
+    if (attempt.status === 'EVALUATED') return res.status(200).json({ success: true, message: 'Already analyzed', score: attempt.final_score });
 
     const storedAnswers = attempt.answers || {};
     const questions = await TechnicalQuestionBank.findAll({ 
@@ -244,7 +284,6 @@ exports.submitAssessment = async (req, res) => {
       where: { questionId: attempt.metadata.question_ids || [] } 
     });
 
-    // Use unified AI evaluation logic
     let technicalScore = 0;
     let behavioralScore = 0;
     let techTotalWeight = 0;
@@ -264,7 +303,6 @@ exports.submitAssessment = async (req, res) => {
       let qMLScore = 0;
       let qAIScore = 0;
 
-      // 1. ML Scoring (Exact Match for MCQ, Cosine for others)
       if (q.evaluation_type === 'MCQ' || (q.questionType === 'MCQ' && q.correct_answer)) {
         qMLScore = (answerText.trim() === q.correct_answer?.trim()) ? 100 : 0;
       } else {
@@ -272,7 +310,6 @@ exports.submitAssessment = async (req, res) => {
         qMLScore = Math.round(scoringService.calculateCosineSimilarity(answerText, reference) * 100);
       }
 
-      // 2. Advanced AI Scoring (Module 1)
       const isBehavioral = q.section_type === 'BEHAVIORAL' || q.topic?.toLowerCase().includes('behavioral');
       
       try {
@@ -297,7 +334,6 @@ exports.submitAssessment = async (req, res) => {
           qAIScore = qMLScore;
         }
       } catch (e) {
-        logger.warn(`AI Analysis failed for question ${qId}, using ML score: ${e.message}`);
         qAIScore = qMLScore;
       }
 
@@ -317,7 +353,6 @@ exports.submitAssessment = async (req, res) => {
     const finalTechScore = techTotalWeight > 0 ? (technicalScore / techTotalWeight) * 100 : 0;
     const finalBehaviorScore = behaviorTotalWeight > 0 ? (behavioralScore / behaviorTotalWeight) * 100 : 0;
     
-    // Normalize additional metrics
     avgStructureScore = techTotalWeight > 0 ? avgStructureScore / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
     avgConceptCoverage = techTotalWeight > 0 ? avgConceptCoverage / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
 
@@ -333,20 +368,18 @@ exports.submitAssessment = async (req, res) => {
       final_score: finalScore,
       score: finalScore,
       status: 'EVALUATED',
-      submitted_at: new Date(),
       structure_score: avgStructureScore,
       concept_coverage: avgConceptCoverage
     });
 
     const application = attempt.Application;
-    const passed = finalScore >= ASSESSMENT_CONFIG.PASSING_SCORE;
-
     await application.update({
       technical_score: finalScore,
-      behavioral_score: finalBehaviorScore,
-      status: 'TECHNICAL_ROUND_COMPLETED' // Cancel auto-reject as requested
+      behavioral_score: finalBehaviorScore
     });
 
+    // Create/Update Analysis
+    await AssessmentAnalysis.destroy({ where: { application_id: application.id } });
     await AssessmentAnalysis.create({
       application_id: application.id,
       overall_score: finalScore,
@@ -354,14 +387,14 @@ exports.submitAssessment = async (req, res) => {
       test_name: `${application.Job?.title} Technical Assessment`,
       strengths: Array.from(new Set([...allStrengths, `Overall assessment completion: ${questions.length} questions`])),
       weaknesses: Array.from(new Set(allWeaknesses)),
-      detailed_feedback: `Final Evaluation: ${finalScore}%. (AI Technical: ${Math.round(finalTechScore)}%, Behavioral: ${Math.round(finalBehaviorScore)}%). Penalty: ${malpracticePenalty}.`
+      detailed_feedback: `AI Analysis: ${finalScore}%. (Tech: ${Math.round(finalTechScore)}%, Behavioral: ${Math.round(finalBehaviorScore)}%).`
     });
 
-    res.json({ success: true, score: finalScore, passed });
+    res.json({ success: true, score: finalScore });
 
   } catch (error) {
-    logger.error('Submit error:', error);
-    res.status(500).json({ error: 'Submission failed' });
+    logger.error('Analysis error:', error);
+    res.status(500).json({ error: 'Analysis failed' });
   }
 };
 

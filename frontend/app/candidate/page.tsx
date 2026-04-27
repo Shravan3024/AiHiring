@@ -35,25 +35,107 @@ export default function CandidateDashboard() {
     queryKey: ["candidate-overview"],
     queryFn: () => candidateApi.getDashboard().then((r) => r.data),
     enabled: !!user,
+    refetchInterval: 5000, // Update dashboard data every 5 seconds for real-time feel
   });
 
   const apps = overview?.applications || overview?.dashboard?.applications || [];
-  
+  const latestApp = apps[0];
+  const appStatus = latestApp?.status?.toUpperCase() || "NONE";
+
+  const getStepStatus = (index: number) => {
+    // 0: Profile Setup, 1: Application Review, 2: Skills Assessment, 3: Technical Interview, 4: Final Offer
+    if (index === 0) return "completed";
+    
+    const statusMap: Record<string, number> = {
+      // Step 1: Application Review / Screening
+      "APPLIED": 1,
+      "SCREENING": 1,
+      "RESUME_REVIEW": 1,
+      "RESUME_SUBMITTED": 1,
+      "RESUME_EVALUATED": 1,
+      "SHORTLISTED": 1,
+      
+      // Step 2: Skills Assessment
+      "ASSESSMENT_UNLOCKED": 2,
+      "TECHNICAL_ROUND": 2,
+      "TECHNICAL_ROUND_PENDING": 2,
+      "TECHNICAL_ROUND_IN_PROGRESS": 2,
+      "ASSESSMENT_IN_PROGRESS": 2,
+      "TECHNICAL_ROUND_COMPLETED": 2,
+      "ASSESSMENT_COMPLETED": 2,
+      
+      // Step 3: AI Interview
+      "INTERVIEW_SCHEDULED": 3,
+      "INTERVIEW_UNLOCKED": 3,
+      "INTERVIEW_PENDING": 3,
+      "INTERVIEW_IN_PROGRESS": 3,
+      "RE_INTERVIEW_REQUESTED": 3,
+      "INTERVIEW_COMPLETED": 3,
+      
+      // Step 4: HR Review & Final Offer
+      "RECOMMENDED_BY_AI": 4,
+      "PROCEED_TO_HR": 4,
+      "HR_REVIEW": 4,
+      "OFFERED": 4,
+      "OFFER_SENT": 4,
+      "SELECTED": 4,
+      "HIRED": 4,
+      "ACCEPTED": 4,
+      "OFFER_REJECTED": 4,
+    };
+
+    const currentStage = statusMap[appStatus] || (apps.length > 0 ? 1 : 0);
+
+    if (currentStage > index) return "completed";
+    if (currentStage === index) return "current";
+    return "pending";
+  };
+
   const getStageColor = (status?: string) => {
     if (!status) return "bg-blue-50 text-blue-600";
     const s = status.toUpperCase();
     if (s.includes("OFFER")) return "bg-emerald-50 text-emerald-600";
     if (s.includes("INTERVIEW")) return "bg-purple-50 text-purple-600";
-    if (s.includes("ASSESSMENT")) return "bg-blue-50 text-blue-600";
+    if (s.includes("ASSESSMENT") || s.includes("TECHNICAL")) return "bg-blue-50 text-blue-600";
     return "bg-slate-50 text-slate-400";
   };
 
   const nextSteps = [
-    { label: "Profile Setup", date: "Completed", status: "completed", icon: User, desc: "Your professional profile is 100% complete." },
-    { label: "Application Review", date: "In Progress", status: "current", icon: FileText, desc: "Recruiters are evaluating your resume." },
-    { label: "Skills Assessment", date: "Upcoming", status: "pending", icon: Target, desc: "Complete tests to showcase your skills." },
-    { label: "Technical Interview", date: "Upcoming", status: "pending", icon: Video, desc: "Live interaction with our tech team." },
-    { label: "Final Offer", date: "Upcoming", status: "pending", icon: Star, desc: "Join the Mask Polymers family." },
+    { 
+      label: "Profile Setup", 
+      date: "Completed", 
+      status: getStepStatus(0), 
+      icon: User, 
+      desc: "Your professional profile is 100% complete." 
+    },
+    { 
+      label: "Application Review", 
+      date: getStepStatus(1) === "completed" ? "Completed" : getStepStatus(1) === "current" ? "In Progress" : "Upcoming", 
+      status: getStepStatus(1), 
+      icon: FileText, 
+      desc: "Recruiters are evaluating your resume." 
+    },
+    { 
+      label: "Skills Assessment", 
+      date: getStepStatus(2) === "completed" ? "Completed" : getStepStatus(2) === "current" ? "Active" : "Upcoming", 
+      status: getStepStatus(2), 
+      icon: Target, 
+      desc: "Complete tests to showcase your skills." 
+    },
+    { 
+      label: "Technical Interview", 
+      date: getStepStatus(3) === "completed" ? "Completed" : getStepStatus(3) === "current" ? "Scheduled" : "Upcoming", 
+      status: getStepStatus(3), 
+      icon: Video, 
+      desc: "Live interaction with our tech team." 
+    },
+    { 
+      label: "Final Offer", 
+      date: getStepStatus(4) === "completed" || getStepStatus(5) === "completed" ? "Completed" : getStepStatus(4) === "current" ? "Received" : "Upcoming", 
+      status: getStepStatus(4), 
+      icon: Star, 
+      desc: "Join the Mask Polymers family." 
+    },
   ];
 
   return (

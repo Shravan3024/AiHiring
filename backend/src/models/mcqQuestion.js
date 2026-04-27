@@ -23,7 +23,7 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       defaultValue: [] // ["a) Option 1", "b) Option 2", ...]
     },
-    correct_answer: {
+    correct_option: {
       type: DataTypes.STRING,
       allowNull: true
     },

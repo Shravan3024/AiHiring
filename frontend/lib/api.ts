@@ -197,6 +197,14 @@ export const hrApi = {
     api.get('/hr/dashboard/top-candidates'),
   getJobs: () =>
     api.get('/hr/jobs'),
+  
+  // Offer Template Management
+  getOfferTemplates: () => api.get("/offer/templates"),
+  createOfferTemplate: (data: any) => api.post("/offer/templates", data),
+  updateOfferTemplate: (id: string, data: any) => api.put(`/offer/templates/${id}`, data),
+
+  // Assessment Analysis
+  analyzeAssessment: (applicationId: string) => api.post(`/assessment/analyze/${applicationId}`),
 };
 
 // ==================== MD ====================

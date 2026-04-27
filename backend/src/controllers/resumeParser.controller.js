@@ -62,7 +62,7 @@ class ResumeController {
         resume_score: 75, // Placeholder/Calculated
         strengths: ["Strong engineering background", "Experience with manufacturing systems"],
         weaknesses: ["Niche industry focus", "Limited leadership exposure"],
-        ai_model_used: process.env.GENAI_MODEL || "gemini-2.5-flash",
+        ai_model_used: process.env.GENAI_MODEL || "gemini-1.5-flash",
         raw_analysis: parsedData
       });
 

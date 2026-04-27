@@ -15,7 +15,7 @@ class LLMService {
     });
 
     // Gemini Initialization
-    this.geminiModelName = process.env.GENAI_MODEL || "gemini-2.5-flash";
+    this.geminiModelName = process.env.GENAI_MODEL || "gemini-1.5-flash";
     
     logger.info(`LLMService initialized with Dual-Provider Support (GPT, Gemini: ${this.geminiModelName})`);
   }
@@ -48,11 +48,11 @@ class LLMService {
    */
   getProviderForUseCase(useCase) {
     const mappings = {
-      'RESUME_SCORING': 'GPT',
-      'INTERVIEW_ANALYSIS': 'GPT',
+      'RESUME_SCORING': 'GEMINI',
+      'INTERVIEW_ANALYSIS': 'GEMINI',
       'VIDEO_AUDIO_INTERVIEW': 'GEMINI',
-      'BIAS_SAFE_HR': 'GPT', // Using GPT as per restriction (removing Claude)
-      'LOW_COST_SCALING': 'GEMINI' // Using Gemini 2.5 Flash for low-cost scaling
+      'BIAS_SAFE_HR': 'GEMINI', 
+      'LOW_COST_SCALING': 'GEMINI'
     };
     return mappings[useCase] || 'GEMINI';
   }
@@ -70,14 +70,28 @@ class LLMService {
   }
 
   /**
-   * Google Gemini implementation
+   * Google Gemini implementation with automatic rate-limit rotation
    */
-  async callGemini(prompt) {
+  async callGemini(prompt, attempt = 1) {
     const key = keyRotator.getNextKey();
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: this.geminiModelName });
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    if (!key) throw new Error("No Gemini API keys available.");
+
+    try {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: this.geminiModelName });
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (error) {
+      const isRateLimit = error.message?.includes("429") || error.message?.toLowerCase().includes("quota");
+      
+      if (isRateLimit && attempt < Math.min(keyRotator.getAllKeys().length, 3)) {
+        logger.warn(`[LLM Router] Gemini Key Rate-Limited (429). Attempting rotation ${attempt + 1}/${Math.min(keyRotator.getAllKeys().length, 3)}...`);
+        return await this.callGemini(prompt, attempt + 1);
+      }
+      
+      logger.error(`[LLM Router] Gemini Final Failure (Attempt ${attempt}): ${error.message}`);
+      throw error;
+    }
   }
 }
 

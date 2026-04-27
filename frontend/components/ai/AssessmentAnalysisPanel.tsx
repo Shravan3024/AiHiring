@@ -1,16 +1,17 @@
 "use client";
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  TrendingUp, Zap, CheckCircle, Scale, Target, Layers, Download
+  TrendingUp, Zap, CheckCircle, Scale, Target, Layers, Download, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
+import { toast } from "sonner";
+import api, { hrApi } from "@/lib/api";
 import { generateAssessmentReport } from "@/lib/utils/generateReports";
 
 interface AssessmentPanelProps {
@@ -18,9 +19,21 @@ interface AssessmentPanelProps {
 }
 
 export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applicationId }) => {
-  const { data: analysisRes } = useQuery({
+  const queryClient = useQueryClient();
+  const { data: analysisRes, isLoading } = useQuery({
     queryKey: ["ai-analysis-full", applicationId],
     queryFn: async () => (await api.get(`/hr/applications/${applicationId}`)).data,
+  });
+
+  const { mutate: analyze, isPending: isAnalyzing } = useMutation({
+    mutationFn: () => hrApi.analyzeAssessment(String(applicationId)),
+    onSuccess: () => {
+      toast.success("Assessment analyzed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["ai-analysis-full", applicationId] });
+    },
+    onError: () => {
+      toast.error("Failed to analyze assessment.");
+    }
   });
 
   // Accessing assessment attempts via relationships or data mapping
@@ -48,6 +61,40 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
 
           {assessmentData.map((attempt: any) => (
             <TabsContent key={attempt.id} value={String(attempt.id)} className="space-y-6 mt-6">
+              {/* Analysis Trigger (If not evaluated yet) */}
+              {attempt.status === 'SUBMITTED' && (
+                <Card className="border-amber-200 bg-amber-50 shadow-sm animate-pulse">
+                  <CardContent className="p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-amber-100 rounded-full">
+                        <Zap className="w-6 h-6 text-amber-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-amber-900">Analysis Pending</h4>
+                        <p className="text-sm text-amber-700">The candidate has submitted the assessment. Click the button to run the AI deep-dive analysis.</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => analyze()} 
+                      disabled={isAnalyzing}
+                      className="bg-amber-600 hover:bg-amber-700 text-white gap-2 px-8"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4" />
+                          Run AI Analysis
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Main Score & Advanced Analytics Card */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                  {/* Left: Score Box */}

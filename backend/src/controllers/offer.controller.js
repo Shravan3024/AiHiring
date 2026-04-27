@@ -98,49 +98,52 @@ exports.respondOffer = async (req, res) => {
     }
 
     let offer;
+    const includeSpec = [
+      { 
+        model: Application, 
+        as: "application",
+        include: [{ model: Candidate, include: [User] }, Job]
+      }
+    ];
+
     if (offer_id) {
-      offer = await Offer.findByPk(offer_id, { include: [{ model: Application, as: "application" }] });
+      offer = await Offer.findByPk(offer_id, { include: includeSpec });
     } else if (application_id) {
       offer = await Offer.findOne({ 
         where: { application_id }, 
-        include: [{ model: Application, as: "application" }] 
+        include: includeSpec 
       });
     }
 
     if (!offer && application_id) {
       // Fallback: If offer record is missing but application is in an offer-ready state, create it
-      const application = await Application.findByPk(application_id, { include: [Job] });
+      const application = await Application.findByPk(application_id, { include: [{ model: Candidate, include: [User] }, Job] });
       if (application && ["SELECTED", "OFFER_SENT", "OFFERED"].includes(application.status)) {
         console.log("🛠️ Auto-creating missing offer record for application:", application_id);
         offer = await Offer.create({
           application_id: application.id,
-          salary: 0, // Default for missing records
+          salary: 0, 
           joining_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           position_title: application.Job?.title || "Position",
           status: "PENDING"
         });
-        // Re-fetch with association
-        offer = await Offer.findByPk(offer.id, { include: [{ model: Application, as: "application" }] });
+        // Re-fetch with associations
+        offer = await Offer.findByPk(offer.id, { include: includeSpec });
       }
     }
 
     if (!offer) {
-      return res.status(404).json({ message: "Offer record not found and cannot be auto-created. Please ensure the candidate has been sent an offer letter." });
+      return res.status(404).json({ message: "Offer record not found" });
     }
 
     // Validate decision input
     const validDecisions = ["ACCEPTED", "REJECTED"];
     if (!validDecisions.includes(decision)) {
-      return res.status(400).json({
-        message: "Invalid decision. Must be 'ACCEPTED' or 'REJECTED'"
-      });
+      return res.status(400).json({ message: "Invalid decision" });
     }
 
-    // Check if offer is still pending
     if (offer.status !== "PENDING") {
-      return res.status(400).json({
-        message: "Offer has already been responded to"
-      });
+      return res.status(400).json({ message: "Offer has already been responded to" });
     }
 
     offer.status = decision;
@@ -151,9 +154,22 @@ exports.respondOffer = async (req, res) => {
     if (offer.application) {
       offer.application.status = decision === "ACCEPTED" ? "HIRED" : "OFFER_REJECTED";
       await offer.application.save();
+      
+      // Send Confirmation Email
+      const candidateUser = offer.application.Candidate?.User;
+      if (candidateUser?.email) {
+        const { sendOfferConfirmationEmail } = require("../services/email.service");
+        await sendOfferConfirmationEmail(
+          candidateUser.email,
+          candidateUser.name,
+          decision,
+          offer.application.Job?.title || offer.position_title || "Position",
+          offer.offer_letter_content
+        );
+      }
     }
 
-    res.json({ message: "Offer response recorded", offer });
+    res.json({ message: `Offer ${decision.toLowerCase()} successfully`, offer });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -168,7 +184,7 @@ exports.getOfferDetails = async (req, res) => {
     const { applicationId } = req.params;
     const offer = await Offer.findOne({ 
       where: { application_id: applicationId },
-      include: [Application] 
+      include: [{ model: Application, as: 'application' }] 
     });
     
     if (!offer) {

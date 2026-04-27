@@ -487,7 +487,7 @@ exports.submitResponsePhase5 = async (req, res) => {
           duration: q.response_duration_seconds
         }));
  
-        aiAnalysis = await aiService.analyzeFullInterview(qaPairs, application.Job?.title);
+        const aiAnalysis = await aiService.analyzeFullInterview(qaPairs, application.Job?.title);
         
         interviewScore = aiAnalysis.overall_interview_score || 0;
         

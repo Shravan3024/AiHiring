@@ -318,7 +318,7 @@ exports.analyzeInterview = async (req, res) => {
         confidence_level: analysis.dimension_scores?.confidence > 70 ? 'HIGH' : 'MEDIUM',
         hire_recommendation: analysis.recommendation || 'CONSIDER',
         detailed_evaluation: analysis.highlights?.summary || "Analysis completed.",
-        ai_model_used: "gemini-2.5-flash"
+        ai_model_used: "gemini-1.5-flash"
       }
     });
 

@@ -234,7 +234,7 @@ export default function CandidateApplication() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <p className="text-sm font-bold text-slate-900">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'Short', year: 'numeric' }) : "Pending"}</p>
+                        <p className="text-sm font-bold text-slate-900">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "Pending"}</p>
                       </TableCell>
                       <TableCell className="text-center">
                         <Link href={`/candidate/application/${app.id}`}>
@@ -256,12 +256,26 @@ export default function CandidateApplication() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
            {apps.length > 0 ? apps.map((app: any, idx: number) => {
               const stages = ["Applied", "Screening", "Assessment", "Interview", "Offer", "Hired"];
-              const currentStageIdx = 1; // Simplified for UI demonstration
+              
+              const getStageIdx = (status: string) => {
+                const s = status?.toUpperCase() || "";
+                if (["HIRED", "ACCEPTED", "OFFER_ACCEPTED"].includes(s)) return 5;
+                if (s.includes("OFFER")) return 4;
+                if (s.includes("INTERVIEW") || s.includes("VIDEO")) return 3;
+                if (s.includes("ASSESSMENT") || s.includes("TECHNICAL")) return 2;
+                if (s.includes("SCREENING") || s.includes("RESUME") || s.includes("EVALUATED") || s.includes("SHORTLISTED")) return 1;
+                return 0; // Applied
+              };
+
+              const currentStageIdx = getStageIdx(app.status);
+              const progressPercentage = (currentStageIdx / (stages.length - 1)) * 100;
+              const isRejected = app.status?.toUpperCase().includes("REJECTED");
+
               return (
                 <Card key={idx} className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden p-8">
                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
                       <div className="flex items-center gap-6">
-                         <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                         <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center", isRejected ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600")}>
                             <Briefcase className="w-8 h-8" />
                          </div>
                          <div>
@@ -269,25 +283,35 @@ export default function CandidateApplication() {
                             <p className="text-slate-400 font-medium">Applied on {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "26 Apr 2026"}</p>
                          </div>
                       </div>
-                      <Badge className="bg-blue-50 text-blue-600 px-6 py-2 rounded-xl border-none font-bold text-sm">
+                      <Badge className={cn("px-6 py-2 rounded-xl border-none font-bold text-sm", getStatusColor(app.status))}>
                          {app.status?.replace(/_/g, " ") || "In Progress"}
                       </Badge>
                    </div>
                    
                    <div className="relative pt-10 pb-6 px-4">
                       <div className="absolute top-[68px] left-[60px] right-[60px] h-1.5 bg-slate-100 rounded-full" />
-                      <div className="absolute top-[68px] left-[60px] w-[30%] h-1.5 bg-blue-600 rounded-full" />
+                      <div 
+                        className={cn("absolute top-[68px] left-[60px] h-1.5 rounded-full transition-all duration-1000", isRejected ? "bg-red-400" : "bg-blue-600")} 
+                        style={{ width: `calc(${progressPercentage}% - ${progressPercentage > 0 ? '120px' : '0px'})`, minWidth: progressPercentage > 0 ? '20px' : '0' }}
+                      />
                       
                       <div className="flex justify-between items-center relative z-10">
                          {stages.map((s, i) => (
                            <div key={s} className="flex flex-col items-center gap-4">
                               <div className={cn(
-                                "w-14 h-14 rounded-full flex items-center justify-center border-4 border-white shadow-md transition-all",
-                                i < currentStageIdx ? "bg-emerald-500 text-white" : i === currentStageIdx ? "bg-blue-600 text-white" : "bg-white text-slate-200"
+                                "w-14 h-14 rounded-full flex items-center justify-center border-4 border-white shadow-md transition-all duration-700",
+                                i < currentStageIdx ? "bg-emerald-500 text-white" : 
+                                i === currentStageIdx ? (isRejected ? "bg-red-600 text-white" : "bg-blue-600 text-white animate-pulse") : 
+                                "bg-white text-slate-200"
                               )}>
-                                 {i < currentStageIdx ? <CheckCircle className="w-6 h-6" /> : <div className="w-2.5 h-2.5 rounded-full bg-current" />}
+                                 {i < currentStageIdx ? <CheckCircle className="w-6 h-6" /> : 
+                                  i === currentStageIdx && isRejected ? <XCircle className="w-6 h-6" /> :
+                                  <div className="w-2.5 h-2.5 rounded-full bg-current" />}
                               </div>
-                              <span className={cn("text-[10px] font-black uppercase tracking-widest", i === currentStageIdx ? "text-blue-600" : "text-slate-400")}>{s}</span>
+                              <span className={cn(
+                                "text-[10px] font-black uppercase tracking-widest transition-colors", 
+                                i === currentStageIdx ? (isRejected ? "text-red-600" : "text-blue-600") : "text-slate-400"
+                              )}>{s}</span>
                            </div>
                          ))}
                       </div>

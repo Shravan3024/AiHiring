@@ -597,23 +597,36 @@ exports.analyzeInterview = async (req, res) => {
     // Hybrid Rule: (ai_score * 0.7) + (similarityScore * 30)
     const hybridScore = Math.round((aiScore * 0.7) + (similarityScore * 30));
 
-    // Store interview analysis
-    const interviewAnalysis = await InterviewAnalysis.create({
-      application_id: applicationId,
-      interview_type: interviewType || 'technical',
+    // ── Helper: sanitise AI output to only valid DB-enum values ─────────
+    const toValidClarity = (v) => ['very_clear','clear','somewhat_clear','unclear'].includes(v) ? v : 'clear';
+    const toValidConfidence = (v) => ['high','medium','low'].includes(v) ? v : 'medium';
+    const toValidPace = (v) => ['fast','normal','slow'].includes(v) ? v : 'normal';
+    const toValidHesitation = (v) => ['high','medium','low'].includes(v) ? v : 'low';
+    const toValidVocabulary = (v) => ['advanced','intermediate','basic'].includes(v) ? v : 'intermediate';
+    const toValidPerformance = (v) => ['high','medium','low'].includes(v) ? v : 'medium';
+    const toValidTeamFit = (v) => ['good','fair','poor'].includes(v) ? v : 'good';
+    const toValidGrowth = (v) => ['fast','moderate','slow'].includes(v) ? v : 'moderate';
+    const toValidHireRec = (v) => ['strong_yes','yes','maybe','no','strong_no'].includes(v) ? v : 'maybe';
+    const toValidInterviewType = (v) => ['technical','hr','behavioral','system_design'].includes(v) ? v : 'technical';
+
+    // ── UPSERT: update existing record or create new one ────────────────
+    // application_id is UNIQUE — re-analyzing the same application must update, not insert
+    const aiPayload = {
+      interview_type: toValidInterviewType(interviewType),
       transcript: transcript.substring(0, 10000),
       qa_pairs: analysis.qa_analyses || [],
-      overall_score: hybridScore,
+      overall_score: Math.min(100, Math.max(0, hybridScore)),
       technical_knowledge_score: analysis.metrics?.technical_knowledge || Math.round(hybridScore * 0.8),
       problem_solving_score: analysis.metrics?.problem_solving || Math.round(hybridScore * 0.7),
       communication_score: analysis.metrics?.communication || Math.round(hybridScore * 0.9),
       soft_skills_score: analysis.metrics?.soft_skills || Math.round(hybridScore * 0.6),
       cultural_fit_score: analysis.metrics?.cultural_fit || Math.round(hybridScore * 0.5),
 
-      confidence_level: analysis.speaking_patterns?.confidence_level || 'moderate',
-      pace: analysis.speaking_patterns?.pace || 'steady',
-      clarity: analysis.speaking_patterns?.clarity || 'clear',
-      hesitation_level: analysis.speaking_patterns?.hesitation_level || 'low',
+      confidence_level: toValidConfidence(analysis.speaking_patterns?.confidence_level),
+      pace: toValidPace(analysis.speaking_patterns?.pace),
+      clarity: toValidClarity(analysis.speaking_patterns?.clarity),
+      hesitation_level: toValidHesitation(analysis.speaking_patterns?.hesitation_level),
+      vocabulary_level: toValidVocabulary(analysis.speaking_patterns?.vocabulary_level),
 
       answer_analyses: analysis.qa_analyses,
       strengths: analysis.overall_assessment?.key_takeaways || [],
@@ -621,15 +634,27 @@ exports.analyzeInterview = async (req, res) => {
       green_flags: analysis.green_flags || [],
       red_flags: analysis.red_flags || [],
 
-      predicted_on_job_performance: analysis.performance_prediction?.predicted_on_job_performance || 'strong',
-      time_to_productivity_months: analysis.performance_prediction?.time_to_productivity_months || 1,
-      retention_probability_percentage: analysis.performance_prediction?.retention_probability_percentage || 80,
+      predicted_on_job_performance: toValidPerformance(analysis.performance_prediction?.predicted_on_job_performance),
+      team_fit_assessment: toValidTeamFit(analysis.team_fit_assessment),
+      growth_trajectory: toValidGrowth(analysis.growth_trajectory),
+      // AI may return float strings like "7.00" — coerce to integer
+      time_to_productivity_months: Math.round(parseInt(analysis.performance_prediction?.time_to_productivity_months, 10) || 1),
+      retention_probability_percentage: parseFloat(analysis.performance_prediction?.retention_probability_percentage) || 80,
 
-      hire_recommendation: analysis.recommendation || 'maybe',
-      next_round_ready: analysis.overall_assessment?.next_round_readiness || false,
+      hire_recommendation: toValidHireRec(analysis.recommendation),
+      next_round_ready: !!analysis.overall_assessment?.next_round_readiness,
       detailed_evaluation: JSON.stringify(analysis),
       ai_model_used: 'gemini-2.0-flash-hybrid'
-    });
+    };
+
+    let interviewAnalysis = await InterviewAnalysis.findOne({ where: { application_id: applicationId } });
+    if (interviewAnalysis) {
+      await interviewAnalysis.update(aiPayload);
+      logger.info(`Updated existing InterviewAnalysis for application ${applicationId}`);
+    } else {
+      interviewAnalysis = await InterviewAnalysis.create({ application_id: applicationId, ...aiPayload });
+      logger.info(`Created new InterviewAnalysis for application ${applicationId}`);
+    }
 
     // Update application and core interview record
     await Application.update(
@@ -680,16 +705,43 @@ exports.analyzeInterview = async (req, res) => {
       const similarityScore = scoringService.calculateCosineSimilarity(transcript, "Technical skills, experience, and professional background");
       const fallbackScore = Math.round(similarityScore * 100);
 
-      const interviewAnalysis = await InterviewAnalysis.create({
-        application_id: applicationId,
-        interview_type: interviewType || 'technical',
-        overall_score: fallbackScore,
-        hire_recommendation: fallbackScore >= 60 ? 'hire' : 'reject',
-        strengths: ["Communication detected via ML sentiment mapping"],
-        weaknesses: ["AI deep-analysis unavailable"],
-        detailed_evaluation: "AI service unavailable. Scored using ML-based Cosine Similarity fallback.",
+      // Clamp fallback score to valid 0-100 range
+      const clampedFallbackScore = Math.min(100, Math.max(0, fallbackScore));
+
+      // ── UPSERT: avoid duplicate key on application_id UNIQUE constraint ──
+      const fallbackPayload = {
+        // DB constraint: interview_type IN ('technical','hr','behavioral','system_design')
+        interview_type: ['technical','hr','behavioral','system_design'].includes(interviewType) ? interviewType : 'technical',
+        overall_score: clampedFallbackScore,
+        technical_knowledge_score: clampedFallbackScore,
+        problem_solving_score: clampedFallbackScore,
+        communication_score: clampedFallbackScore,
+        soft_skills_score: clampedFallbackScore,
+        cultural_fit_score: clampedFallbackScore,
+        confidence_level: 'medium',
+        communication_style: 'professional',
+        pace: 'normal',
+        clarity: 'somewhat_clear',
+        hesitation_level: 'low',
+        vocabulary_level: 'intermediate',
+        predicted_on_job_performance: 'medium',
+        team_fit_assessment: 'good',
+        growth_trajectory: 'moderate',
+        hire_recommendation: 'maybe',
+        strengths: ['Communication detected via ML sentiment mapping'],
+        weaknesses: ['AI deep-analysis unavailable'],
+        detailed_evaluation: 'AI service unavailable. Scored using ML-based Cosine Similarity fallback.',
         ai_model_used: 'ml-fallback-similarity'
-      });
+      };
+
+      let interviewAnalysis = await InterviewAnalysis.findOne({ where: { application_id: applicationId } });
+      if (interviewAnalysis) {
+        await interviewAnalysis.update(fallbackPayload);
+        logger.info(`ML Fallback: Updated existing InterviewAnalysis for application ${applicationId}`);
+      } else {
+        interviewAnalysis = await InterviewAnalysis.create({ application_id: applicationId, ...fallbackPayload });
+        logger.info(`ML Fallback: Created new InterviewAnalysis for application ${applicationId}`);
+      }
 
       await Application.update({ interview_score: fallbackScore }, { where: { id: applicationId } });
 

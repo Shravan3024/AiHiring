@@ -250,22 +250,25 @@ export const generateInterviewReport = (data: {
     const qaSource = analysis.qa_pairs || session.answers_provided || [];
     const qaBody = qaSource.map((qa: any, idx: number) => [
       idx + 1,
-      qa.question || qa.question_text || `Question ${idx + 1}`,
+      { 
+        content: `${qa.question || qa.question_text || `Question ${idx + 1}`}\n\n[EXPECTED]: ${qa.expected_answer || qa.expectedAnswer || "N/A"}`,
+        styles: { fontStyle: 'normal' } 
+      },
       qa.answer || qa.candidate_response || "No response recorded"
     ]);
 
     autoTable(doc, {
       startY: 25,
-      head: [["#", "Interview Question", "Candidate Semantic Response"]],
+      head: [["#", "Interview Question & Gold Standard", "Candidate Semantic Response"]],
       body: qaBody,
-      theme: "plain",
-      headStyles: { fillColor: [241, 245, 249], textColor: [30, 41, 59], font: "times", fontStyle: "bold" },
+      theme: "grid",
+      headStyles: { fillColor: [29, 78, 216], font: "times", fontStyle: "bold" },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 90 },
-        2: { cellWidth: 80 }
+        1: { cellWidth: 110 },
+        2: { cellWidth: 60 }
       },
-      styles: { font: "times", fontSize: 9, overflow: 'linebreak' },
+      styles: { font: "times", fontSize: 9, overflow: 'linebreak', cellPadding: 4 },
       alternateRowStyles: { fillColor: [248, 250, 252] }
     });
   }

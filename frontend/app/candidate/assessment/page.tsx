@@ -37,6 +37,27 @@ export default function CandidateAssessmentHub() {
 
   const hasActiveAssessment = activeAssessments.length > 0;
 
+  // Dynamic logic for Banner Progress Bar
+  const getBannerStepIdx = () => {
+    if (apps.length === 0) return 0;
+    const s = apps[0].status?.toUpperCase() || "";
+    if (s.includes("INTERVIEW")) return 3;
+    if (s.includes("ASSESSMENT") || s.includes("TECHNICAL")) return 2;
+    if (s.includes("SCREENING") || s.includes("RESUME") || s.includes("EVALUATED") || s.includes("SHORTLISTED")) return 1;
+    return 0; // Applied
+  };
+
+  const bannerStepIdx = getBannerStepIdx();
+  const bannerPercentage = (bannerStepIdx / 3) * 100;
+  const currentStepLabel = ["Applied", "Screening", "Assessment", "Interview"][bannerStepIdx];
+
+  const steps = [
+    { label: "Applied", status: bannerStepIdx > 0 ? "completed" : bannerStepIdx === 0 ? "current" : "pending" },
+    { label: "Screening", status: bannerStepIdx > 1 ? "completed" : bannerStepIdx === 1 ? "current" : "pending" },
+    { label: "Assessment", status: bannerStepIdx > 2 ? "completed" : bannerStepIdx === 2 ? "current" : "pending" },
+    { label: "Interview", status: bannerStepIdx > 3 ? "completed" : bannerStepIdx === 3 ? "current" : "pending" },
+  ];
+
   if (isLoading) {
     return <div className="p-20 text-center animate-pulse text-slate-400 font-bold uppercase tracking-widest leading-relaxed">Analyzing Assessment Queue...</div>;
   }
@@ -49,27 +70,25 @@ export default function CandidateAssessmentHub() {
         <Card className="border-none shadow-sm rounded-[40px] bg-white p-10 overflow-hidden relative">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
             <div className="space-y-4 text-center md:text-left">
-              <h2 className="text-3xl font-bold text-slate-900 leading-tight">You are currently in the <br/><span className="text-blue-600">screening phase.</span></h2>
+              <h2 className="text-3xl font-bold text-slate-900 leading-tight">You are currently in the <br/><span className="text-blue-600 uppercase italic tracking-tighter">{currentStepLabel.toLowerCase()} phase.</span></h2>
               <p className="text-slate-500 font-medium">Once shortlisted, your assessment will be unlocked here.</p>
             </div>
             
             <div className="flex-1 max-w-xl w-full">
               <div className="relative pt-8 pb-4">
                  <div className="absolute top-[52px] left-0 right-0 h-1 bg-slate-100 rounded-full" />
-                 <div className="absolute top-[52px] left-0 w-[40%] h-1 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]" />
+                 <div 
+                   className="absolute top-[52px] left-0 h-1 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)] transition-all duration-1000" 
+                   style={{ width: `${bannerPercentage}%` }}
+                 />
                  
                  <div className="flex justify-between items-center relative z-10">
-                   {[
-                     { label: "Applied", status: "completed" },
-                     { label: "Screening", status: "current" },
-                     { label: "Assessment", status: "pending" },
-                     { label: "Interview", status: "pending" },
-                   ].map((step, i) => (
+                   {steps.map((step, i) => (
                      <div key={i} className="flex flex-col items-center gap-4">
                        <div className={cn(
-                         "w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-md transition-all duration-500",
+                         "w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-md transition-all duration-700",
                          step.status === "completed" ? "bg-emerald-500 text-white" :
-                         step.status === "current" ? "bg-blue-600 text-white" :
+                         step.status === "current" ? "bg-blue-600 text-white animate-pulse" :
                          "bg-white text-slate-300 border-slate-50"
                        )}>
                          {step.status === "completed" ? <CheckCircle className="w-5 h-5" /> : 
@@ -77,8 +96,8 @@ export default function CandidateAssessmentHub() {
                           <div className="w-2 h-2 rounded-full bg-slate-200" />}
                        </div>
                        <span className={cn(
-                         "text-[10px] font-bold uppercase tracking-widest",
-                         step.status === "completed" ? "text-slate-400" :
+                         "text-[10px] font-bold uppercase tracking-widest transition-colors duration-500",
+                         step.status === "completed" ? "text-emerald-500" :
                          step.status === "current" ? "text-blue-600" :
                          "text-slate-300"
                        )}>{step.label}</span>
@@ -108,7 +127,7 @@ export default function CandidateAssessmentHub() {
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
                         <Badge className="bg-blue-50 text-blue-600 border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest">Technical Round</Badge>
-                        <h3 className="text-2xl font-bold text-slate-900 pt-1">{app.job_title}</h3>
+                        <h3 className="text-2xl font-bold text-slate-900 pt-1">{app.job_title || app.jobId?.title}</h3>
                         <p className="text-slate-500 font-medium text-sm">Application ID: #APP-{String(app.id).slice(-6).toUpperCase()}</p>
                       </div>
                       <div className="text-right">
@@ -162,7 +181,10 @@ export default function CandidateAssessmentHub() {
           </div>
           <h4 className="text-xl font-bold text-slate-900">Prepare for Assessment</h4>
           <p className="text-slate-500 text-sm mt-4 leading-relaxed px-4">Our assessments evaluate both technical skills and problem-solving abilities. Stay prepared!</p>
-          <Button variant="link" className="text-emerald-600 font-bold mt-6">View Sample Questions <ArrowRight className="ml-2 w-4 h-4" /></Button>
+          <Button variant="link" className="text-emerald-600 font-bold mt-6" onClick={() => {
+             const { toast } = require("sonner");
+             toast.info("Sample questions are being curated by our AI. Check back soon!");
+          }}>View Sample Questions <ArrowRight className="ml-2 w-4 h-4" /></Button>
         </Card>
 
         <Card className="border-none shadow-sm rounded-[32px] bg-white p-8 flex flex-col items-center text-center group hover:shadow-md transition-all">
@@ -171,7 +193,10 @@ export default function CandidateAssessmentHub() {
           </div>
           <h4 className="text-xl font-bold text-slate-900">Fair & Transparent</h4>
           <p className="text-slate-500 text-sm mt-4 leading-relaxed px-4">We use unbiased AI models to ensure every candidate gets a fair shot at their dream role.</p>
-          <Button variant="link" className="text-purple-600 font-bold mt-6">Learn About Our Process <ArrowRight className="ml-2 w-4 h-4" /></Button>
+          <Button variant="link" className="text-purple-600 font-bold mt-6" onClick={() => {
+             const { toast } = require("sonner");
+             toast.info("Our process transparency guide is being updated. Stay tuned!");
+          }}>Learn About Our Process <ArrowRight className="ml-2 w-4 h-4" /></Button>
         </Card>
       </div>
 
@@ -186,7 +211,13 @@ export default function CandidateAssessmentHub() {
               <p className="text-blue-100 mt-2 font-medium">Read our expert guide on how to perform best in technical evaluations.</p>
             </div>
           </div>
-          <Button className="bg-white text-blue-600 hover:bg-blue-50 h-12 px-10 rounded-xl font-bold shadow-lg shadow-blue-900/20">
+          <Button 
+            className="bg-white text-blue-600 hover:bg-blue-50 h-12 px-10 rounded-xl font-bold shadow-lg shadow-blue-900/20"
+            onClick={() => {
+              const { toast } = require("sonner");
+              toast.info("Assessment guide is currently being finalized. You'll receive a notification once it's live!");
+            }}
+          >
             Read Guide
           </Button>
         </div>

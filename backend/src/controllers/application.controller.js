@@ -437,6 +437,45 @@ exports.checkAndTriggerAutoRejection = async (applicationId, logger = console) =
       await t.commit();
       logger?.info(`[Auto-Rejection] ✅ Status updated to: ${newStatus} with score: ${finalScore}`);
 
+      // 📢 QUEUE NOTIFICATION (Asynchronous via worker)
+      try {
+        const { NotificationQueue, Candidate, User, Job } = require("../models");
+        const appWithUser = await Application.findByPk(applicationId, {
+          include: [{ model: Candidate, include: [User] }, { model: Job }]
+        });
+
+        if (appWithUser && appWithUser.Candidate) {
+          let title = "Application Update";
+          let message = "Your application status has been updated. Please check the portal.";
+          let type = "OTHER";
+
+          if (newStatus === 'RECOMMENDED_BY_AI') {
+            title = "Great News! Recommended for next stage";
+            message = `Congratulations! Your assessment performance for ${appWithUser.Job?.title} has been rated as Strong. Our team will review your dossier shortly.`;
+            type = "RECOMMENDATION";
+          } else if (newStatus === 'PROCEED_TO_HR') {
+            title = "Assessment Completed - Under Review";
+            message = `Thank you for completing the assessments for ${appWithUser.Job?.title}. Your results are being reviewed by our recruitment team.`;
+          }
+
+          await NotificationQueue.create({
+            candidate_id: appWithUser.Candidate.id,
+            application_id: applicationId,
+            notification_type: type,
+            title,
+            message,
+            status: 'PENDING',
+            metadata: {
+              jobTitle: appWithUser.Job?.title,
+              finalScore: finalScore,
+              candidateName: appWithUser.Candidate.User?.name
+            }
+          });
+        }
+      } catch (notifyErr) {
+        logger?.error(`[Auto-Rejection] Failed to queue notification: ${notifyErr.message}`);
+      }
+
     } catch (dbError) {
       await t.rollback();
       logger?.error(`[Auto-Rejection] Database error: ${dbError.message}`);

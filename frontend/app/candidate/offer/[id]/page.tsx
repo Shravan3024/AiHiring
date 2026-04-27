@@ -25,14 +25,27 @@ export default function OfferLetterPage() {
   const { setPageTitle } = useUIStore();
   const [notes, setNotes] = useState("");
 
-  useEffect(() => {
-    setPageTitle("Job Offer");
-  }, []);
-
   const { data: offerData, isLoading, error } = useQuery({
     queryKey: ["offer-details", applicationId],
     queryFn: () => candidateApi.getOfferDetails(applicationId).then((r: any) => r.data),
   });
+
+  useEffect(() => {
+    setPageTitle("Job Offer");
+  }, []);
+
+  // Auto-trigger print if requested via query param
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('print') === 'true' && offerData?.offer) {
+       const timer = setTimeout(() => {
+          window.print();
+          // Clean up the URL to prevent re-printing on manual refresh
+          window.history.replaceState({}, '', window.location.pathname);
+       }, 1200); // Slight delay to ensure content is painted
+       return () => clearTimeout(timer);
+    }
+  }, [offerData]);
 
   const mutation = useMutation({
     mutationFn: (decision: string) => 
@@ -76,9 +89,9 @@ export default function OfferLetterPage() {
         </Button>
         <div className="flex gap-4">
            {isResponded && offer.status === "ACCEPTED" && (
-             <Button variant="outline" onClick={() => window.print()} className="h-12 px-6 rounded-xl font-bold gap-2 border-slate-200">
-                <Printer className="w-4 h-4" /> Print Offer
-             </Button>
+              <Button variant="outline" onClick={() => router.push(`/print-offer/${applicationId}`)} className="h-12 px-6 rounded-xl font-bold gap-2 border-slate-200">
+                 <Printer className="w-4 h-4" /> Print Offer
+              </Button>
            )}
         </div>
       </div>
@@ -107,21 +120,20 @@ export default function OfferLetterPage() {
              <div className="absolute top-0 right-0 p-12 opacity-10"><ShieldCheck className="w-48 h-48" /></div>
            </Card>
 
-           {/* Letter Card */}
-           <Card className="border-none shadow-sm rounded-[40px] bg-white overflow-hidden">
-             <div className="p-10 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
-                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                   <FileCheck className="w-6 h-6 text-blue-600" /> Offer of Employment
-                </h3>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document ID: #OFF-{applicationId.slice(-6).toUpperCase()}</p>
-             </div>
-             <div className="p-10 lg:p-14">
-                <div 
-                   className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-h4:text-slate-900"
-                   dangerouslySetInnerHTML={{ __html: offer.offer_letter_content }} 
-                />
-             </div>
-           </Card>
+            <Card id="printable-offer" className="border-none shadow-sm rounded-[40px] bg-white overflow-hidden">
+              <div className="p-10 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between no-print">
+                 <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                    <FileCheck className="w-6 h-6 text-blue-600" /> Offer of Employment
+                 </h3>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document ID: #OFF-${applicationId.slice(-6).toUpperCase()}</p>
+              </div>
+              <div className="p-10 lg:p-14">
+                 <div 
+                    className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-h4:text-slate-900"
+                    dangerouslySetInnerHTML={{ __html: offer.offer_letter_content }} 
+                 />
+              </div>
+            </Card>
         </div>
 
         <div className="lg:col-span-4 space-y-10">
@@ -207,9 +219,9 @@ export default function OfferLetterPage() {
                    </p>
                 </div>
                 {offer.status === "ACCEPTED" && (
-                   <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-emerald-200 text-emerald-700 bg-white" onClick={() => window.print()}>
-                      <Download className="w-4 h-4 mr-2" /> Download Copy
-                   </Button>
+                    <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-emerald-200 text-emerald-700 bg-white" onClick={() => router.push(`/print-offer/${applicationId}`)}>
+                       <Download className="w-4 h-4 mr-2" /> Download Copy
+                    </Button>
                 )}
              </Card>
            )}

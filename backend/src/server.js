@@ -23,6 +23,10 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: Production (Supabase)`);
+
+      // Start Background Workers
+      const notificationWorker = require("./workers/notification.worker");
+      notificationWorker.start();
     });
 
   } catch (error) {

@@ -77,19 +77,19 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING, // Changed from ENUM
       },
       strengths: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       weaknesses: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       key_takeaways: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       green_flags: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       red_flags: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       predicted_on_job_performance: {
         type: DataTypes.STRING, // Changed from ENUM
@@ -110,10 +110,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING, // Changed from ENUM
       },
       follow_up_questions: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       further_discussion_topics: {
-        type: DataTypes.JSON, // Changed from ARRAY
+        type: DataTypes.ARRAY(DataTypes.STRING),
       },
       hire_recommendation: {
         type: DataTypes.STRING, // Changed from ENUM
@@ -132,7 +132,7 @@ module.exports = (sequelize) => {
       },
       ai_model_used: {
         type: DataTypes.STRING,
-        defaultValue: "gemini-2.5-flash-latest",
+        defaultValue: "gemini-1.5-flash-latest",
       },
       analysis_timestamp: {
         type: DataTypes.DATE,

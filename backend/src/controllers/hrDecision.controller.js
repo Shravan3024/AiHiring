@@ -1,7 +1,7 @@
 const {
   Application, Candidate, User,
   Notification, ApplicationStatusLog, NotificationQueue, AssessmentAttempt,
-  InterviewSession, InterviewAnalysis, MalpracticeEvent, Job
+  InterviewSession, InterviewAnalysis, MalpracticeEvent, Job, Offer
 } = require('../models');
 const { Op } = require('sequelize');
 const auditLogger = require('../services/auditLogger.service');
@@ -85,13 +85,54 @@ class HRDecisionController {
            });
         } catch (_) {}
       }
-
       if (decision === 'REQUEST_RE_ASSESSMENT') {
         application.technical_score = null;
         await AssessmentAttempt.update(
           { status: 'NOT_STARTED', score: null, answers: null, submitted_at: null },
           { where: { application_id: applicationId } }
         );
+      }
+      
+      // Handle Offer record creation for SEND_OFFER
+      if (decision === 'SEND_OFFER') {
+        const { OfferTemplate } = require('../models');
+        const latestTemplate = await OfferTemplate.findOne({ order: [['createdAt', 'DESC']] });
+        
+        let templateContent = latestTemplate?.templateContent || `
+          <div style="font-family: 'Times New Roman', serif; line-height: 1.5; color: #000;">
+            <h2 style="text-align: center;">OFFER OF EMPLOYMENT</h2>
+            <p>Dear {{candidateName}},</p>
+            <p>We are pleased to offer you the position of <strong>{{jobTitle}}</strong> at Mask Polymers.</p>
+            <p><strong>Salary:</strong> {{salary}}</p>
+            <p><strong>Joining Date:</strong> {{joiningDate}}</p>
+            <p>We look forward to having you join our team.</p>
+            <p>Sincerely,<br/>HR Department</p>
+          </div>
+        `;
+
+        // Replace Placeholders
+        const candidateName = application.Candidate?.User?.name || 'Candidate';
+        const jobTitle = req.body.designation || application.Job?.title || 'Professional';
+        const salaryVal = `₹${(req.body.salary || 1000000).toLocaleString()}`;
+        const joiningDateVal = new Date(req.body.joining_date || Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+
+        templateContent = templateContent
+          .replace(/{{candidateName}}/g, candidateName)
+          .replace(/{{jobTitle}}/g, jobTitle)
+          .replace(/{{salary}}/g, salaryVal)
+          .replace(/{{joiningDate}}/g, joiningDateVal);
+
+        // Delete existing offers for this application to avoid duplicates
+        await Offer.destroy({ where: { application_id: applicationId } });
+        
+        await Offer.create({
+          application_id: applicationId,
+          salary: req.body.salary || 1000000,
+          joining_date: req.body.joining_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          position_title: jobTitle,
+          status: "PENDING",
+          offer_letter_content: templateContent
+        });
       }
 
       // Aggregate Score if moving to final
@@ -148,9 +189,18 @@ class HRDecisionController {
             notification_type: config?.type || 'OTHER',
             title: config?.title || 'Status Update',
             message: config?.msg || 'Your application status has been updated.',
-            status: 'PENDING'
+            status: 'PENDING',
+            metadata: {
+              jobTitle: application.Job?.title,
+              candidateName: application.Candidate?.User?.name,
+              salary: req.body.salary || 1000000,
+              joining_date: req.body.joining_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              position: req.body.designation || application.Job?.title
+            }
           });
-        } catch (_) {}
+        } catch (err) {
+          console.error("Failed to queue notification:", err.message);
+        }
       }
 
       return res.status(200).json({

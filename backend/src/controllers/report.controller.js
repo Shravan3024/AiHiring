@@ -159,12 +159,64 @@ exports.generateCandidateReport = async (req, res) => {
 
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
-    // Questions
+    // 1. Fetch Questions from ALL potential banks
     let questions = [];
     const questionIds = attempt?.metadata?.question_ids || [];
+    
     if (questionIds.length > 0) {
-      questions = await TechnicalQuestionBank.findAll({ where: { questionId: questionIds } });
-      questions.sort((a, b) => questionIds.indexOf(a.questionId) - questionIds.indexOf(b.questionId));
+      const { MCQQuestion, InterviewQuestionBank } = require('../models');
+      
+      // Fetch from Technical Bank
+      const techQ = await TechnicalQuestionBank.findAll({ 
+        where: { questionId: questionIds } 
+      });
+      
+      // Fetch from MCQ Bank (numeric IDs)
+      const mcqIds = questionIds.filter(id => !isNaN(parseInt(id, 10)));
+      let mcqQ = [];
+      if (mcqIds.length > 0) {
+        mcqQ = await MCQQuestion.findAll({
+          where: { id: { [Op.in]: mcqIds.map(id => parseInt(id, 10)) } }
+        });
+      }
+      
+      // Fetch from Interview Bank
+      const intQ = await InterviewQuestionBank.findAll({
+        where: { questionId: { [Op.in]: questionIds } }
+      });
+      
+      // Merge and standardize
+      const allFetched = [
+        ...techQ.map(q => ({
+          questionId: q.questionId,
+          question: q.question,
+          correct_answer: q.correct_answer || q.expected_answer,
+          difficulty: q.difficulty,
+          section_type: q.section_type || 'TECHNICAL',
+          keywords: q.keywords
+        })),
+        ...mcqQ.map(q => ({
+          questionId: String(q.id),
+          question: q.question,
+          correct_answer: q.correct_option,
+          difficulty: 'MEDIUM',
+          section_type: 'MCQ',
+          keywords: []
+        })),
+        ...intQ.map(q => ({
+          questionId: q.questionId,
+          question: q.question,
+          correct_answer: q.expectedAnswer,
+          difficulty: q.difficulty,
+          section_type: 'INTERVIEW',
+          keywords: q.keywords
+        }))
+      ];
+      
+      // Sort to match metadata order
+      questions = allFetched.sort((a, b) => 
+        questionIds.indexOf(String(a.questionId)) - questionIds.indexOf(String(b.questionId))
+      );
     }
 
     // Answer helper
@@ -851,9 +903,16 @@ exports.generateInterviewReport = async (req, res) => {
 exports.generateExecutiveReport = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const application = await Application.findByPk(applicationId, {
-      include: [{ model: Candidate, include: [User] }, { model: Job }]
-    });
+    const [application, analysis, session] = await Promise.all([
+      Application.findByPk(applicationId, {
+        include: [{ model: Candidate, include: [User] }, { model: Job }]
+      }),
+      InterviewAnalysis.findOne({ where: { application_id: applicationId } }),
+      InterviewSession.findOne({ 
+        where: { application_id: applicationId },
+        order: [['created_at', 'DESC']]
+      })
+    ]);
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
     const name = application.Candidate?.User?.name || 'N/A';
@@ -885,6 +944,63 @@ exports.generateExecutiveReport = async (req, res) => {
     scoreCard(doc, MARGIN + (cw+6)*2,   matY, cw, 'Integrity',  application.integrity_score || 0);
     scoreCard(doc, MARGIN + (cw+6)*3,   matY, cw, 'Success Prob',
       Math.round((application.success_probability || 0) * 100));
+    doc.moveDown(5.5);
+
+    // ── Phase 5 Interview Highlights ──────────────────
+    if (analysis) {
+      section(doc, 'Phase 5: AI Interview Intelligence');
+      infoRow(doc, 'Hire Recommendation', analysis.hire_recommendation || 'MAYBE');
+      infoRow(doc, 'Rating', analysis.rating || 'N/A');
+      
+      if (analysis.strengths && analysis.strengths.length > 0) {
+        doc.moveDown(0.5);
+        doc.fillColor(C.green).font('Times-Bold').fontSize(8).text('KEY STRENGTHS:', MARGIN);
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(analysis.strengths.join(', '), MARGIN + 100, doc.y - 8, { width: CONTENT - 100 });
+      }
+      
+      if (analysis.weaknesses && analysis.weaknesses.length > 0) {
+        doc.moveDown(0.5);
+        doc.fillColor(C.red).font('Times-Bold').fontSize(8).text('AREAS OF CONCERN:', MARGIN);
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(analysis.weaknesses.join(', '), MARGIN + 100, doc.y - 8, { width: CONTENT - 100 });
+      }
+
+      if (analysis.detailed_evaluation) {
+        doc.moveDown(1);
+        doc.rect(MARGIN, doc.y, CONTENT, 40).fill(C.light).stroke(C.border);
+        doc.fillColor(C.muted).font('Times-Italic').fontSize(7.5).text('INTERVIEW SUMMARY:', MARGIN + 8, doc.y + 6);
+        doc.fillColor(C.text).font('Times-Roman').fontSize(8).text(analysis.detailed_evaluation.substring(0, 300) + '...', MARGIN + 8, doc.y + 4, { width: CONTENT - 16 });
+      }
+
+      // ── Full Q&A Transcript Section ──────────────────
+      const qa = analysis.qa_pairs || session?.questions_asked || [];
+      if (Array.isArray(qa) && qa.length > 0) {
+        doc.addPage();
+        drawHeader(doc, 'INTERVIEW Q&A TRANSCRIPT', name, applicationId);
+        section(doc, 'Phase 5: Full Interview Interaction');
+        
+        qa.forEach((pair, i) => {
+          if (doc.y > 650) {
+             doc.addPage();
+             drawHeader(doc, 'INTERVIEW Q&A TRANSCRIPT', name, applicationId);
+          }
+          
+          const questionText = pair.question_text || pair.question || `Question ${i+1}`;
+          const answerText   = pair.answer_text || pair.response_text || 'No verbal response recorded.';
+          
+          doc.fillColor(C.accent).font('Times-Bold').fontSize(8.5).text(`Q${i+1}: ${questionText}`, MARGIN);
+          doc.moveDown(0.2);
+          doc.fillColor(C.subtext).font('Times-Roman').fontSize(8.5).text(`A: ${answerText}`, MARGIN + 12, doc.y, { width: CONTENT - 12 });
+          
+          if (pair.relevance_score !== undefined) {
+             doc.fillColor(C.muted).font('Times-Italic').fontSize(7)
+               .text(`AI Relevance Score: ${pair.relevance_score}/10 | Logic Match: ${pair.logic_score || 'N/A'}`, MARGIN + 12, doc.y + 2);
+          }
+          
+          doc.moveDown(1);
+          rule(doc);
+        });
+      }
+    }
 
     doc.end();
   } catch (err) {

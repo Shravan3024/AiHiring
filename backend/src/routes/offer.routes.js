@@ -10,6 +10,30 @@ const {
   getOfferDetails
 } = require("../controllers/offer.controller");
 
+const templateController = require("../controllers/offerTemplate.controller");
+
+/* Template Management */
+router.get(
+  "/templates",
+  authMiddleware,
+  roleMiddleware(["HR", "ADMIN"]),
+  templateController.getTemplates
+);
+
+router.post(
+  "/templates",
+  authMiddleware,
+  roleMiddleware(["HR", "ADMIN"]),
+  templateController.createTemplate
+);
+
+router.put(
+  "/templates/:id",
+  authMiddleware,
+  roleMiddleware(["HR", "ADMIN"]),
+  templateController.updateTemplate
+);
+
 /* HR/Admin creates offer */
 router.post(
   "/create",

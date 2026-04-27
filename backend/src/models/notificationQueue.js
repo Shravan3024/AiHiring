@@ -28,6 +28,7 @@ module.exports = (sequelize) => {
         "INTERVIEW_COMPLETED",
         "OFFER_LETTER_READY",
         "REJECTION",
+        "RECOMMENDATION",
         "OTHER"
       ),
       allowNull: false
@@ -64,6 +65,11 @@ module.exports = (sequelize) => {
     retry_count: {
       type: DataTypes.INTEGER,
       defaultValue: 0
+    },
+    metadata: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: "Additional data for email templates (e.g. salary, position)"
     },
     error_message: {
       type: DataTypes.TEXT,

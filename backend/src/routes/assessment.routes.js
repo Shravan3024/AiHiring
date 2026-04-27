@@ -65,6 +65,12 @@ router.post(
 );
 
 // ==================== HR/ADMIN ROUTES ====================
+router.post(
+  '/analyze/:applicationId',
+  authMiddleware,
+  roleMiddleware(['HR', 'MD', 'ADMIN']),
+  assessmentController.analyzeAssessment
+);
 
 // TODO: reEvaluateAssessment method not yet implemented in assessment controller
 // /**
