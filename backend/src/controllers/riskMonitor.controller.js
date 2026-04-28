@@ -53,7 +53,14 @@ class RiskMonitorController {
       }
 
       if (stage !== "All") {
-        appWhere.status = stage;
+        // Map human-readable stage to actual DB status enums
+        const stageMap = {
+          'Sourcing': ['APPLIED', 'RESUME_SUBMITTED'],
+          'Assessment': ['TECHNICAL_ROUND_PENDING', 'TECHNICAL_ROUND_IN_PROGRESS', 'TECHNICAL_ROUND_COMPLETED', 'ASSESSMENT_UNLOCKED'],
+          'Interview': ['INTERVIEW_UNLOCKED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_IN_PROGRESS', 'INTERVIEW_COMPLETED'],
+          'Review': ['HR_REVIEW', 'PROCEED_TO_HR', 'RECOMMENDED_BY_AI']
+        };
+        appWhere.status = stageMap[stage] || stage;
       }
 
       // Filter by Risk Type (Mapped to Malpractice Event Types or Scores)

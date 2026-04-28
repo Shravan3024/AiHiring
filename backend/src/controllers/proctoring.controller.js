@@ -3,7 +3,7 @@
  * Real-time exam monitoring and behavioral analysis
  */
 
-const { Application, AssessmentAttempt, User, ApplicationStatusLog, MalpracticeEvent, Candidate, Job } = require('../models');
+const { Application, AssessmentAttempt, User, ApplicationStatusLog, MalpracticeEvent, Candidate, Job, InterviewSession } = require('../models');
 const { BehavioralAnalyzer, AnomalyDetector, IntegrityValidator } = require('../utils/proctoring.utils');
 const { sendEmail } = require('../utils/emailService');
 const crypto = require('crypto');
@@ -558,25 +558,41 @@ class ProctoringController {
   static async logMalpractice(req, res) {
     try {
       const { application_id, type, meta, severity, reference_id, referenceId } = req.body;
-      const targetAppId = application_id || reference_id || referenceId;
+      const targetId = application_id || reference_id || referenceId;
       const candidateId = req.candidate?.id;
 
-      if (!targetAppId || !type) {
+      if (!targetId || !type) {
         return res.status(400).json({ success: false, message: 'application_id/reference_id and type are required' });
       }
 
-      // Verify application belongs to candidate (if not internal or if candidateId is present)
-      const app = await Application.findByPk(targetAppId);
+      // Resolve application_id if targetId is a session/attempt ID
+      let resolvedAppId = targetId;
+      
+      // Check if it's an InterviewSession ID
+      const interviewSession = await InterviewSession.findByPk(targetId);
+      if (interviewSession) {
+        resolvedAppId = interviewSession.application_id;
+      } else {
+        // Check if it's an AssessmentAttempt ID
+        const assessmentAttempt = await AssessmentAttempt.findByPk(targetId);
+        if (assessmentAttempt) {
+          resolvedAppId = assessmentAttempt.application_id;
+        }
+      }
+
+      // Verify application belongs to candidate
+      const app = await Application.findByPk(resolvedAppId);
       if (!app || (candidateId && app.candidate_id !== candidateId)) {
-        return res.status(403).json({ success: false, message: 'Unauthorized' });
+        return res.status(403).json({ success: false, message: 'Unauthorized or application not found' });
       }
 
       const event = await MalpracticeEvent.create({
-        application_id: targetAppId,
+        application_id: resolvedAppId,
         type,
         meta: { 
           ...meta, 
-          reference_id: targetAppId
+          reference_id: targetId,
+          timestamp: new Date()
         },
         severity: severity || 1
       });

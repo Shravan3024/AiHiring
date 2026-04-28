@@ -257,7 +257,20 @@ exports.submitAssessment = async (req, res) => {
       reason: 'Candidate submitted assessment'
     });
 
-    res.json({ success: true, message: "Assessment submitted successfully. HR will analyze your results soon." });
+    res.json({ success: true, message: "Assessment submitted successfully. AI analysis is running in the background." });
+
+    // ========== ASYNC AUTO-ANALYSIS TRIGGER (NON-BLOCKING) ==========
+    setImmediate(async () => {
+      try {
+        logger.info(`[Auto-Analysis] Triggering background evaluation for app ${application.id}`);
+        // We call the internal analysis logic directly
+        const mockReq = { params: { applicationId: application.id } };
+        const mockRes = { json: (data) => logger.info(`[Auto-Analysis] Completed for app ${application.id}: ${JSON.stringify(data)}`), status: () => mockRes };
+        await exports.analyzeAssessment(mockReq, mockRes);
+      } catch (err) {
+        logger.error(`[Auto-Analysis] Background evaluation failed for app ${application.id}: ${err.message}`);
+      }
+    });
 
   } catch (error) {
     logger.error('Submit error:', error);

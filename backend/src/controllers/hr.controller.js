@@ -7,7 +7,8 @@ const {
   User,
   MCQTest,
   AssessmentAttempt,
-  AssessmentAnalysis
+  AssessmentAnalysis,
+  InterviewSession
 } = require("../models");
 const emailService = require("../services/email.service");
 
@@ -43,17 +44,39 @@ exports.getAllApplications = async (req, res) => {
           where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
           include: [User] 
         },
-        { 
-          model: Job,
-          where: Object.keys(jobWhere).length > 0 ? jobWhere : undefined
-        },
-        { model: TechnicalRound }
+        { model: Job, where: Object.keys(jobWhere).length > 0 ? jobWhere : undefined },
+        { model: TechnicalRound, attributes: ['score'] },
+        { model: AssessmentAnalysis, attributes: ['overall_score'] },
+        { model: InterviewSession, as: 'interview_session', attributes: ['overall_score'] }
       ],
       order: [["created_at", "DESC"]]
     });
 
-    const mapped = applications.map(app => {
+    const { computeApplicationScore } = require('../utils/applicationStatus.utils');
+    
+    // Deduplicate applications by ID to prevent React duplicate key errors
+    const uniqueApplications = [];
+    const seenIds = new Set();
+    
+    for (const app of applications) {
+      if (!seenIds.has(app.id)) {
+        uniqueApplications.push(app);
+        seenIds.add(app.id);
+      }
+    }
+
+    const mapped = uniqueApplications.map(app => {
       const j = app.toJSON();
+      
+      // Calculate real-time aggregate score using all available data
+      const realTimeScore = computeApplicationScore({
+        overallScore: j.overall_score,
+        resumeScore: j.resume_score,
+        technicalScore: j.TechnicalRound?.score || j.AssessmentAnalysis?.overall_score || j.technical_score,
+        interviewScore: j.interview_session?.overall_score || j.interview_score,
+        malpracticeWarnings: j.malpractice_warnings || 0
+      });
+
       return {
         ...j,
         _id: String(j.id),
@@ -70,7 +93,7 @@ exports.getAllApplications = async (req, res) => {
           department: j.Job.department,
         } : j.job_id,
         stage: j.status,
-        aiScore: j.overall_score,
+        aiScore: realTimeScore, // Using real-time calculated score
         appliedAt: j.applied_at,
         createdAt: j.created_at,
         updatedAt: j.updated_at,

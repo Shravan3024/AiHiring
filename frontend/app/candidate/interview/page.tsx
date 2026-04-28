@@ -42,8 +42,12 @@ export default function CandidateInterview() {
   const [mediaError, setMediaError] = useState<"PERMISSION_DENIED" | "DEVICE_NOT_FOUND" | "UNKNOWN_ERROR" | null>(null);
   const [currentEmotion, setCurrentEmotion] = useState("Neutral");
   const [proctoringScore, setProctoringScore] = useState(100);
+  const [isWindowFocused, setIsWindowFocused] = useState(true);
+  const [proctoringAlert, setProctoringAlert] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const multipleFacesCount = useRef(0);
+  const noFaceCount = useRef(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -104,6 +108,16 @@ export default function CandidateInterview() {
       }
     };
 
+    const handleBlur = () => {
+      if (started && !completed) {
+        setIsWindowFocused(false);
+        setWarningCount(v => v + 1);
+        logMalpracticeMutation.mutate({ type: "WINDOW_UNFOCUSED", meta: { timestamp: new Date(), question: currentQ + 1 } });
+      }
+    };
+
+    const handleFocus = () => setIsWindowFocused(true);
+
     const blockAction = (e: Event) => {
         if (started && !completed) {
           e.preventDefault();
@@ -120,6 +134,8 @@ export default function CandidateInterview() {
 
     document.addEventListener("fullscreenchange", handleFSChange);
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     document.addEventListener("copy", blockAction);
     document.addEventListener("paste", blockAction);
     document.addEventListener("contextmenu", blockAction);
@@ -128,6 +144,8 @@ export default function CandidateInterview() {
     return () => {
       document.removeEventListener("fullscreenchange", handleFSChange);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       document.removeEventListener("copy", blockAction);
       document.removeEventListener("paste", blockAction);
       document.removeEventListener("contextmenu", blockAction);
@@ -142,6 +160,20 @@ export default function CandidateInterview() {
     let interval: NodeJS.Timeout;
     let noiseCounter = 0;
 
+    const captureSnapshot = () => {
+      if (videoRef.current && videoRef.current.readyState === 4) {
+        const canvas = document.createElement("canvas");
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          return canvas.toDataURL("image/jpeg", 0.6);
+        }
+      }
+      return null;
+    };
+
     const runMonitoring = async () => {
       const faceapi = (window as any).faceapi;
       if (faceapi && faceApiLoaded.current && videoRef.current && videoRef.current.readyState === 4) {
@@ -152,20 +184,37 @@ export default function CandidateInterview() {
           ).withFaceLandmarks().withFaceExpressions();
 
           if (results.length > 1) {
-            setFaceDetectionStatus(`WARNING: ${results.length} People Detected`);
-            logMalpracticeMutation.mutate({ 
-              type: "MULTIPLE_PERSONS_DETECTED", 
-              meta: { count: results.length, timestamp: new Date() } 
-            });
-            toast.error("Multiple people detected in frame!");
+            multipleFacesCount.current += 1;
+            if (multipleFacesCount.current > 3) {
+              setFaceDetectionStatus(`WARNING: ${results.length} People Detected`);
+              setProctoringAlert("Multiple people detected in frame! Screen blurred for security.");
+              logMalpracticeMutation.mutate({ 
+                type: "MULTIPLE_PERSONS_DETECTED", 
+                meta: { 
+                  count: results.length, 
+                  timestamp: new Date(),
+                  image: captureSnapshot()
+                } 
+              });
+            }
           } else if (results.length === 0) {
-            setFaceDetectionStatus("CRITICAL: Face Not Found");
-            logMalpracticeMutation.mutate({ 
-              type: "FACE_NOT_VISIBLE", 
-              meta: { timestamp: new Date() } 
-            });
-            toast.warning("Please stay visible to the camera.");
+            noFaceCount.current += 1;
+            if (noFaceCount.current > 5) {
+              setFaceDetectionStatus("CRITICAL: Face Not Found");
+              setProctoringAlert("Face not visible! Please stay in the camera frame.");
+              logMalpracticeMutation.mutate({ 
+                type: "FACE_NOT_VISIBLE", 
+                meta: { 
+                  timestamp: new Date(),
+                  image: captureSnapshot()
+                } 
+              });
+            }
           } else {
+            multipleFacesCount.current = 0;
+            noFaceCount.current = 0;
+            setProctoringAlert(null);
+            
             const data = results[0];
             const landmarks = data.landmarks;
             const expressions = data.expressions;
@@ -385,9 +434,17 @@ export default function CandidateInterview() {
     };
     recognition.onerror = (e: any) => {
       // 'aborted' usually happens when we intentionally stop speech, ignore it to reduce log noise
-      if (e.error === 'aborted') return;
+      // 'no-speech' happens when there is silence, which is common
+      if (e.error === 'aborted' || e.error === 'no-speech') return;
       
-      console.error("Speech Recognition Error", e);
+      if (e.error === 'network') {
+        console.warn("Speech Recognition Network Error");
+        toast.warning("Speech recognition network error. Please check your connection.");
+        setListening(false);
+        return;
+      }
+
+      console.error("Speech Recognition Error:", e.error);
       if (e.error === 'not-allowed') {
         setMediaError("PERMISSION_DENIED");
         toast.error("Microphone permission denied.");
@@ -527,6 +584,28 @@ export default function CandidateInterview() {
 
   return (
     <div ref={containerRef} className="min-h-screen bg-slate-50/30">
+      {!isWindowFocused && started && !completed && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
+          <div className="text-center p-12 bg-white rounded-3xl max-w-lg shadow-2xl">
+             <AlertOctagon className="w-20 h-20 text-orange-500 mx-auto mb-6 animate-pulse" />
+             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Focus Lost</h2>
+             <p className="text-slate-600 font-medium mb-8">You clicked away from the interview window. This action has been logged.</p>
+             <Button onClick={() => setIsWindowFocused(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 h-12 font-bold uppercase tracking-wide">Resume</Button>
+          </div>
+        </div>
+      )}
+      
+      {proctoringAlert && started && !completed && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-xl">
+          <div className="text-center p-12 bg-white rounded-3xl max-w-lg shadow-2xl">
+             <AlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-6 animate-pulse" />
+             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Security Alert</h2>
+             <p className="text-slate-600 font-medium mb-8">{proctoringAlert}</p>
+             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Fix the issue to resume interview</p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto space-y-10 pb-12 pt-8">
         {!started ? (
           <div className="flex items-center justify-center min-h-[70vh]">

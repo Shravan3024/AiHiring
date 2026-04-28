@@ -6,21 +6,36 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// Strictly Supabase PostgreSQL configuration
+// Strictly Supabase PostgreSQL configuration with resilience settings
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
   dialectOptions: {
     ssl: {
       require: true,
       rejectUnauthorized: false // Required for Supabase standard SSL
-    }
+    },
+    keepAlive: true // Help prevent ECONNRESET by keeping connection active
   },
-  logging: false, // Set to console.log to debug SQL queries
+  logging: false,
   pool: {
-    max: 20,
+    max: 15, // Slightly lower to prevent hitting Supabase limits
     min: 2,
     acquire: 60000,
-    idle: 10000
+    idle: 30000, // Longer idle time before closing
+    evict: 1000 // Frequency of checking for idle connections to evict
+  },
+  retry: {
+    match: [
+      /SequelizeConnectionError/,
+      /SequelizeConnectionRefusedError/,
+      /SequelizeHostNotFoundError/,
+      /SequelizeHostNotReachableError/,
+      /SequelizeInvalidConnectionError/,
+      /SequelizeConnectionTimedOutError/,
+      /TimeoutError/,
+      /ECONNRESET/ // Specifically catch and retry on resets
+    ],
+    max: 3 // Retry up to 3 times for transient failures
   }
 });
 

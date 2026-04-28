@@ -27,6 +27,7 @@ export default function MDDashboard() {
   const {
     data: analytics = {},
     isLoading: isAnalyticsLoading,
+    refetch: refetchAnalytics,
   } = useQuery({
     queryKey: ["md-analytics"],
     queryFn: async () => (await api.get("/md/analytics")).data,
@@ -36,11 +37,18 @@ export default function MDDashboard() {
   const {
     data: top = [],
     isLoading: isTopLoading,
+    refetch: refetchTop,
   } = useQuery({
     queryKey: ["md-top-candidates"],
     queryFn: async () => (await api.get("/md/top-candidates")).data,
     refetchInterval: 30000,
   });
+
+  const handleRefresh = () => {
+    refetchApps();
+    refetchAnalytics();
+    refetchTop();
+  };
 
   const isLoading = isAppsLoading || isAnalyticsLoading || isTopLoading;
 
@@ -54,7 +62,7 @@ export default function MDDashboard() {
           </div>
           <button
             className="h-14 rounded-2xl bg-slate-900 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-50"
-            onClick={() => refetchApps()}
+            onClick={handleRefresh}
             disabled={isLoading}
           >
             {isLoading ? "Synchronizing..." : "System Refresh"}

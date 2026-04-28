@@ -38,7 +38,7 @@ const { Job } = require("../models");
 router.get(
   "/jobs",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   async (req, res) => {
     try {
       const jobs = await Job.findAll({ order: [["title", "ASC"]] });
@@ -52,28 +52,28 @@ router.get(
 router.get(
   "/applications",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getAllApplications
 );
 
 router.post(
   "/decision",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   updateDecision
 );
 
 router.get(
   "/dashboard",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getDashboardSummary
 );
 
 router.get(
   "/notifications",
   auth,
-  role(["HR"]),
+  role(["HR", "ADMIN", "MD"]),
   getNotifications
 );
 
@@ -85,126 +85,126 @@ router.get(
 router.get(
   "/dashboard/kpi",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getKPICards
 );
 
 router.get(
   "/dashboard/funnel",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getHiringFunnel
 );
 
 router.get(
   "/dashboard/distribution",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getStatusDistribution
 );
 
 router.get(
   "/dashboard/skills-heatmap",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getSkillGap            // ✅ was: getSkillGapHeatmap (didn't exist)
 );
 
 router.get(
   "/dashboard/pending-actions",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getPendingActions
 );
 
 router.get(
   "/dashboard/ai-vs-hr",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getAIvsHRComparison
 );
 
 router.get(
   "/dashboard/overview",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getDashboardOverview
 );
 
 router.get(
   "/dashboard/time-to-hire",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getTimeToHirePerRole
 );
 
 router.get(
   "/dashboard/rejection-reasons",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getRejectionReasons
 );
 
 router.get(
   "/dashboard/operational-core",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getOperationalCore
 );
 
 router.get(
   "/dashboard/top-candidates",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDashboardController.getTopCandidates
 );
 
 router.get(
   "/assessments/stats",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getAssessmentStats
 );
 
 router.get(
   "/assessments/list",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getAssessmentsList
 );
 
 router.get(
   "/assessments/:jobId/details",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getAssessmentDetails
 );
 
 router.get(
   "/interviews/stats",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getInterviewStats
 );
 
 router.get(
   "/interviews/list",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getInterviewsList
 );
 
 router.get(
   "/interviews/ready",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getReadyForInterview
 );
 
 router.get(
   "/interviews/:id/details",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   getInterviewDetails
 );
 
@@ -216,28 +216,28 @@ router.get(
 router.get(
   "/applications/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   CandidateProfileController.getCandidateProfile
 );
 
 router.get(
   "/candidates/:candidateId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   CandidateProfileController.getCandidateById
 );
 
 router.get(
   "/pipeline",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   CandidateProfileController.getPipelineCandidates
 );
 
 router.get(
   "/risk-monitor",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   RiskMonitorController.getRiskMonitor
 );
 
@@ -249,49 +249,49 @@ router.get(
 router.post(
   "/decision/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.makeDecision
 );
 
 router.get(
   "/approvals/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.getPendingApprovals
 );
 
 router.post(
   "/escalate/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.escalateDecision
 );
 
 router.post(
   "/request-reinterview/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.requestReInterview
 );
 
 router.post(
   "/re-evaluate-assessment/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.reEvaluateAssessment
 );
 
 router.get(
   "/approval-rules",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.getApprovalRules
 );
 
 router.put(
   "/applications/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   async (req, res) => {
     try {
       const { applicationId } = req.params;
@@ -324,21 +324,21 @@ router.put(
 router.post(
   "/send-offer/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   sendOfferLetter
 );
 
 router.post(
   "/send-rejection/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   sendRejectionEmail
 );
 
 router.post(
   "/schedule-interview/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   scheduleInterview
 );
 
@@ -346,49 +346,49 @@ router.post(
 router.post(
   "/add-note/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   addInternalNote
 );
 
 router.get(
   "/report/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.generateCandidateReport
 );
 
 router.get(
   "/report/interview/:applicationId",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.generateInterviewReport
 );
 
 router.get(
   "/reports/stats",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.getReportStats
 );
 
 router.get(
   "/reports/list",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.getReportsList
 );
 
 router.get(
   "/reports/recent",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.getRecentDownloads
 );
 
 router.post(
   "/reports/:reportId/track",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   ReportController.trackDownload
 );
 
@@ -402,7 +402,7 @@ router.get(
 router.post(
   "/applications/:applicationId/decide",
   auth,
-  role(["HR", "ADMIN"]),
+  role(["HR", "ADMIN", "MD"]),
   HRDecisionController.triggerAIDecision
 );
 

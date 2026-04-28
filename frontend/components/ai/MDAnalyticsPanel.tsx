@@ -32,6 +32,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
       const response = await aiApi.getAnalytics(jobId, departmentId, filterLevel !== "all" ? filterLevel : undefined);
       return response.data;
     },
+    refetchInterval: 30000,
   });
 
   const stats = analyticsData?.data?.stats || {};

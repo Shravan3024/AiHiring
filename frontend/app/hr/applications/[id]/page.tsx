@@ -479,7 +479,10 @@ function ProctoringDataWrapper({ applicationId }: { applicationId: number }) {
   });
 
   if (isLoading) return <div className="p-10 text-center text-gray-400">Loading security logs...</div>;
-  const attempts = appDetails?.data?.assessment_attempts || [];
+  
+  const data = appDetails?.data || {};
+  const attempts = data.assessment_attempts || [];
+  const generalViolations = data.proctoringSummary?.violations || [];
 
-  return <ProctoringReviewPanel attempts={attempts} />;
+  return <ProctoringReviewPanel attempts={attempts} generalViolations={generalViolations} />;
 }

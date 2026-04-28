@@ -12,13 +12,60 @@ import {
 import { cn } from "@/lib/utils";
 
 interface ProctoringReviewPanelProps {
-  attempts: any[];
+  attempts?: any[];
+  generalViolations?: any[];
 }
 
-export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ attempts }) => {
+export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ 
+  attempts = [], 
+  generalViolations = [] 
+}) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  if (!attempts || attempts.length === 0) {
+  // 1. Get events from attempts (Phase 4/7)
+  const attempt = attempts.length > 0 ? attempts[0] : null;
+  const attemptData = attempt?.anti_cheating_data || {};
+  const attemptEvents = attemptData.events || [];
+  const attemptFlags = attemptData.flags || [];
+  const attemptAnomalies = attemptData.anomalies || [];
+
+  // 2. Map general violations (Phase 5/Interview) to a consistent format
+  const mappedGeneralEvents = generalViolations.map(v => ({
+    type: v.type,
+    severity: v.severity >= 4 ? "CRITICAL" : v.severity >= 3 ? "HIGH" : "NORMAL",
+    timestamp: v.createdAt || v.timestamp,
+    message: v.meta?.message || `Violation: ${v.type?.replace(/_/g, " ")}`,
+    data: v.meta || {},
+    category: "VIOLATION"
+  }));
+
+  // 3. Extract webcam images from all sources
+  const snapshotsFromAttempts = attemptEvents
+    .filter((e: any) => e.type === "WEBCAM_ANOMALY" && e.data?.image)
+    .map((e: any) => ({
+      image: e.data.image,
+      timestamp: e.timestamp,
+      id: e.eventId
+    }));
+
+  const snapshotsFromGeneral = generalViolations
+    .filter((v: any) => v.meta?.image)
+    .map((v: any) => ({
+      image: v.meta.image,
+      timestamp: v.createdAt || v.timestamp,
+      id: v.id
+    }));
+
+  const snapshots = [...snapshotsFromAttempts, ...snapshotsFromGeneral];
+
+  // 4. Combine all violations for the timeline
+  const allCriticalEvents = [
+    ...attemptFlags.map((f: any) => ({ ...f, category: "FLAG" })),
+    ...attemptAnomalies.map((a: any) => ({ ...a, category: "ANOMALY" })),
+    ...mappedGeneralEvents
+  ].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  if (allCriticalEvents.length === 0 && snapshots.length === 0 && attempts.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="p-10 text-center text-gray-400">
@@ -29,26 +76,7 @@ export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ at
     );
   }
 
-  // Use the most recent attempt
-  const attempt = attempts[0]; 
-  const data = attempt.anti_cheating_data || {};
-  const events = data.events || [];
-  const flags = data.flags || [];
-  const anomalies = data.anomalies || [];
-  
-  // Extract webcam images from events
-  const snapshots = events
-    .filter((e: any) => e.type === "WEBCAM_ANOMALY" && e.data?.image)
-    .map((e: any) => ({
-      image: e.data.image,
-      timestamp: e.timestamp,
-      id: e.eventId
-    }));
-
-  const allCriticalEvents = [
-    ...flags.map((f: any) => ({ ...f, category: "FLAG" })),
-    ...anomalies.map((a: any) => ({ ...a, category: "ANOMALY" }))
-  ].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const integrityScore = attemptData.integrityScore || Math.max(0, 100 - (generalViolations.length * 10));
 
   return (
     <div className="space-y-6">
@@ -57,18 +85,18 @@ export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ at
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className={cn(
           "border-l-4 shadow-sm",
-          (data.integrityScore || 100) < 60 ? "border-l-red-500" : "border-l-emerald-500"
+          integrityScore < 60 ? "border-l-red-500" : "border-l-emerald-500"
         )}>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Integrity Score</p>
-              <h3 className="text-2xl font-black">{data.integrityScore || 100}%</h3>
+              <h3 className="text-2xl font-black">{integrityScore}%</h3>
             </div>
             <div className={cn(
               "p-2 rounded-full",
-              (data.integrityScore || 100) < 60 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+              integrityScore < 60 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
             )}>
-              {(data.integrityScore || 100) < 60 ? <AlertTriangle /> : <CheckCircle />}
+              {integrityScore < 60 ? <AlertTriangle /> : <CheckCircle />}
             </div>
           </CardContent>
         </Card>
@@ -77,7 +105,7 @@ export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ at
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Flags Detected</p>
-              <h3 className="text-2xl font-black">{flags.length}</h3>
+              <h3 className="text-2xl font-black">{allCriticalEvents.length}</h3>
             </div>
             <div className="p-2 bg-orange-50 text-orange-600 rounded-full">
               <ShieldAlert />
@@ -89,8 +117,8 @@ export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({ at
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Device Fingerprint</p>
-              <h3 className="text-sm font-bold truncate max-w-[150px]">{data.deviceInfo?.browser || "CHROME V120"}</h3>
-              <p className="text-[10px] text-gray-400">{data.deviceInfo?.os || "Windows 11"}</p>
+              <h3 className="text-sm font-bold truncate max-w-[150px]">{attemptData.deviceInfo?.browser || "SYSTEM V1"}</h3>
+              <p className="text-[10px] text-gray-400">{attemptData.deviceInfo?.os || "Candidate OS"}</p>
             </div>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-full">
               <Monitor />

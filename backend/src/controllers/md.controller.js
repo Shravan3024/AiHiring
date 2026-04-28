@@ -30,34 +30,50 @@ async function getMalpracticeScore(application_id) {
 // 📊 MAIN API
 exports.getMDApplications = async (req, res) => {
   try {
+    const { AssessmentAnalysis, InterviewAnalysis } = require("../models");
+    
     const applications = await Application.findAll({
       attributes: ['id', 'overall_score', 'status', 'applied_at'],
       include: [
         { model: Candidate, attributes: ['id'], include: [{ model: User, attributes: ['name', 'email'] }] },
-        { model: Job, attributes: ['title'] },
+        { model: Job, attributes: ['title', 'department'] },
         { model: TechnicalRound, attributes: ['score', 'status'] },
-        { model: MalpracticeEvent, attributes: ['severity'] }
-      ]
+        { model: MalpracticeEvent, attributes: ['severity'] },
+        { model: AssessmentAnalysis, attributes: ['strengths', 'weaknesses'] },
+        { model: InterviewAnalysis, attributes: ['detailed_evaluation', 'hire_recommendation'] }
+      ],
+      order: [['created_at', 'DESC']]
     });
 
     const enriched = applications.map((app) => {
       const score = app.overall_score || 0;
       const malpracticeScore = (app.MalpracticeEvents || []).reduce((sum, e) => sum + (e.severity || 0), 0);
-
       const recommendation = getRecommendation(score, malpracticeScore);
+
+      // Map pros/cons from analyses
+      const assessment = app.AssessmentAnalysis;
+      const pros = Array.isArray(assessment?.strengths) ? assessment.strengths : [];
+      const cons = Array.isArray(assessment?.weaknesses) ? assessment.weaknesses : [];
 
       return {
         ...app.toJSON(),
         candidate: { name: app.Candidate?.User?.name || 'Unknown' },
         score: app.overall_score || 0,
         ai_recommendation: recommendation,
-        malpracticeScore
+        malpracticeScore,
+        AIDecision: {
+          pros: pros,
+          cons: cons,
+          ai_decision: recommendation,
+          score: score
+        }
       };
     });
 
     res.json(enriched);
 
   } catch (err) {
+    console.error("MD Applications Fetch Error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -73,14 +89,8 @@ exports.mdDecision = async (req, res) => {
     }
 
     if (decision === "APPROVED") {
-      app.status = "OFFERED";
-
-      await Offer.create({
-        application_id: app.id,
-        salary: 1000000,
-        joining_date: new Date()
-      });
-
+      // Correct status for global consistency
+      app.status = "SELECTED";
     } else {
       app.status = "REJECTED";
     }
@@ -88,11 +98,12 @@ exports.mdDecision = async (req, res) => {
     await app.save();
 
     res.json({
-      message: "MD decision applied successfully",
+      message: `Application ${decision.toLowerCase()} successfully`,
       app
     });
 
   } catch (err) {
+    console.error("MD Decision Error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -127,12 +138,21 @@ exports.getAnalytics = async (req, res) => {
   try {
     const total = await Application.count();
 
+    // Align with global status enums
     const selected = await Application.count({
-      where: { status: "OFFERED" }
+      where: { 
+        status: { 
+          [require('sequelize').Op.in]: ['SELECTED', 'HIRED'] 
+        } 
+      }
     });
 
     const rejected = await Application.count({
-      where: { status: "REJECTED" }
+      where: { 
+        status: { 
+          [require('sequelize').Op.in]: ['REJECTED', 'AUTO_REJECTED'] 
+        } 
+      }
     });
 
     // Analytics based on overall score
@@ -146,11 +166,12 @@ exports.getAnalytics = async (req, res) => {
       total,
       selected,
       rejected,
-      selectionRate: ((selected / total) * 100).toFixed(2),
+      selectionRate: total > 0 ? ((selected / total) * 100).toFixed(1) : "0.0",
       scoreDistribution
     });
 
   } catch (err) {
+    console.error("MD Analytics Error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
