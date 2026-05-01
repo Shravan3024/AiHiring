@@ -183,7 +183,7 @@ exports.startAssessment = async (req, res) => {
   }
 };
 
-// ================= SAVE ANSWER =================
+// ================= SAVE ANSWER (single) =================
 exports.saveAnswer = async (req, res) => {
   try {
     const { attemptId } = req.params;
@@ -199,6 +199,39 @@ exports.saveAnswer = async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to save' });
+  }
+};
+
+// ================= SAVE ALL ANSWERS (bulk) =================
+exports.saveAllAnswers = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const { answers } = req.body; // { [questionId]: { answer_text, section } }
+
+    if (!answers || typeof answers !== 'object') {
+      return res.status(400).json({ error: 'answers object required' });
+    }
+
+    const attempt = await AssessmentAttempt.findByPk(attemptId);
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+
+    // Merge with existing answers (don't overwrite answers from other section)
+    const existing = attempt.answers || {};
+    const merged = { ...existing };
+    Object.keys(answers).forEach(qId => {
+      merged[qId] = {
+        answer_text: answers[qId]?.answer_text || answers[qId] || '',
+        section: answers[qId]?.section || 1,
+        timestamp: new Date()
+      };
+    });
+
+    await AssessmentAttempt.update({ answers: merged, updated_at: new Date() }, { where: { id: attemptId } });
+    logger.info(`[BulkSave] Saved ${Object.keys(answers).length} answers for attempt ${attemptId}`);
+    res.json({ success: true, saved: Object.keys(merged).length });
+  } catch (error) {
+    logger.error('Bulk save error:', error);
+    res.status(500).json({ error: 'Failed to save answers' });
   }
 };
 

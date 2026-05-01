@@ -56,26 +56,31 @@ export default function AssessmentPage() {
     if (phase === "s2" && assessment) setTimeLeft(assessment.config.section2_duration * 60);
   }, [phase, assessment]);
 
-  // Timer countdown
+  // Timer countdown — uses ref to avoid TDZ with handleSectionTimeout defined below
+  const sectionTimeoutRef = useRef<() => void>(() => {});
   useEffect(() => {
     if ((phase !== "s1" && phase !== "s2") || timeLeft <= 0) return;
     const t = setInterval(() => {
       setTimeLeft(p => {
-        if (p <= 1) { handleSectionTimeout(); return 0; }
+        if (p <= 1) { sectionTimeoutRef.current(); return 0; }
         return p - 1;
       });
     }, 1000);
     return () => clearInterval(t);
   }, [phase, timeLeft]);
 
-  const handleSectionTimeout = () => {
-    if (phase === "s1") { toast.warning("Section 1 time up! Moving to Section 2."); setPhase("transition"); setCurrentIdx(0); }
-    else if (phase === "s2") handleFinalSubmit();
-  };
+
+
+
 
   const saveAnswer = useMutation({
     mutationFn: ({ qId, ans, section }: any) =>
       candidateApi.saveAssessmentAnswer(String(assessment!.attempt_id), qId, ans, section)
+  });
+
+  const bulkSave = useMutation({
+    mutationFn: (answersToSave: Record<string, { answer_text: string; section: number }>) =>
+      candidateApi.saveAllAnswers(String(assessment!.attempt_id), answersToSave)
   });
 
   const logMal = useMutation({
@@ -84,25 +89,80 @@ export default function AssessmentPage() {
 
   const submitMut = useMutation({
     mutationFn: () => candidateApi.submitAssessment(String(assessment!.attempt_id)),
-    onSuccess: () => { stopCamera(); router.push(`/candidate/application/${applicationId}`); },
+    onSuccess: () => { stopCamera(); toast.success("Assessment submitted!"); router.push(`/candidate/application/${applicationId}`); },
     onError: () => { toast.error("Submission failed. Answers were saved."); setIsSubmitting(false); }
   });
 
-  const handleFinalSubmit = useCallback(() => {
+  // Build payload for a section
+  const buildPayload = (sectionNum: number) => {
+    const questions = sectionNum === 1 ? assessment?.section1 : assessment?.section2;
+    const payload: Record<string, { answer_text: string; section: number }> = {};
+    (questions || []).forEach(q => {
+      if (answers[q.id] !== undefined) {
+        payload[q.id] = { answer_text: answers[q.id], section: sectionNum };
+      }
+    });
+    return payload;
+  };
+
+  // Section timeout handler (needs buildPayload + handleFinalSubmit)
+  const handleSectionTimeout = async () => {
+    if (phase === "s1") {
+      toast.warning("Section 1 time up! Saving and moving to Section 2.");
+      try {
+        const s1Payload = buildPayload(1);
+        if (Object.keys(s1Payload).length > 0 && assessment?.attempt_id) {
+          await candidateApi.saveAllAnswers(String(assessment.attempt_id), s1Payload);
+        }
+      } catch (_) {}
+      setPhase("transition"); setCurrentIdx(0);
+    } else if (phase === "s2") {
+      handleFinalSubmit();
+    }
+  };
+
+  // Flush ALL answers (both sections) then submit
+  const handleFinalSubmit = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    toast.success("Submitting assessment...");
+    try {
+      // Build full payload for section 2 (section 1 was already flushed at transition)
+      const s2Payload = buildPayload(2);
+      if (Object.keys(s2Payload).length > 0) {
+        await candidateApi.saveAllAnswers(String(assessment!.attempt_id), s2Payload);
+      }
+    } catch (_) {}
     submitMut.mutate();
-  }, [isSubmitting]);
+  }, [isSubmitting, answers, assessment]);
 
-  // Auto-save every 15s
+  // Flush section 1 answers then go to transition
+  const handleCompleteSection1 = useCallback(async () => {
+    const s1Payload = buildPayload(1);
+    try {
+      if (Object.keys(s1Payload).length > 0) {
+        await candidateApi.saveAllAnswers(String(assessment!.attempt_id), s1Payload);
+      }
+    } catch (_) {}
+    setPhase("transition");
+    setCurrentIdx(0);
+  }, [answers, assessment]);
+
+  // Keep ref updated so timer can call the latest version
+  useEffect(() => {
+    sectionTimeoutRef.current = handleSectionTimeout;
+  });
+
+  // Auto-save current question every 30s as safety net
   useEffect(() => {
     if (phase !== "s1" && phase !== "s2") return;
     const questions = phase === "s1" ? assessment?.section1 : assessment?.section2;
+    const sectionNum = phase === "s1" ? 1 : 2;
     const interval = setInterval(() => {
       const q = questions?.[currentIdx];
-      if (q && answers[q.id]) saveAnswer.mutate({ qId: q.id, ans: answers[q.id], section: phase === "s1" ? 1 : 2 });
-    }, 15000);
+      if (q && answers[q.id]) {
+        saveAnswer.mutate({ qId: q.id, ans: answers[q.id], section: sectionNum });
+      }
+    }, 30000);
     return () => clearInterval(interval);
   }, [phase, currentIdx, assessment, answers]);
 
@@ -151,9 +211,15 @@ export default function AssessmentPage() {
   }, [phase, isSubmitting]);
 
   const handleAnswer = (val: string) => {
-    const questions = phase === "s1" ? assessment?.section1 : assessment?.section2;
+    const isS1 = phase === "s1";
+    const questions = isS1 ? assessment?.section1 : assessment?.section2;
     const q = questions?.[currentIdx];
-    if (q) setAnswers(p => ({ ...p, [q.id]: val }));
+    if (!q) return;
+    setAnswers(p => ({ ...p, [q.id]: val }));
+    // For MCQ: immediately persist the answer to DB
+    if (isS1 && assessment?.attempt_id) {
+      saveAnswer.mutate({ qId: q.id, ans: val, section: 1 });
+    }
   };
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -342,7 +408,7 @@ export default function AssessmentPage() {
               </div>
               {isS1 ? (
                 <Button
-                  onClick={() => { setPhase("transition"); setCurrentIdx(0); }}
+                  onClick={handleCompleteSection1}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 h-10 rounded-xl font-bold text-xs uppercase"
                 >
                   Complete Section 1

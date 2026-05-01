@@ -259,6 +259,9 @@ export const candidateApi = {
   saveAssessmentAnswer: (attemptId: string, questionId: string, answerText: string, section?: number) =>
     api.post(`/assessment/${attemptId}/answer`, { question_id: questionId, answer_text: answerText, section }),
 
+  saveAllAnswers: (attemptId: string, answers: Record<string, { answer_text: string; section: number }>) =>
+    api.post(`/assessment/${attemptId}/answers`, { answers }),
+
 
   // ✅ FIXED
   submitAssessment: (attemptId: string) =>

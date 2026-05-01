@@ -31,6 +31,17 @@ router.post(
 );
 
 /**
+ * SAVE ALL ANSWERS (BULK FLUSH)
+ * POST /api/assessment/:attemptId/answers
+ */
+router.post(
+  '/:attemptId/answers',
+  authMiddleware,
+  roleMiddleware(['CANDIDATE']),
+  assessmentController.saveAllAnswers
+);
+
+/**
  * SUBMIT ASSESSMENT
  * POST /api/assessment/:attemptId/submit
  */
