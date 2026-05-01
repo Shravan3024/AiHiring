@@ -14,13 +14,15 @@ const scoringService = require('../services/scoring.service');
 const logger = require("../utils/logger");
 
 const ASSESSMENT_CONFIG = {
-  DURATION_MINUTES: 45,
+  SECTION1_MCQ_COUNT: 20,
+  SECTION1_DURATION_MINUTES: 20,
+  SECTION2_THEORY_COUNT: 5,
+  SECTION2_DURATION_MINUTES: 25,
   TOTAL_QUESTIONS: 25,
-  TECH_QUESTIONS: 20,
-  BEHAVIORAL_QUESTIONS: 5,
+  TOTAL_DURATION_MINUTES: 45,
   PASSING_SCORE: 40,
-  TECH_WEIGHT: 0.8,
-  BEHAVIOR_WEIGHT: 0.2
+  MCQ_WEIGHT: 0.6,    // Section 1 contributes 60% of total score
+  THEORY_WEIGHT: 0.4, // Section 2 contributes 40% of total score
 };
 
 // ================= START ASSESSMENT =================
@@ -41,95 +43,10 @@ exports.startAssessment = async (req, res) => {
     }
 
     const job = application.Job;
+    const mappedRole = job.title.toUpperCase().replace(/[\s\-\/]+/g, '_');
+    logger.info(`[Assessment] Mapped role: ${mappedRole} for job: ${job.title}`);
 
-    // Helper to determine the mapped jobRole name (e.g., "Executive - Marketing" -> "EXECUTIVE_MARKETING")
-    const mappedRole = job.title.toUpperCase().replace(/[\s-]+/g, '_');
-    logger.info(`Matching questions for role: ${mappedRole}`);
-
-    // 0. Fetch already used question IDs for this candidate to ensure uniqueness
-    const usedAttempts = await AssessmentAttempt.findAll({
-      where: { candidate_id: candidateId },
-      attributes: ['metadata'],
-      transaction
-    });
-
-    const usedQuestionIds = new Set();
-    usedAttempts.forEach(ua => {
-      if (ua.metadata?.question_ids && Array.isArray(ua.metadata.question_ids)) {
-        ua.metadata.question_ids.forEach(id => usedQuestionIds.add(id));
-      }
-    });
-
-    // 1. Fetch Master Pool of potential questions for this role
-    // Exclude used questions to ensure uniqueness for this candidate
-    let masterPool = await TechnicalQuestionBank.findAll({
-      where: { 
-        [Op.or]: [
-          { jobRole: mappedRole }, 
-          { job_id: job.id }, 
-          { jobRole: 'GENERAL' } 
-        ],
-        isActive: true,
-        questionId: { [Op.notIn]: Array.from(usedQuestionIds) }
-      },
-      order: sequelize.random(),
-      transaction
-    });
-
-    // Deduplicate by questionId
-    const uniquePoolMap = new Map();
-    masterPool.forEach(q => {
-      if (!uniquePoolMap.has(q.questionId)) {
-        uniquePoolMap.set(q.questionId, q);
-      }
-    });
-    masterPool = Array.from(uniquePoolMap.values());
-
-    // Fallback: If pool is too small because candidate saw everything, relax the constraint slightly or reset
-    if (masterPool.length < ASSESSMENT_CONFIG.TOTAL_QUESTIONS) {
-        logger.warn(`Pool exhausted for candidate ${candidateId}. Relaxing uniqueness constraint.`);
-        const refillPool = await TechnicalQuestionBank.findAll({
-            where: { 
-              [Op.or]: [{ jobRole: mappedRole }, { jobRole: 'GENERAL' }],
-              isActive: true
-            },
-            order: sequelize.random(),
-            limit: ASSESSMENT_CONFIG.TOTAL_QUESTIONS * 2, // Fetch more to ensure enough unique ones
-            transaction
-        });
-        
-        refillPool.forEach(q => {
-            if (!uniquePoolMap.has(q.questionId)) {
-                uniquePoolMap.set(q.questionId, q);
-                masterPool.push(q);
-            }
-        });
-    }
-
-    // 2. Separate and deduplicate
-    const techQuestions = masterPool.filter(q => q.section_type !== 'BEHAVIORAL').slice(0, ASSESSMENT_CONFIG.TECH_QUESTIONS);
-    const behavioralQuestions = masterPool
-      .filter(q => q.section_type === 'BEHAVIORAL' && !techQuestions.find(t => t.questionId === q.questionId))
-      .slice(0, ASSESSMENT_CONFIG.BEHAVIORAL_QUESTIONS);
-
-    const selectedQuestions = [...techQuestions, ...behavioralQuestions];
-
-    // 2. Check if we have enough questions, fallback if needed
-    if (selectedQuestions.length === 0) {
-      selectedQuestions.push({ 
-        questionId: 'placeholder_001',
-        question: 'Please describe your relevant experience for this role.',
-        questionType: 'THEORY',
-        topic: 'GENERAL',
-        difficulty: 'EASY',
-        weight: 1,
-        section_type: 'TECHNICAL'
-      });
-    }
-
-    const questionIds = selectedQuestions.map(q => q.questionId || q.id);
-
-    // 3. Create or Fetch Attempt
+    // Check existing attempt
     let attempt = await AssessmentAttempt.findOne({ 
       where: { application_id: applicationId },
       transaction 
@@ -140,15 +57,77 @@ exports.startAssessment = async (req, res) => {
       return res.status(400).json({ error: 'Assessment already submitted' });
     }
 
+    // --- SECTION 1: Fetch 20 MCQ questions ---
+    let mcqPool = await TechnicalQuestionBank.findAll({
+      where: {
+        [Op.or]: [{ jobRole: mappedRole }, { job_id: job.id }],
+        isActive: true,
+        section_type: 'MCQ'
+      },
+      order: sequelize.random(),
+      limit: ASSESSMENT_CONFIG.SECTION1_MCQ_COUNT,
+      transaction
+    });
+
+    // Fallback: try partial match if exact role not found
+    if (mcqPool.length < ASSESSMENT_CONFIG.SECTION1_MCQ_COUNT) {
+      const fallback = await TechnicalQuestionBank.findAll({
+        where: { isActive: true, section_type: 'MCQ' },
+        order: sequelize.random(),
+        limit: ASSESSMENT_CONFIG.SECTION1_MCQ_COUNT,
+        transaction
+      });
+      const existingIds = new Set(mcqPool.map(q => q.questionId));
+      fallback.forEach(q => { if (!existingIds.has(q.questionId)) mcqPool.push(q); });
+      mcqPool = mcqPool.slice(0, ASSESSMENT_CONFIG.SECTION1_MCQ_COUNT);
+    }
+
+    // --- SECTION 2: Fetch 5 Theory/Scenario/Behavioral questions ---
+    let theoryPool = await TechnicalQuestionBank.findAll({
+      where: {
+        [Op.or]: [{ jobRole: mappedRole }, { job_id: job.id }],
+        isActive: true,
+        section_type: 'SECTION_2'
+      },
+      order: sequelize.random(),
+      limit: ASSESSMENT_CONFIG.SECTION2_THEORY_COUNT,
+      transaction
+    });
+
+    if (theoryPool.length < ASSESSMENT_CONFIG.SECTION2_THEORY_COUNT) {
+      const fallback = await TechnicalQuestionBank.findAll({
+        where: {
+          isActive: true,
+          section_type: 'SECTION_2',
+          [Op.notIn]: theoryPool.map(q => q.questionId)
+        },
+        order: sequelize.random(),
+        limit: ASSESSMENT_CONFIG.SECTION2_THEORY_COUNT,
+        transaction
+      });
+      const existingIds = new Set(theoryPool.map(q => q.questionId));
+      fallback.forEach(q => { if (!existingIds.has(q.questionId)) theoryPool.push(q); });
+      theoryPool = theoryPool.slice(0, ASSESSMENT_CONFIG.SECTION2_THEORY_COUNT);
+    }
+
+    // Combine question IDs for attempt metadata
+    const mcqIds = mcqPool.map(q => q.questionId);
+    const theoryIds = theoryPool.map(q => q.questionId);
+    const allIds = [...mcqIds, ...theoryIds];
+
     const attemptData = {
       application_id: application.id,
       candidate_id: candidateId,
       assessment_type: 'TECHNICAL',
       status: 'IN_PROGRESS',
       started_at: new Date(),
-      metadata: { 
-        question_ids: questionIds,
-        config: ASSESSMENT_CONFIG 
+      metadata: {
+        question_ids: allIds,
+        mcq_ids: mcqIds,
+        theory_ids: theoryIds,
+        config: ASSESSMENT_CONFIG,
+        job_title: job.title,
+        mapped_role: mappedRole
       },
       answers: {},
       ip_address: req.ip || req.connection?.remoteAddress,
@@ -161,9 +140,7 @@ exports.startAssessment = async (req, res) => {
       attempt = await AssessmentAttempt.create(attemptData, { transaction });
     }
 
-    // 4. Update Application status
     await application.update({ status: 'TECHNICAL_ROUND_IN_PROGRESS' }, { transaction });
-    
     await ApplicationStatusLog.create({
       application_id: applicationId,
       previous_status: application.status,
@@ -173,18 +150,30 @@ exports.startAssessment = async (req, res) => {
 
     await transaction.commit();
 
+    const formatQuestion = (q, section) => ({
+      id: q.questionId,
+      question: q.question,
+      options: q.options || [],
+      type: q.questionType || q.section_type,
+      topic: q.topic,
+      difficulty: q.difficulty || 'MEDIUM',
+      weight: q.weight || 1,
+      section,
+      evaluation_type: q.evaluation_type || (q.section_type === 'MCQ' ? 'MCQ' : 'AI')
+    });
+
     res.json({
       success: true,
       attempt_id: attempt.id,
-      duration: ASSESSMENT_CONFIG.DURATION_MINUTES,
-      questions: selectedQuestions.map(q => ({
-        id: q.questionId || q.id,
-        question: q.question,
-        options: q.options,
-        category: q.section_type || q.questionType,
-        difficulty: q.difficulty,
-        weight: q.weight || 1
-      }))
+      config: {
+        section1_duration: ASSESSMENT_CONFIG.SECTION1_DURATION_MINUTES,
+        section2_duration: ASSESSMENT_CONFIG.SECTION2_DURATION_MINUTES,
+        total_duration: ASSESSMENT_CONFIG.TOTAL_DURATION_MINUTES,
+        mcq_count: mcqPool.length,
+        theory_count: theoryPool.length,
+      },
+      section1: mcqPool.map(q => formatQuestion(q, 1)),
+      section2: theoryPool.map(q => formatQuestion(q, 2)),
     });
 
   } catch (error) {
@@ -194,61 +183,40 @@ exports.startAssessment = async (req, res) => {
   }
 };
 
-// ================= SAVE ANSWER (AUTO SAVE) =================
+// ================= SAVE ANSWER =================
 exports.saveAnswer = async (req, res) => {
   try {
     const { attemptId } = req.params;
-    const { question_id, answer_text } = req.body;
+    const { question_id, answer_text, section } = req.body;
 
     const attempt = await AssessmentAttempt.findByPk(attemptId);
     if (!attempt) return res.status(404).json({ message: "Attempt not found" });
 
     const currentAnswers = attempt.answers || {};
-    currentAnswers[question_id] = {
-      answer_text: answer_text,
-      timestamp: new Date()
-    };
+    currentAnswers[question_id] = { answer_text, section: section || 1, timestamp: new Date() };
 
-    // Use update to ensure JSON column is recognized as changed
-    await AssessmentAttempt.update({ 
-      answers: currentAnswers,
-      updated_at: new Date()
-    }, { 
-      where: { id: attemptId }
-    });
-
-    res.json({ success: true, message: "State preserved" });
+    await AssessmentAttempt.update({ answers: currentAnswers, updated_at: new Date() }, { where: { id: attemptId } });
+    res.json({ success: true });
   } catch (error) {
-    logger.error('Save answer error:', error);
-    res.status(500).json({ error: 'Failed' });
+    res.status(500).json({ error: 'Failed to save' });
   }
 };
 
-// ================= SUBMIT ASSESSMENT (FAST) =================
+// ================= SUBMIT ASSESSMENT =================
 exports.submitAssessment = async (req, res) => {
   try {
     const { attemptId } = req.params;
     const candidateId = req.candidate.id;
 
-    const attempt = await AssessmentAttempt.findByPk(attemptId, { 
-      include: [{ model: Application }] 
-    });
-
+    const attempt = await AssessmentAttempt.findByPk(attemptId, { include: [{ model: Application }] });
     if (!attempt || attempt.status !== 'IN_PROGRESS') {
       return res.status(400).json({ error: 'Invalid attempt' });
     }
 
-    // Fast submission without AI analysis
-    await attempt.update({
-      status: 'SUBMITTED',
-      submitted_at: new Date()
-    });
+    await attempt.update({ status: 'SUBMITTED', submitted_at: new Date() });
 
     const application = attempt.Application;
-    await application.update({
-      status: 'TECHNICAL_ROUND_COMPLETED'
-    });
-
+    await application.update({ status: 'TECHNICAL_ROUND_COMPLETED' });
     await ApplicationStatusLog.create({
       application_id: application.id,
       previous_status: 'TECHNICAL_ROUND_IN_PROGRESS',
@@ -257,18 +225,16 @@ exports.submitAssessment = async (req, res) => {
       reason: 'Candidate submitted assessment'
     });
 
-    res.json({ success: true, message: "Assessment submitted successfully. AI analysis is running in the background." });
+    res.json({ success: true, message: "Assessment submitted. AI analysis running in background." });
 
-    // ========== ASYNC AUTO-ANALYSIS TRIGGER (NON-BLOCKING) ==========
+    // Async auto-analysis
     setImmediate(async () => {
       try {
-        logger.info(`[Auto-Analysis] Triggering background evaluation for app ${application.id}`);
-        // We call the internal analysis logic directly
         const mockReq = { params: { applicationId: application.id } };
-        const mockRes = { json: (data) => logger.info(`[Auto-Analysis] Completed for app ${application.id}: ${JSON.stringify(data)}`), status: () => mockRes };
+        const mockRes = { json: () => {}, status: () => mockRes };
         await exports.analyzeAssessment(mockReq, mockRes);
       } catch (err) {
-        logger.error(`[Auto-Analysis] Background evaluation failed for app ${application.id}: ${err.message}`);
+        logger.error(`[Auto-Analysis] Failed for app ${application.id}: ${err.message}`);
       }
     });
 
@@ -278,136 +244,112 @@ exports.submitAssessment = async (req, res) => {
   }
 };
 
-// ================= ANALYZE ASSESSMENT (ON-DEMAND BY HR) =================
+// ================= ANALYZE ASSESSMENT =================
 exports.analyzeAssessment = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    
+
     const attempt = await AssessmentAttempt.findOne({
       where: { application_id: applicationId },
+      order: [['created_at', 'DESC']],
       include: [{ model: Application, include: [Job] }]
     });
 
-    if (!attempt) return res.status(404).json({ error: 'Assessment attempt not found' });
-    if (attempt.status === 'EVALUATED') return res.status(200).json({ success: true, message: 'Already analyzed', score: attempt.final_score });
+    if (!attempt) return res.status(404).json({ error: 'No assessment attempt found' });
+    if (attempt.status === 'EVALUATED') return res.status(200).json({ success: true, score: attempt.final_score });
 
     const storedAnswers = attempt.answers || {};
-    const questions = await TechnicalQuestionBank.findAll({ 
-      attributes: ['questionId', 'question', 'options', 'difficulty', 'questionType', 'topic', 'correct_answer', 'weight', 'section_type', 'expected_answer', 'evaluation_type', 'keywords'],
-      where: { questionId: attempt.metadata.question_ids || [] } 
+    const allIds = attempt.metadata?.question_ids || [];
+    const mcqIds = attempt.metadata?.mcq_ids || [];
+    const theoryIds = attempt.metadata?.theory_ids || [];
+
+    const questions = await TechnicalQuestionBank.findAll({
+      where: { questionId: { [Op.in]: allIds } },
+      attributes: ['questionId', 'question', 'options', 'difficulty', 'questionType', 'topic',
+                   'correct_answer', 'weight', 'section_type', 'expected_answer', 'evaluation_type', 'keywords']
     });
 
-    let technicalScore = 0;
-    let behavioralScore = 0;
-    let techTotalWeight = 0;
-    let behaviorTotalWeight = 0;
-    
-    let avgStructureScore = 0;
-    let avgConceptCoverage = 0;
-    
-    const allStrengths = [];
-    const allWeaknesses = [];
+    let mcqTotal = 0, mcqWeight = 0;
+    let theoryTotal = 0, theoryWeight = 0;
+    let avgStructure = 0, avgCoverage = 0, theoryCount = 0;
+    const allStrengths = [], allWeaknesses = [];
 
     for (const q of questions) {
-      const qId = q.questionId;
-      const ansData = storedAnswers[qId];
-      const answerText = ansData?.answer_text || "";
-      
-      let qMLScore = 0;
-      let qAIScore = 0;
+      const ansData = storedAnswers[q.questionId];
+      const answerText = ansData?.answer_text || '';
+      const w = q.weight || 1;
+      const isMCQ = q.section_type === 'MCQ' || mcqIds.includes(q.questionId);
 
-      if (q.evaluation_type === 'MCQ' || (q.questionType === 'MCQ' && q.correct_answer)) {
-        qMLScore = (answerText.trim() === q.correct_answer?.trim()) ? 100 : 0;
+      let score = 0;
+      if (isMCQ) {
+        // MCQ: exact match
+        score = (answerText.trim().toLowerCase() === (q.correct_answer || '').trim().toLowerCase()) ? 100 : 0;
+        mcqTotal += score * w;
+        mcqWeight += w;
       } else {
-        const reference = q.expected_answer || q.question || "";
-        qMLScore = Math.round(scoringService.calculateCosineSimilarity(answerText, reference) * 100);
-      }
+        // Theory: AI + ML hybrid
+        let mlScore = 0, aiScore = 0;
+        try {
+          mlScore = Math.round(scoringService.calculateCosineSimilarity(answerText, q.expected_answer || q.question) * 100);
+        } catch (_) {}
 
-      const isBehavioral = q.section_type === 'BEHAVIORAL' || q.topic?.toLowerCase().includes('behavioral');
-      
-      try {
-        if (q.evaluation_type === 'AI' || isBehavioral || !q.correct_answer) {
-          const aiRes = await aiService.evaluateTechnicalAnswer(
-            q.question,
-            answerText,
-            q.expected_answer,
-            q.keywords
-          );
-          
-          qAIScore = aiRes.score || 0;
-          
-          if (!isBehavioral) {
-            avgStructureScore += (aiRes.structure_score || 0);
-            avgConceptCoverage += (aiRes.concept_coverage || 0);
-          }
-
+        try {
+          const aiRes = await aiService.evaluateTechnicalAnswer(q.question, answerText, q.expected_answer, q.keywords);
+          aiScore = aiRes.score || 0;
+          avgStructure += aiRes.structure_score || 0;
+          avgCoverage += aiRes.concept_coverage || 0;
+          theoryCount++;
           if (aiRes.strengths) allStrengths.push(...aiRes.strengths);
           if (aiRes.weaknesses) allWeaknesses.push(...aiRes.weaknesses);
-        } else {
-          qAIScore = qMLScore;
+        } catch (_) {
+          aiScore = mlScore;
         }
-      } catch (e) {
-        qAIScore = qMLScore;
-      }
 
-      const qFinalScore = Math.round((qAIScore * 0.7) + (qMLScore * 0.3));
-      const qWeight = q.weight || 1;
-      const weightedScore = (qFinalScore / 100) * qWeight;
-
-      if (!isBehavioral) {
-        technicalScore += weightedScore;
-        techTotalWeight += qWeight;
-      } else {
-        behavioralScore += weightedScore;
-        behaviorTotalWeight += qWeight;
+        score = Math.round((aiScore * 0.7) + (mlScore * 0.3));
+        theoryTotal += score * w;
+        theoryWeight += w;
       }
     }
 
-    const finalTechScore = techTotalWeight > 0 ? (technicalScore / techTotalWeight) * 100 : 0;
-    const finalBehaviorScore = behaviorTotalWeight > 0 ? (behavioralScore / behaviorTotalWeight) * 100 : 0;
-    
-    avgStructureScore = techTotalWeight > 0 ? avgStructureScore / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
-    avgConceptCoverage = techTotalWeight > 0 ? avgConceptCoverage / questions.filter(q => q.section_type !== 'BEHAVIORAL').length : 0;
+    const mcqScore = mcqWeight > 0 ? Math.round(mcqTotal / mcqWeight) : 0;
+    const theoryScore = theoryWeight > 0 ? Math.round(theoryTotal / theoryWeight) : 0;
+    const finalScore = Math.round((mcqScore * ASSESSMENT_CONFIG.MCQ_WEIGHT) + (theoryScore * ASSESSMENT_CONFIG.THEORY_WEIGHT));
 
-    const aggregatedScore = (finalTechScore * ASSESSMENT_CONFIG.TECH_WEIGHT) + 
-                             (finalBehaviorScore * ASSESSMENT_CONFIG.BEHAVIOR_WEIGHT);
-
-    const malpracticePenalty = Math.min(attempt.malpractice_score || 0, 40);
-    const finalScore = Math.max(0, Math.round(aggregatedScore - malpracticePenalty));
+    const structureAvg = theoryCount > 0 ? avgStructure / theoryCount : 0;
+    const coverageAvg = theoryCount > 0 ? avgCoverage / theoryCount : 0;
 
     await attempt.update({
-      ai_score: Math.round(finalTechScore),
-      ml_score: Math.round(finalBehaviorScore),
+      ai_score: theoryScore,
+      ml_score: mcqScore,
       final_score: finalScore,
       score: finalScore,
       status: 'EVALUATED',
-      structure_score: avgStructureScore,
-      concept_coverage: avgConceptCoverage
+      structure_score: structureAvg,
+      concept_coverage: coverageAvg,
+      ai_feedback: `MCQ Section: ${mcqScore}% | Theory Section: ${theoryScore}% | Final: ${finalScore}%`
     });
 
     const application = attempt.Application;
-    await application.update({
-      technical_score: finalScore,
-      behavioral_score: finalBehaviorScore
-    });
+    await application.update({ technical_score: finalScore });
 
-    // Create/Update Analysis
     await AssessmentAnalysis.destroy({ where: { application_id: application.id } });
     await AssessmentAnalysis.create({
       application_id: application.id,
       overall_score: finalScore,
+      correctness_score: mcqScore,
       assessment_type: 'TECHNICAL',
-      test_name: `${application.Job?.title} Technical Assessment`,
-      strengths: Array.from(new Set([...allStrengths, `Overall assessment completion: ${questions.length} questions`])),
-      weaknesses: Array.from(new Set(allWeaknesses)),
-      detailed_feedback: `AI Analysis: ${finalScore}%. (Tech: ${Math.round(finalTechScore)}%, Behavioral: ${Math.round(finalBehaviorScore)}%).`
+      test_name: `${application.Job?.title || 'Role'} — Technical Assessment`,
+      strengths: Array.from(new Set([...allStrengths, `MCQ Score: ${mcqScore}%`, `Theory Score: ${theoryScore}%`])).slice(0, 6),
+      weaknesses: Array.from(new Set(allWeaknesses)).slice(0, 6),
+      detailed_feedback: `**Assessment Complete**\n\nSection 1 (MCQ): ${mcqScore}%\nSection 2 (Theory): ${theoryScore}%\nWeighted Final Score: ${finalScore}%\n\nMCQ evaluates core technical knowledge. Theory questions evaluate applied thinking and role-specific problem solving.`,
+      estimated_skill_level: finalScore >= 75 ? 'ADVANCED' : finalScore >= 50 ? 'INTERMEDIATE' : 'BEGINNER'
     });
 
-    res.json({ success: true, score: finalScore });
+    if (res?.json) res.json({ success: true, score: finalScore, mcq_score: mcqScore, theory_score: theoryScore });
 
   } catch (error) {
     logger.error('Analysis error:', error);
-    res.status(500).json({ error: 'Analysis failed' });
+    if (res?.status) res.status(500).json({ error: 'Analysis failed', details: error.message });
   }
 };
 
@@ -420,23 +362,17 @@ exports.logMalpractice = async (req, res) => {
     const attempt = await AssessmentAttempt.findByPk(attemptId);
     if (!attempt || attempt.status !== 'IN_PROGRESS') return res.status(400).json({ error: 'Invalid' });
 
-    const penaltyMap = { 'TAB_SWITCH': 5, 'FULLSCREEN_EXIT': 10, 'COPY_ATTEMPT': 3, 'WINDOW_BLUR': 2 };
+    const penaltyMap = { TAB_SWITCH: 5, FULLSCREEN_EXIT: 10, COPY_ATTEMPT: 3, WINDOW_BLUR: 2 };
     const penalty = penaltyMap[type] || severity || 0;
-    
+
     await attempt.update({
       malpractice_score: (attempt.malpractice_score || 0) + penalty,
       anti_cheating_data: [...(attempt.anti_cheating_data || []), { type, penalty, timestamp: new Date(), metadata }]
     });
 
-    await MalpracticeEvent.create({
-      application_id: attempt.application_id,
-      type,
-      severity: penalty,
-      meta: metadata
-    });
-
-    res.json({ success: true, total: attempt.malpractice_score + penalty });
-  } catch (error) {
+    await MalpracticeEvent.create({ application_id: attempt.application_id, type, severity: penalty, meta: metadata });
+    res.json({ success: true });
+  } catch (_) {
     res.status(500).json({ error: 'Failed' });
   }
 };
@@ -448,9 +384,8 @@ exports.getAssessmentStatus = async (req, res) => {
     const { attemptId } = req.params;
     const attempt = await AssessmentAttempt.findByPk(attemptId);
     if (!attempt) return res.status(404).json({ error: 'Not found' });
-    const expiry = new Date(attempt.started_at).getTime() + ASSESSMENT_CONFIG.DURATION_MINUTES * 60 * 1000;
-    res.json({ status: attempt.status, time_remaining_ms: Math.max(0, expiry - Date.now()) });
-  } catch (error) {
+    res.json({ status: attempt.status, started_at: attempt.started_at });
+  } catch (_) {
     res.status(500).json({ error: 'Failed' });
   }
 };

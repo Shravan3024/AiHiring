@@ -16,11 +16,7 @@ module.exports = (sequelize) => {
       },
       jobRole: {
         type: DataTypes.ENUM(
-          "SENIOR_AI_ENGINEER",
-          "FULL_STACK_DEVELOPER",
-          "DATA_SCIENTIST",
-          "QA_ENGINEER",
-          "DEVOPS_ENGINEER",
+          
           "MANAGEMENT_TRAINEE_MARKETING",
           "EXECUTIVE_MARKETING",
           "ASSISTANT_MANAGER_MARKETING",

@@ -256,8 +256,9 @@ export const candidateApi = {
   startAssessment: (applicationId: string) =>
     api.get(`/assessment/application/${applicationId}/start`),
 
-  saveAssessmentAnswer: (attemptId: string, questionId: string, answerText: string) =>
-    api.post(`/assessment/${attemptId}/answer`, { question_id: questionId, answer_text: answerText }),
+  saveAssessmentAnswer: (attemptId: string, questionId: string, answerText: string, section?: number) =>
+    api.post(`/assessment/${attemptId}/answer`, { question_id: questionId, answer_text: answerText, section }),
+
 
   // ✅ FIXED
   submitAssessment: (attemptId: string) =>

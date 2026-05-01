@@ -131,9 +131,10 @@ export default function CandidateAssessmentHub() {
                         <p className="text-slate-500 font-medium text-sm">Application ID: #APP-{String(app.id).slice(-6).toUpperCase()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Limit</p>
-                        <p className="text-xl font-bold text-slate-900">45 Minutes</p>
-                      </div>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Time</p>
+                         <p className="text-xl font-bold text-slate-900">45 Min</p>
+                         <p className="text-[10px] text-slate-400">20 MCQ + 25 Theory</p>
+                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-4">
@@ -141,9 +142,13 @@ export default function CandidateAssessmentHub() {
                           <ShieldCheck className="w-4 h-4 text-emerald-500" />
                           <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">AI Proctoring Enabled</span>
                        </div>
-                       <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+                       <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-100">
                           <Target className="w-4 h-4 text-blue-500" />
-                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Role-Specific Coding</span>
+                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Section 1: 20 MCQs · 20 Min</span>
+                       </div>
+                       <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-2xl border border-purple-100">
+                          <Star className="w-4 h-4 text-purple-500" />
+                          <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Section 2: 5 Theory · 25 Min</span>
                        </div>
                     </div>
                   </div>
