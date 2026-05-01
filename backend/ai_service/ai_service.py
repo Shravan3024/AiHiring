@@ -28,22 +28,26 @@ class AIService:
     
     # ===================== RESUME OPERATIONS =====================
     
-    def parse_resume(self, file_path: str) -> Dict[str, Any]:
+    def parse_resume(self, file_path: str, job_title: str = None, job_description: str = None, job_skills: list = None) -> Dict[str, Any]:
         """
-        Parse resume from file
+        Parse resume from file with optional job context for role-specific scoring
         
         Args:
             file_path: Path to resume file
+            job_title: Job title to score against (e.g. "Management Trainee - Marketing")
+            job_description: Full job description text
+            job_skills: List of required skills for the role
             
         Returns:
-            Parsed resume data
+            Parsed resume data with role-specific insights
         """
         try:
-            logger.info(f"Parsing resume: {file_path}")
-            return self.resume_parser.parse_resume(file_path)
+            logger.info(f"Parsing resume: {file_path}" + (f" for role: {job_title}" if job_title else ""))
+            return self.resume_parser.parse_resume(file_path, job_title=job_title, job_description=job_description, job_skills=job_skills)
         except Exception as e:
             logger.error(f"Error parsing resume: {e}")
             raise
+
     
     def score_resume(self, parsed_resume: Dict[str, Any], job_requirements: str) -> Dict[str, Any]:
         """

@@ -62,23 +62,39 @@ exports.parseResumeWithAI = async (req, res) => {
 
     logger.info(`Parsing resume for application ${applicationId}`);
 
-    // Parse with AI service
-    const parsedData = await aiService.parseResumeWithAI(filePath);
+    // Fetch Job Data FIRST for role-specific scoring
+    const job = jobId ? await Job.findByPk(jobId) : await Application.findByPk(applicationId, { include: [Job] }).then(a => a?.Job);
+    const jobContext = job ? {
+      title: job.title,
+      description: job.description || '',
+      skills: Array.isArray(job.required_skills) ? job.required_skills : []
+    } : {};
 
-    // Generate resume summary
-    const summary = await aiService.generateResumeSummary(parsedData);
+    logger.info(`[Resume Parse] Job context: ${jobContext.title || 'None'}`);
 
-    // Fetch Job Data for Fallback/Validation
-    const job = jobId ? await Job.findByPk(jobId) : null;
-    const jdText = job ? `${job.title} ${job.description} ${job.required_skills?.join(' ')}` : '';
+    // Parse with AI service (with job context for role-specific insights)
+    const parsedData = await aiService.parseResumeWithAI(filePath, jobContext);
+
+    // Determine correct experience: if FRESHER, force 0
+    const candidateType = (parsedData.candidate_type || '').toUpperCase();
+    const correctExpYears = candidateType === 'FRESHER' ? 0 : (parsedData.total_years_experience || parsedData.experience_years || 0);
+
+    // Generate resume summary (with job context)
+    const summary = await aiService.generateResumeSummary({ ...parsedData, total_years_experience: correctExpYears }, jobContext);
+
+    // Fetch updated Job for JD scoring (if not already fetched)
+    const jdText = job ? `${job.title} ${job.description || ''} ${(job.required_skills || []).join(' ')}` : '';
     const resumeText = JSON.stringify(parsedData);
 
     // ML Validation Layer (Cosine Similarity)
     const cosineSimilarityScore = scoringService.calculateCosineSimilarity(jdText, resumeText);
     const hybridJDScore = Math.round((parsedData.overall_score * 0.6) + (cosineSimilarityScore * 40));
 
-    // Store parsing result in database
-    const resumeAnalysis = await ResumeAnalysis.create({
+    // Extract highest qualification
+    const highestQual = parsedData.highest_qualification || null;
+
+    // Upsert resume analysis in database (support re-parse)
+    const [resumeAnalysis, created] = await ResumeAnalysis.upsert({
       application_id: applicationId,
       resume_id: parsedData.resume_id || null,
       contact_info: parsedData.contact_info,
@@ -94,27 +110,70 @@ exports.parseResumeWithAI = async (req, res) => {
       key_achievements: parsedData.key_achievements,
       overall_score: hybridJDScore,
       jd_match_score: 0,
-      total_years_experience: parsedData.total_years_experience,
-      highest_qualification: parsedData.highest_qualification,
+      total_years_experience: correctExpYears,
+      highest_qualification: highestQual,
       ai_model_used: 'gemini-2.0-flash-hybrid'
-    });
+    }, { returning: true });
 
-    // JD matching if jobId provided
+    // Update Candidate record with correct experience and qualification
+    if (applicationId) {
+      try {
+        const app = await Application.findByPk(applicationId, { include: [Candidate] });
+        if (app?.Candidate) {
+          const updatePayload = {};
+          // Only update experience if different (and if fresher, force 0)
+          if (candidateType === 'FRESHER') {
+            updatePayload.experience_years = 0;
+            updatePayload.candidate_type = 'FRESHER';
+          } else if (correctExpYears > 0 && correctExpYears !== app.Candidate.experience_years) {
+            updatePayload.experience_years = correctExpYears;
+          }
+          // Update skills if missing
+          if (!app.Candidate.skills?.length && parsedData.skills?.length) {
+            updatePayload.skills = parsedData.skills;
+          }
+          // Update education/qualification if blank
+          if (!app.Candidate.education && parsedData.education?.[0]?.degree) {
+            updatePayload.education = parsedData.education[0].degree;
+          }
+          if (Object.keys(updatePayload).length > 0) {
+            await app.Candidate.update(updatePayload);
+            logger.info(`[Resume] Updated Candidate ${app.Candidate.id}: ${JSON.stringify(updatePayload)}`);
+          }
+        }
+      } catch (candErr) {
+        logger.warn(`[Resume] Candidate update failed: ${candErr.message}`);
+      }
+    }
+
+
+    // JD matching (use already-fetched job object)
     let jdScore = null;
-    if (jobId) {
-      jdScore = await aiService.scoreResume(parsedData, jobId);
+    if (job) {
+      const jdReq = { 
+        required_skills: job.required_skills || [], 
+        description: job.description || job.title || ''
+      };
+      jdScore = await aiService.scoreResume(parsedData, jdReq);
       const finalJDScore = Math.round((jdScore.overall_fit_percentage * 0.6) + (cosineSimilarityScore * 40));
-      await resumeAnalysis.update({
+      const updateData = {
         jd_match_score: finalJDScore,
         jd_matched_skills: jdScore.matched_skills,
         jd_missing_skills: jdScore.missing_skills
-      });
+      };
+      if (Array.isArray(resumeAnalysis)) {
+        await resumeAnalysis[0]?.update?.(updateData);
+      } else {
+        await resumeAnalysis.update?.(updateData);
+      }
     }
+
+    const ra = Array.isArray(resumeAnalysis) ? resumeAnalysis[0] : resumeAnalysis;
 
     // Update application with resume score
     await Application.update(
       {
-        resume_score: resumeAnalysis.jd_match_score || resumeAnalysis.overall_score,
+        resume_score: ra?.jd_match_score || ra?.overall_score || hybridJDScore,
         status: 'RESUME_EVALUATED'
       },
       { where: { id: applicationId } }
@@ -128,21 +187,29 @@ exports.parseResumeWithAI = async (req, res) => {
       changed_by: 'system',
       changed_by_role: 'system',
       is_ai_decision: true,
-      reason: 'Resume parsed and scored using Hybrid AI+ML Engine',
-      ai_score: resumeAnalysis.overall_score
+      reason: `Resume parsed for role: ${job?.title || 'Unknown'}. Hybrid AI+ML Engine used.`,
+      ai_score: ra?.overall_score
     });
 
     return res.status(200).json({
       success: true,
       message: 'Resume parsed successfully with Hybrid AI analysis',
       data: {
-        analysis_id: resumeAnalysis.id,
-        resume_score: resumeAnalysis.overall_score,
-        jd_match_score: resumeAnalysis.jd_match_score,
+        analysis_id: ra?.id,
+        resume_score: ra?.overall_score,
+        jd_match_score: ra?.jd_match_score,
         summary: summary,
-        cosine_similarity: cosineSimilarityScore
+        cosine_similarity: cosineSimilarityScore,
+        // Key metadata for HR decision
+        highest_qualification: highestQual || 'Not detected — review manually',
+        experience_years: correctExpYears,
+        candidate_type: candidateType || 'UNKNOWN',
+        role_applied: job?.title || 'Unknown',
+        education_highlight: summary?.education_highlight || highestQual,
+        jd_match_analysis: summary?.jd_match_analysis || null
       }
     });
+
 
   } catch (error) {
     logger.warn(`AI Resume parsing failed for application ${req.body.applicationId}, triggering ML Fallback:`, error.message);
@@ -586,10 +653,25 @@ exports.analyzeInterview = async (req, res) => {
 
     logger.info(`Analyzing interview for application ${applicationId}`);
 
+    // Fetch job context for role-specific analysis
+    let jobTitle = 'the specified role';
+    let jobSkills = [];
+    try {
+      const app = await Application.findByPk(applicationId, { include: [Job] });
+      if (app?.Job) {
+        jobTitle = app.Job.title;
+        jobSkills = app.Job.required_skills || [];
+      }
+    } catch(jErr) {
+      logger.warn(`[Interview] Could not fetch job for app ${applicationId}`);
+    }
+
     // AI Analysis Success Path
     const analysis = await aiService.analyzeInterview(transcript, {
       type: interviewType || 'technical',
-      questions
+      questions,
+      jobTitle,
+      jobSkills
     });
 
     const aiScore = analysis.overall_assessment?.overall_score || 0;
@@ -695,7 +777,9 @@ exports.analyzeInterview = async (req, res) => {
         analysis_id: interviewAnalysis.id,
         overall_score: interviewAnalysis.overall_score,
         hire_recommendation: analysis.recommendation,
-        strengths: assessmentAnalysis?.strengths || [],
+        strengths: interviewAnalysis.strengths || [],
+        weaknesses: interviewAnalysis.weaknesses || [],
+        job_role: jobTitle,
         confidence: 0.92
       }
     });
@@ -732,9 +816,9 @@ exports.analyzeInterview = async (req, res) => {
         team_fit_assessment: 'good',
         growth_trajectory: 'moderate',
         hire_recommendation: 'maybe',
-        strengths: ['Communication detected via ML sentiment mapping'],
-        weaknesses: ['AI deep-analysis unavailable'],
-        detailed_evaluation: 'AI service unavailable. Scored using ML-based Cosine Similarity fallback.',
+        strengths: ['Candidate demonstrated structured responses to interview questions'],
+        weaknesses: ['AI deep-analysis unavailable — review responses manually', 'Insufficient transcript data for full evaluation'],
+        detailed_evaluation: 'AI service unavailable. Scored using ML-based Cosine Similarity fallback. Manual review recommended.',
         ai_model_used: 'ml-fallback-similarity'
       };
 

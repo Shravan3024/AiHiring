@@ -63,14 +63,26 @@ def parse_resume():
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No file selected'}), 400
         
+        # Extract optional job context for role-specific scoring
+        job_title = request.form.get('job_title', None)
+        job_description = request.form.get('job_description', None)
+        job_skills_raw = request.form.get('job_skills', None)
+        job_skills = None
+        if job_skills_raw:
+            try:
+                import json as _json
+                job_skills = _json.loads(job_skills_raw) if job_skills_raw.startswith('[') else [s.strip() for s in job_skills_raw.split(',')]
+            except Exception:
+                job_skills = [s.strip() for s in job_skills_raw.split(',')]
+        
         # Save file temporarily
         filename = secure_filename(file.filename)
         os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
         file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
         file.save(file_path)
         
-        # Parse resume
-        result = ai_service.parse_resume(file_path)
+        # Parse resume with job context
+        result = ai_service.parse_resume(file_path, job_title=job_title, job_description=job_description, job_skills=job_skills)
         
         # Clean up
         os.remove(file_path)
@@ -83,6 +95,7 @@ def parse_resume():
     except Exception as e:
         logger.error(f"Error parsing resume: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/ai/resume/score', methods=['POST'])
 def score_resume():

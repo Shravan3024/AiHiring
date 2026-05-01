@@ -93,7 +93,7 @@ class ResumeParser:
             logger.warning(f"Spacy model {Config.SPACY_MODEL} not found. Install with: python -m spacy download {Config.SPACY_MODEL}")
             self.nlp = None
     
-    def parse_resume(self, file_path: str) -> Dict[str, Any]:
+    def parse_resume(self, file_path: str, job_title: str = None, job_description: str = None, job_skills: list = None) -> Dict[str, Any]:
         """
         Parse resume and extract all information
         
@@ -107,8 +107,8 @@ class ResumeParser:
             # Extract text from file
             raw_text = extract_text_from_file(file_path)
             
-            # Parse with AI
-            parsed_data = self._parse_with_ai(raw_text)
+            # Parse with AI (pass job context for role-specific scoring)
+            parsed_data = self._parse_with_ai(raw_text, job_title=job_title, job_description=job_description, job_skills=job_skills)
             
             # Extract specific fields
             contact_info = self._extract_contact_info(raw_text)
@@ -117,11 +117,34 @@ class ResumeParser:
             experience = self._extract_experience(raw_text)
             
             # Calculate total years of experience
+            # Determine candidate type first
+            candidate_type = parsed_data.get('candidate_type', '').upper()
+            ai_exp_years = parsed_data.get('experience_years', 0)
+            
             total_exp_years = 0
-            if experience:
-                total_exp_years = max([exp.get('duration_years', 0) for exp in experience] + [parsed_data.get('experience_years', 0), 0])
+            if candidate_type == 'FRESHER':
+                # Freshers always have 0 professional experience
+                total_exp_years = 0
+            elif experience:
+                total_exp_years = max([exp.get('duration_years', 0) for exp in experience] + [ai_exp_years, 0])
             else:
-                total_exp_years = parsed_data.get('experience_years', 0)
+                total_exp_years = ai_exp_years
+
+            # Extract highest qualification from education list
+            highest_qual = parsed_data.get('highest_qualification', None)
+            if not highest_qual and education:
+                degree_priority = ['PhD', 'M.Tech', 'M.E', 'M.Sc', 'MBA', 'MCA', 'M.S', 'M.A', 'M.Com',
+                                   'B.Tech', 'B.E', 'B.Sc', 'BCA', 'B.S', 'B.A', 'B.Com', 'Diploma']
+                for deg in degree_priority:
+                    for edu in education:
+                        if edu.get('degree', '').upper() == deg.upper() or deg.lower() in edu.get('degree', '').lower():
+                            spec = edu.get('specialization', '')
+                            highest_qual = f"{edu['degree']}{' in ' + spec if spec else ''}"
+                            break
+                    if highest_qual:
+                        break
+                if not highest_qual and education:
+                    highest_qual = education[0].get('degree', None)
 
             # Merge AI detected skills with regex matched skills
             ai_skills = parsed_data.get('skills', [])
@@ -142,6 +165,7 @@ class ResumeParser:
                 'education': education,
                 'experience': experience,
                 'experience_years': total_exp_years,
+                'total_years_experience': total_exp_years,
                 'skills': skills,
                 'summary': parsed_data.get('summary'),
                 'strengths': parsed_data.get('strengths', []),
@@ -152,6 +176,8 @@ class ResumeParser:
                 'key_achievements': self._extract_achievements(raw_text),
                 'certifications': self._extract_certifications(raw_text),
                 'languages': self._extract_languages(raw_text),
+                'highest_qualification': highest_qual,
+                'candidate_type': candidate_type or ('FRESHER' if total_exp_years == 0 else 'WORKING_PROFESSIONAL'),
             }
             
             return result
@@ -160,24 +186,41 @@ class ResumeParser:
             logger.error(f"Error parsing resume: {e}")
             raise
     
-    def _parse_with_ai(self, text: str) -> Dict[str, Any]:
-        """Parse resume using Google Generative AI"""
+    def _parse_with_ai(self, text: str, job_title: str = None, job_description: str = None, job_skills: list = None) -> Dict[str, Any]:
+        """Parse resume using Google Generative AI with job context for role-specific scoring"""
         try:
-            prompt = f"""Analyze this resume and provide detailed insights:
+            # Build job context block
+            job_context = ""
+            if job_title or job_description:
+                skills_str = ', '.join(job_skills) if job_skills else 'Not specified'
+                job_context = f"""
+TARGET JOB ROLE: {job_title or 'Not specified'}
+REQUIRED SKILLS FOR THIS ROLE: {skills_str}
+JOB DESCRIPTION: {(job_description or '')[:500]}
+
+IMPORTANT: Score the candidate SPECIFICALLY against this role. Strengths and weaknesses must reflect how well they fit THIS role, not their profile in general.
+"""
+            
+            prompt = f"""Analyze this resume and provide detailed insights for the hiring decision:
 
 {text[:3000]}
 
+{job_context}
 
- Provide the following in JSON format (ensure exactly 5 strengths and 5 weaknesses are provided). 
- CRITICAL: DO NOT use any markdown formatting like asterisks (**) or bolding in the text. Return plain text only.
+Provide the following in JSON format (ensure exactly 5 strengths and 5 weaknesses are provided).
+CRITICAL: DO NOT use any markdown formatting like asterisks (**) or bolding in the text. Return plain text only.
+If a job role is specified above, make ALL insights role-specific and relevant to that role.
 {{
-    "summary": "Brief summary of candidate",
-    "strengths": ["Detailed strength 1", "Detailed strength 2", "Detailed strength 3", "Detailed strength 4", "Detailed strength 5"],
-    "weaknesses": ["Detailed weakness 1", "Detailed weakness 2", "Detailed weakness 3", "Detailed weakness 4", "Detailed weakness 5"],
+    "summary": "Brief summary of candidate's fit for the role",
+    "strengths": ["Role-specific strength 1", "Role-specific strength 2", "Role-specific strength 3", "Role-specific strength 4", "Role-specific strength 5"],
+    "weaknesses": ["Role-specific weakness 1", "Role-specific weakness 2", "Role-specific weakness 3", "Role-specific weakness 4", "Role-specific weakness 5"],
     "recommendations": ["recommendation1", ...],
     "overall_score": 0-100,
     "key_insights": ["insight1", "insight2", ...],
-    "role_fit": {{"technical_fit": 0-100, "cultural_fit": 0-100}}
+    "role_fit": {{"technical_fit": 0-100, "cultural_fit": 0-100}},
+    "experience_years": 0,
+    "highest_qualification": "degree name or null",
+    "candidate_type": "FRESHER or WORKING_PROFESSIONAL"
 }}"""
             
             logger.info(f"Sending prompt to Gemini: {prompt[:100]}...")

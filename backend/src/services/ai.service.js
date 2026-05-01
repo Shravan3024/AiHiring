@@ -46,7 +46,7 @@ const sanitizeAIOutput = (obj) => {
 /**
  * Resume parsing integration
  */
-const parseResumeWithAI = async (filePath) => {
+const parseResumeWithAI = async (filePath, jobContext = {}) => {
   try {
     // 1. Try Remote AI Service first (Flask)
     logger.info(`[AI Service] Attempting remote parse via ${AI_SERVICE_URL}`);
@@ -57,6 +57,13 @@ const parseResumeWithAI = async (filePath) => {
     
     const fileStream = fs.createReadStream(filePath);
     formData.append('file', fileStream);
+    
+    // Pass job context for role-specific scoring
+    if (jobContext.title) formData.append('job_title', jobContext.title);
+    if (jobContext.description) formData.append('job_description', jobContext.description.substring(0, 1000));
+    if (jobContext.skills && Array.isArray(jobContext.skills)) {
+      formData.append('job_skills', JSON.stringify(jobContext.skills));
+    }
 
     const response = await aiServiceClient.post('/api/ai/resume/parse', formData, {
       headers: formData.getHeaders(),
@@ -73,7 +80,7 @@ const parseResumeWithAI = async (filePath) => {
     
     // 2. Try Direct Gemini Parse from Node (Secondary Pipeline)
     try {
-        return await parseResumeWithGeminiDirect(filePath);
+        return await parseResumeWithGeminiDirect(filePath, jobContext);
     } catch (geminiError) {
         logger.error(`[AI Service] Direct Gemini parse also failed: ${geminiError.message}. Falling back to local ML parser.`);
         // 3. Last Resort: Local ML Parser
@@ -86,10 +93,11 @@ const parseResumeWithAI = async (filePath) => {
   }
 };
 
+
 /**
  * Direct Gemini Resume Parser (Node-based secondary pipeline)
  */
-const parseResumeWithGeminiDirect = async (filePath) => {
+const parseResumeWithGeminiDirect = async (filePath, jobContext = {}) => {
     try {
         const fs = require('fs');
         const pdf = require('pdf-parse'); 
@@ -103,24 +111,38 @@ const parseResumeWithGeminiDirect = async (filePath) => {
             text = dataBuffer.toString('utf-8');
         }
 
+        // Build job context for role-specific scoring
+        const jobContextText = jobContext.title ? `
+TARGET JOB ROLE: ${jobContext.title}
+REQUIRED SKILLS: ${(jobContext.skills || []).join(', ')}
+Evaluate ALL insights specifically for this role.
+` : '';
+
         const prompt = `
-            Task: Parse the following resume text and return a structured JSON object.
+            Task: Parse the following resume and return a structured JSON object.${jobContextText}
             
             Resume Text:
             ${text.substring(0, 4000)}
 
-            Required JSON Format:
+            Required JSON Format (fill all fields accurately):
             {
                 "contact_info": { "email": "", "phone": "", "name": "" },
                 "skills": ["skill1", "skill2"],
-                "experience_years": number,
+                "experience_years": 0,
+                "candidate_type": "FRESHER or WORKING_PROFESSIONAL",
                 "overall_score": 0-100,
-                "summary": "Short executive summary",
-                "education": [{ "degree": "", "specialization": "", "cgpa": "" }],
-                "strengths": ["string", "string", "string", "string", "string"],
-                "weaknesses": ["string", "string", "string", "string", "string"],
-                "role_fit": { "fit_level": "High/Medium/Low", "explanation": "" }
+                "summary": "Role-specific professional summary",
+                "highest_qualification": "degree name e.g. B.Tech in CS or null",
+                "education": [{ "degree": "", "specialization": "", "institution": "", "year_of_passout": "" }],
+                "strengths": ["role-specific strength 1", "strength 2", "strength 3", "strength 4", "strength 5"],
+                "weaknesses": ["role-specific weakness 1", "weakness 2", "weakness 3", "weakness 4", "weakness 5"],
+                "role_fit": { "fit_level": "High/Medium/Low", "explanation": "role-specific fit explanation" }
             }
+            
+            CRITICAL RULES:
+            - If candidate is a FRESHER (student/no full-time work), set experience_years=0 and candidate_type=FRESHER
+            - If highest_qualification cannot be found, set it to null (do not guess)
+            - All strengths/weaknesses must be relevant to the target job role if specified
         `;
 
         const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
@@ -128,13 +150,15 @@ const parseResumeWithGeminiDirect = async (filePath) => {
         const sanitized = sanitizeAIOutput(parsed);
         return {
             ...sanitized,
-            total_years_experience: sanitized.experience_years || 0
+            experience_years: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0),
+            total_years_experience: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0)
         };
     } catch (e) {
         logger.error(`[Gemini Direct] Failed: ${e.message}`);
         throw e;
     }
 };
+
 
 /**
  * Local ML-based Resume Parser (Iterative Fallback)
@@ -165,15 +189,18 @@ const localResumeParser = async (filePath) => {
         const foundSkills = commonSkills.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(text));
 
         const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
-        const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 2;
+        // CRITICAL FIX: Do NOT default experience to 2 - freshers have 0 years
+        const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 0;
 
         return {
             contact_info: { email, phone },
             skills: foundSkills,
             experience_years: parseInt(experience),
+            total_years_experience: parseInt(experience),
             overall_score: 65,
             summary: "Extracted via Local Semantic Pipeline (AI Fallback Active)",
-            education: [{ degree: "Detected Degree", cgpa: cgpaMatch?.[1] }],
+            highest_qualification: null, // Cannot reliably detect without AI
+            education: [{ degree: cgpaMatch ? "Detected Degree" : null, cgpa: cgpaMatch?.[1] }],
             strengths: ["Clear professional background", "Documented technical skills", "Structured profile layout"],
             weaknesses: ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
             role_fit: { fit_level: "Moderate", explanation: "Matched against core industrial keywords." }
@@ -189,7 +216,20 @@ const localResumeParser = async (filePath) => {
  */
 const scoreResume = async (parsedResume, jobRequirements) => {
   try {
-    const jdSkillsText = (jobRequirements.required_skills?.join(' ') || jobRequirements.description || '').toLowerCase();
+    // jobRequirements can be either a job object {required_skills, description} or a string/number job ID
+    let reqObj = jobRequirements;
+    if (typeof jobRequirements === 'string' || typeof jobRequirements === 'number') {
+      // Legacy: look up job by ID
+      try {
+        const { Job } = require('../models');
+        const job = await Job.findByPk(jobRequirements);
+        reqObj = job ? { required_skills: job.required_skills || [], description: job.description || job.title || '' } : {};
+      } catch(e) {
+        reqObj = {};
+      }
+    }
+
+    const jdSkillsText = (reqObj.required_skills?.join(' ') || reqObj.description || '').toLowerCase();
     const candSkills = parsedResume.skills ? (Array.isArray(parsedResume.skills) ? parsedResume.skills : Object.values(parsedResume.skills).flat()) : [];
     
     const skillMatch = scoringService.matchSkills(jdSkillsText, candSkills);
@@ -211,6 +251,7 @@ const scoreResume = async (parsedResume, jobRequirements) => {
     return { overall_fit_percentage: 0, matched_skills: [], missing_skills: [] };
   }
 };
+
 
 /**
  * Analyze Assessment Response (Hybrid Gemini + Local Semantic)
@@ -266,24 +307,32 @@ const analyzeAssessmentResponse = async (assessmentData) => {
  * Analyze Interview using Deep AI
  */
 const analyzeInterview = async (transcript, interviewDetails = {}) => {
-  const { type = 'technical', questions = [] } = interviewDetails;
+  const { type = 'technical', questions = [], jobTitle = 'the role', jobSkills = [] } = interviewDetails;
   
+  const jobContext = jobTitle !== 'the role' ? `
+Job Role Being Evaluated: ${jobTitle}
+Required Skills for This Role: ${jobSkills.slice(0, 10).join(', ')}
+CRITICAL: All analysis, strengths, weaknesses, and recommendations must be SPECIFIC to the "${jobTitle}" role.
+` : '';
+
   const prompt = `
-    Task: Deep AI Interview Analysis for Mask Polymers.
+    Task: Deep AI Interview Analysis for Mask Polymers Recruitment.
     Interview Type: ${type}
+    ${jobContext}
     Context Questions: ${JSON.stringify(questions)}
     Transcript: ${transcript.substring(0, 8000)}
 
-    Analyze the transcript and provide a comprehensive evaluation in JSON format.
-    Include scores (0-100), green/red flags, and hiring recommendations.
+    Analyze the transcript comprehensively. Evaluate the candidate's fitness for ${jobTitle}.
+    Provide scores (0-100), role-specific green/red flags, and hiring recommendations.
+    DO NOT use markdown formatting (no asterisks **). Return plain text only.
 
     Required JSON Schema:
     {
       "overall_assessment": {
         "overall_score": 0-100,
-        "summary": "string",
-        "key_takeaways": ["string"],
-        "next_round_readiness": boolean
+        "summary": "Role-specific assessment summary for ${jobTitle}",
+        "key_takeaways": ["role-specific takeaway 1", "takeaway 2"],
+        "next_round_readiness": true/false
       },
       "qa_analyses": [
         { "question": "string", "answer_summary": "string", "technical_depth": 0-10, "communication_clarity": 0-10 }
@@ -301,12 +350,13 @@ const analyzeInterview = async (transcript, interviewDetails = {}) => {
         "clarity": "clear | average | poor",
         "hesitation_level": "low | medium | high"
       },
-      "green_flags": ["string"],
-      "red_flags": ["string"],
+      "green_flags": ["role-relevant positive indicator 1", "indicator 2"],
+      "red_flags": ["role-relevant concern 1", "concern 2"],
+      "weaknesses": ["specific weakness relevant to ${jobTitle}", "weakness 2"],
       "recommendation": "strong_yes | yes | maybe | no",
       "performance_prediction": {
         "predicted_on_job_performance": "exceptional | strong | average | risk",
-        "time_to_productivity_months": number,
+        "time_to_productivity_months": 1-12,
         "retention_probability_percentage": 0-100
       }
     }
@@ -325,38 +375,55 @@ const analyzeInterview = async (transcript, interviewDetails = {}) => {
     return {
       overall_assessment: { 
         overall_score: score, 
-        summary: "Semantic fallback analysis active due to AI service interruption.",
+        summary: `Semantic fallback analysis for ${jobTitle}. AI service interrupted.`,
         key_takeaways: ["Candidate provided structured responses"]
       },
       metrics: { technical_knowledge: score, communication: 70, problem_solving: 60, soft_skills: 70, cultural_fit: 60 },
+      weaknesses: [`Limited data for ${jobTitle} role evaluation`],
       recommendation: score > 60 ? 'yes' : 'maybe'
     };
   }
 };
 
+
 /**
  * Generate Resume Summary (AI-enhanced)
  */
-const generateResumeSummary = async (parsedData) => {
+const generateResumeSummary = async (parsedData, jobContext = {}) => {
     try {
         const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : 
                       (typeof parsedData.skills === 'object' ? Object.values(parsedData.skills).flat().join(', ') : 'Various technical domains');
         const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
+        const qual = parsedData.highest_qualification || 'Not specified';
+        const candidateType = parsedData.candidate_type || (exp === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL');
+        
+        // Build role-specific prompt
+        const roleContext = jobContext.title ? `
+TARGET JOB ROLE: ${jobContext.title}
+REQUIRED SKILLS: ${(jobContext.skills || []).slice(0, 10).join(', ')}
+All insights must be evaluated against this specific role.` : '';
         
         const prompt = `
-            Task: Generate an executive summary and analysis for a candidate based on their parsed resume data.
+            Task: Generate a role-specific executive summary and analysis for a candidate.
+            ${roleContext}
+            
             Candidate Data:
-            - Experience: ${exp} years
+            - Candidate Type: ${candidateType}
+            - Experience: ${exp === 0 ? 'Fresher (0 years)' : exp + ' years'}
             - Skills: ${skills}
-            - Highest Qualification: ${parsedData.highest_qualification || 'N/A'}
+            - Highest Qualification: ${qual}
             - Top Achievements: ${parsedData.key_achievements?.join(', ') || 'N/A'}
+            
+            ${jobContext.title ? `Evaluate the candidate SPECIFICALLY for the role: ${jobContext.title}` : 'Provide a general professional evaluation.'}
             
             Return a JSON object:
             {
-                "executive_summary": "A 2-3 sentence professional summary",
-                "key_strengths": ["List 5 distinct strengths"],
-                "weaknesses": ["List 3-5 potential areas for growth or gaps"],
-                "recommended_improvements": ["What the candidate should add or improve in their profile"]
+                "executive_summary": "A 2-3 sentence professional summary that explicitly mentions fit/gap for the target role",
+                "key_strengths": ["List 5 role-specific strengths"],
+                "weaknesses": ["List 3-5 role-specific areas for growth or gaps"],
+                "recommended_improvements": ["What the candidate should add or improve for this role"],
+                "jd_match_analysis": "1-2 sentences on how well the candidate matches the JD",
+                "education_highlight": "${qual} - brief note on relevance to the role"
             }
         `;
 
@@ -367,10 +434,14 @@ const generateResumeSummary = async (parsedData) => {
         } catch (llmErr) {
             logger.warn(`LLM Summary generation failed: ${llmErr.message}. Using structured fallback.`);
             return {
-                executive_summary: `Candidate presents ${exp} years of industry experience with core competencies in ${skills.substring(0, 100)}...`,
-                key_strengths: parsedData.strengths?.length > 0 ? parsedData.strengths : ["Clear professional background", "Documented technical skills", "Structured profile layout"],
-                weaknesses: parsedData.weaknesses?.length > 0 ? parsedData.weaknesses : ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
-                recommended_improvements: parsedData.recommendations?.length > 0 ? parsedData.recommendations : ["Add specific project impact metrics"]
+                executive_summary: candidateType === 'FRESHER' 
+                    ? `Fresher candidate with strong academic background in ${qual}. Skills include ${skills.substring(0, 80)}. Interested in ${jobContext.title || 'the applied role'}.`
+                    : `Candidate with ${exp} years of experience. Core competencies: ${skills.substring(0, 100)}.`,
+                key_strengths: parsedData.strengths?.length > 0 ? parsedData.strengths : ["Academic background", "Technical skill awareness", "Growth potential"],
+                weaknesses: parsedData.weaknesses?.length > 0 ? parsedData.weaknesses : ["Limited professional experience", "Verify certifications manually"],
+                recommended_improvements: ["Add specific project impact metrics", "Highlight role-specific skills"],
+                jd_match_analysis: `Candidate's profile has been evaluated against ${jobContext.title || 'the role'}.`,
+                education_highlight: qual || 'Qualification not detected — please review resume manually'
             };
         }
     } catch (e) {
@@ -383,6 +454,7 @@ const generateResumeSummary = async (parsedData) => {
         };
     }
 };
+
 
 /**
  * Generate Interview Summary
@@ -437,10 +509,23 @@ module.exports = {
    * Module 2: Full Interview Analysis
    */
   analyzeFullInterview: async (qaPairs, jobTitle) => {
+    const roleCtx = jobTitle ? `Role being evaluated: ${jobTitle}. All scoring must be specific to this role.` : '';
     const prompt = `
-      Task: Analyze Video Interview for ${jobTitle}.
+      Task: Analyze Video Interview for ${jobTitle || 'the applied role'}.
+      ${roleCtx}
       Data: ${JSON.stringify(qaPairs)}
-      Output Format (JSON): { "dimension_scores": { "technical": 0, "communication": 0, "confidence": 0, "soft_skills": 0, "integrity": 0 }, "overall_interview_score": 0, "highlights": { "summary": "" }, "recommendation": "" }
+      
+      Evaluate the candidate's fitness for this SPECIFIC role.
+      DO NOT use markdown formatting. Return plain text only.
+      
+      Output Format (JSON): { 
+        "dimension_scores": { "technical": 0-100, "communication": 0-100, "confidence": 0-100, "soft_skills": 0-100, "integrity": 0-100 }, 
+        "overall_interview_score": 0-100, 
+        "highlights": { "summary": "Role-specific assessment summary" },
+        "strengths": ["role-specific strength 1", "strength 2"],
+        "weaknesses": ["role-specific gap 1", "gap 2"],
+        "recommendation": "Strong Hire | Hire | Hold | Reject"
+      }
     `;
     try {
       const responseText = await llmService.generateCompletion('INTERVIEW_ANALYSIS', prompt);
@@ -450,11 +535,14 @@ module.exports = {
       logger.warn(`AI Full Interview Analysis Error: ${err.message}`);
       return { 
         overall_interview_score: 50, 
-        highlights: { summary: "The AI interview analysis was interrupted. Please review the transcript manually." },
-        dimension_scores: { technical: 50, communication: 50, confidence: 50 }
+        highlights: { summary: `The AI interview analysis for ${jobTitle || 'this role'} was interrupted. Please review the transcript manually.` },
+        dimension_scores: { technical: 50, communication: 50, confidence: 50 },
+        strengths: ["Candidate completed the interview session"],
+        weaknesses: ["Full AI evaluation unavailable — manual review required"]
       };
     }
   },
+
 
   /**
    * Module 4: Final Recommendation Engine
