@@ -29,6 +29,19 @@ interface ApplicationDetails {
     phone?: string;
     location?: string;
     profileImage?: string;
+    // Education
+    education?: string;
+    specialization?: string;
+    cgpa?: number;
+    year_of_passout?: number;
+    experience_years?: number;
+    candidate_type?: string;
+    domain?: string;
+    area_of_interest?: string;
+    current_company?: string;
+    working_address?: string;
+    skills?: string[];
+    summary?: string;
   };
   job: {
     id: number;
@@ -208,52 +221,139 @@ export default function HRApplicationDetailsPage() {
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Candidate Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="font-semibold text-gray-900">{appData.candidate?.name || "N/A"}</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-white border-2 border-blue-200 overflow-hidden shadow-lg">
-                      <img 
-                        src={appData.candidate?.profileImage || "/images/default-avatar.png"} 
-                        alt={appData.candidate?.name} 
-                        className="w-full h-full object-cover"
-                        onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <a href={`mailto:${appData.candidate?.email}`} className="font-semibold text-blue-600 hover:underline">
-                        {appData.candidate?.email || "N/A"}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                {appData.candidate?.phone && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {/* Left col */}
+                <div className="space-y-4">
                   <div className="flex items-start gap-2">
-                    <Phone className="w-4 h-4 text-gray-600 mt-1" />
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <a href={`tel:${appData.candidate.phone}`} className="font-semibold text-blue-600 hover:underline">
-                        {appData.candidate.phone}
-                      </a>
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-white border-2 border-blue-200 overflow-hidden shadow-lg shrink-0">
+                        <img
+                          src={appData.candidate?.profileImage || "/images/default-avatar.png"}
+                          alt={appData.candidate?.name}
+                          className="w-full h-full object-cover"
+                          onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Full Name</p>
+                        <p className="font-bold text-gray-900 text-lg">{appData.candidate?.name || "N/A"}</p>
+                        {appData.candidate?.candidate_type && (
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                            appData.candidate.candidate_type === 'FRESHER' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {appData.candidate.candidate_type === 'FRESHER' ? 'Fresher' : 'Working Professional'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
-                {appData.candidate?.location && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-600 mt-1" />
-                    <div>
-                      <p className="text-sm text-gray-600">Location</p>
-                      <p className="font-semibold text-gray-900">{appData.candidate.location}</p>
+
+                  {appData.candidate?.email && (
+                    <div className="flex items-start gap-2">
+                      <Mail className="w-4 h-4 text-gray-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500">Email</p>
+                        <a href={`mailto:${appData.candidate.email}`} className="font-semibold text-blue-600 hover:underline text-sm">
+                          {appData.candidate.email}
+                        </a>
+                      </div>
                     </div>
+                  )}
+
+                  {appData.candidate?.phone && (
+                    <div className="flex items-start gap-2">
+                      <Phone className="w-4 h-4 text-gray-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500">Phone</p>
+                        <a href={`tel:${appData.candidate.phone}`} className="font-semibold text-blue-600 hover:underline text-sm">
+                          {appData.candidate.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {appData.candidate?.location && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500">Location</p>
+                        <p className="font-semibold text-gray-900 text-sm">{appData.candidate.location}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right col — Education & Background */}
+                <div className="space-y-3 border-l border-blue-200 pl-6">
+                  <p className="text-xs font-black text-blue-700 uppercase tracking-widest mb-2">Education & Background</p>
+
+                  {(appData.candidate?.education || appData.candidate?.specialization) && (
+                    <div>
+                      <p className="text-xs text-gray-500">Degree / Specialization</p>
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {[appData.candidate?.education, appData.candidate?.specialization].filter(Boolean).join(' — ')}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {appData.candidate?.cgpa && (
+                      <div className="bg-white rounded-xl p-3 border border-blue-100">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">CGPA</p>
+                        <p className="text-lg font-black text-blue-700">{appData.candidate.cgpa}</p>
+                      </div>
+                    )}
+                    {appData.candidate?.year_of_passout && (
+                      <div className="bg-white rounded-xl p-3 border border-blue-100">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Year of Passout</p>
+                        <p className="text-lg font-black text-slate-700">{appData.candidate.year_of_passout}</p>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {(appData.candidate?.experience_years !== undefined) && (
+                    <div>
+                      <p className="text-xs text-gray-500">Experience</p>
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {appData.candidate.experience_years === 0 ? 'Fresher (0 years)' : `${appData.candidate.experience_years} year(s)`}
+                      </p>
+                    </div>
+                  )}
+
+                  {appData.candidate?.current_company && (
+                    <div>
+                      <p className="text-xs text-gray-500">Current Company</p>
+                      <p className="font-semibold text-gray-900 text-sm">{appData.candidate.current_company}</p>
+                    </div>
+                  )}
+
+                  {(appData.candidate?.domain || appData.candidate?.area_of_interest) && (
+                    <div>
+                      <p className="text-xs text-gray-500">Domain / Interest</p>
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {[appData.candidate?.domain, appData.candidate?.area_of_interest].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {appData.candidate?.skills && appData.candidate.skills.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Skills</p>
+                      <div className="flex flex-wrap gap-1">
+                        {appData.candidate.skills.slice(0, 8).map((sk: string, i: number) => (
+                          <span key={i} className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{sk}</span>
+                        ))}
+                        {appData.candidate.skills.length > 8 && (
+                          <span className="text-[10px] text-gray-400">+{appData.candidate.skills.length - 8} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
+
 
           {/* Score Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
