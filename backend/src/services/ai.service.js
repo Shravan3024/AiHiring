@@ -580,76 +580,118 @@ module.exports = {
         interviewScore, 
         integrityScore, 
         behavioralScore,
+        resumeScore,
         jobTitle = "the specified role",
         candidateName = "this candidate"
     } = metrics;
     
     // Default weights
-    let weights = { assessment: 0.4, interview: 0.4, integrity: 0.1, behavioral: 0.1 };
+    let weights = { assessment: 0.35, interview: 0.35, integrity: 0.1, behavioral: 0.1, resume: 0.1 };
 
     if (jobId) {
       try {
         const { AIConfig } = require('../models');
         const dbConfig = await AIConfig.findOne({ where: { jobId: String(jobId), status: 'ACTIVE' } });
         if (dbConfig) {
-          // Map AI Config weights (Resume, MCQ, Tech, Interview) to the final 4 metrics
-          // Since this function focuses on Post-Interview decision, we re-weight
           const totalBase = (dbConfig.mcqWeight + dbConfig.technicalWeight + dbConfig.interviewWeight) || 1;
-          weights.assessment = (dbConfig.mcqWeight + dbConfig.technicalWeight) / totalBase * 0.8;
-          weights.interview = dbConfig.interviewWeight / totalBase * 0.8;
+          weights.assessment = (dbConfig.mcqWeight + dbConfig.technicalWeight) / totalBase * 0.7;
+          weights.interview = dbConfig.interviewWeight / totalBase * 0.7;
           weights.integrity = 0.1;
           weights.behavioral = 0.1;
+          weights.resume = 0.1;
         }
       } catch (e) {
         logger.warn(`Failed to fetch AI weights for job ${jobId}, using defaults.`);
       }
     }
     
-    const finalScore = (assessmentScore * weights.assessment) + (interviewScore * weights.interview) + (integrityScore * weights.integrity) + (behavioralScore * weights.behavioral);
+    const finalScore = Math.round(
+      (assessmentScore * weights.assessment) + 
+      (interviewScore * weights.interview) + 
+      (integrityScore * weights.integrity) + 
+      (behavioralScore * weights.behavioral) +
+      ((resumeScore || 0) * weights.resume)
+    );
+
+    // Derive fit dimensions from available scores
+    const technicalFit = Math.round((assessmentScore * 0.7) + (interviewScore * 0.3));
+    const commFit = Math.round((interviewScore * 0.6) + (behavioralScore * 0.4));
+    const leadershipFit = Math.round((behavioralScore * 0.5) + (interviewScore * 0.3) + (assessmentScore * 0.2));
+    const domainFit = Math.round((assessmentScore * 0.6) + ((resumeScore || 0) * 0.4));
+    const culturalFit = Math.round((behavioralScore * 0.6) + (integrityScore * 0.4));
     
     const prompt = `
       Task: Generate Final Hiring Decision for Mask Polymers Recruitment System.
       Role: ${jobTitle}
       Candidate: ${candidateName}
       
-      Performance Metrics:
-      - Technical Assessment Score: ${assessmentScore}/100
-      - AI Interview Performance: ${interviewScore}/100
-      - Integrity/Security Score: ${integrityScore}/100
-      - Behavioral/Cultural Score: ${behavioralScore}/100
-      - Calculated Weighted Score: ${Math.round(finalScore)}/100
+      Performance Metrics (all scores out of 100):
+      - Technical Assessment Score: ${assessmentScore}
+      - AI Interview Performance: ${interviewScore}
+      - Resume/Profile Score: ${resumeScore || 'Not evaluated'}
+      - Integrity & Security Index: ${integrityScore}
+      - Behavioral & Cultural Score: ${behavioralScore}
+      - Computed Weighted Score: ${finalScore}
+
+      Pre-computed Fit Estimates:
+      - Technical Fit: ${technicalFit}
+      - Communication Fit: ${commFit}
+      - Leadership Fit: ${leadershipFit}
+      - Domain Expertise Fit: ${domainFit}
+      - Cultural Fit: ${culturalFit}
+
+      Instructions:
+      - Base your decision strictly on the above metrics
+      - "Comm Fit" = Communication Fitness derived from interview articulation + behavioral score
+      - Use "Strong Hire" only if weighted score >= 70
+      - Use "Hire" if weighted score 55-69
+      - Use "Borderline" if weighted score 40-54
+      - Use "Reject" if weighted score < 40
+      - role_recommendation must be role-specific for: ${jobTitle}
+      - DO NOT use markdown. Return plain text values only.
       
-      Provide a comprehensive hiring recommendation in JSON format.
-      CRITICAL: DO NOT use markdown like asterisks (**) for bolding. Return plain text only.
-      
-      Required JSON Schema:
+      Required JSON Schema (numbers only, no units):
       {
         "decision": "Strong Hire | Hire | Borderline | Reject",
-        "role_recommendation": "A detailed 1-2 sentence recommendation on which specific capacity or sub-role this candidate fits best within ${jobTitle}.",
+        "role_recommendation": "Specific 1-2 sentence recommendation for ${jobTitle} capacity.",
         "fit_breakdown": {
           "technical": 0-100,
           "communication": 0-100,
-          "leadership": 0-100
+          "leadership": 0-100,
+          "domain_expertise": 0-100,
+          "cultural_fit": 0-100
         },
-        "reasoning": "A professional executive rationale for the decision based on the provided metrics.",
+        "reasoning": "Professional 2-3 sentence executive rationale citing specific scores.",
+        "key_strengths": ["strength1", "strength2", "strength3"],
+        "development_areas": ["area1", "area2"],
         "success_prediction_percentage": 0-100
       }
     `;
 
     try {
       const responseText = await llmService.generateCompletion('BIAS_SAFE_HR', prompt);
-      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
-      
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
       return { ...sanitizeAIOutput(parsed), final_score: finalScore };
     } catch (err) {
       logger.error(`[AI Decision Core] Execution Error: ${err.message}`);
+      // Deterministic fallback — use actual computed scores, not hardcoded 50
+      const autoDecision = finalScore >= 70 ? 'Strong Hire' : finalScore >= 55 ? 'Hire' : finalScore >= 40 ? 'Borderline' : 'Reject';
       return { 
-        decision: "Borderline", 
-        role_recommendation: "System requires manual HR review due to analysis error.",
-        fit_breakdown: { technical: assessmentScore, communication: interviewScore, leadership: 50 },
-        reasoning: "The AI decision core encountered a processing error. Please review scores manually.",
-        success_prediction_percentage: 50,
-        final_score: finalScore 
+        decision: autoDecision,
+        role_recommendation: `Based on computed metrics (Score: ${finalScore}/100), candidate shows ${autoDecision === 'Strong Hire' || autoDecision === 'Hire' ? 'sufficient' : 'insufficient'} alignment for the ${jobTitle} role. Manual HR review recommended for final confirmation.`,
+        fit_breakdown: { 
+          technical: technicalFit, 
+          communication: commFit, 
+          leadership: leadershipFit,
+          domain_expertise: domainFit,
+          cultural_fit: culturalFit
+        },
+        reasoning: `Deterministic scoring applied (AI unavailable). Assessment: ${assessmentScore}%, Interview: ${interviewScore}%, Integrity: ${integrityScore}%. Weighted final: ${finalScore}/100.`,
+        key_strengths: assessmentScore > 60 ? [`Strong technical assessment (${assessmentScore}%)`] : [`Completed full assessment pipeline`],
+        development_areas: assessmentScore < 60 ? [`Technical depth for ${jobTitle}`] : [],
+        success_prediction_percentage: finalScore,
+        final_score: finalScore
       };
     }
   },

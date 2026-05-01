@@ -491,11 +491,11 @@ class HRDecisionController {
         interviewScore: application.interview_score || 0,
         integrityScore,
         behavioralScore: application.behavioral_score || 50,
+        resumeScore: application.resume_score || 0,
         jobTitle: application.Job?.title || "Target Role",
         candidateName: application.Candidate?.User?.name || "Candidate"
       });
 
-      // Defensive logic for AI response fields
       const successProb = typeof aiResponse.success_prediction_percentage === 'number' 
         ? aiResponse.success_prediction_percentage / 100 
         : 0.5;
@@ -511,6 +511,7 @@ class HRDecisionController {
       });
 
       res.json({ success: true, decision: aiResponse });
+
     } catch (err) {
       console.error("[Decision Core] Error:", err);
       res.status(500).json({ error: err.message, stack: process.env.NODE_ENV === 'development' ? err.stack : undefined });
