@@ -476,13 +476,32 @@ module.exports = {
    * Module 1: Advanced Answer Analysis
    */
   evaluateTechnicalAnswer: async (question, answer, expectedAnswer, keywords) => {
+    // If answer is empty/blank, skip AI call and return honest 0-score
+    const trimmedAnswer = (answer || '').trim();
+    if (!trimmedAnswer || trimmedAnswer.length < 5) {
+      return {
+        score: 0,
+        structure_score: 0,
+        concept_coverage: 0,
+        explanation: "No answer was provided for this question.",
+        strengths: [],
+        weaknesses: ["No answer provided for evaluation."]
+      };
+    }
+
     const prompt = `
-      Task: Evaluate technical response for Mask Polymers.
-      Context: Q: ${question} | Ans: ${answer} | Ref: ${expectedAnswer}
-      Output Format (JSON): { 
-        "score": number, 
-        "structure_score": number, 
-        "concept_coverage": number, 
+      Task: Evaluate technical response for Mask Polymers recruitment assessment.
+      Question: ${question}
+      Candidate Answer: ${trimmedAnswer}
+      Expected Answer Reference: ${expectedAnswer || 'N/A'}
+      Key Scoring Keywords: ${Array.isArray(keywords) ? keywords.join(', ') : 'N/A'}
+      
+      Score based on: relevance, completeness, and keyword coverage.
+      Return ONLY valid JSON, no markdown.
+      Output Format: { 
+        "score": number (0-100), 
+        "structure_score": number (0-100), 
+        "concept_coverage": number (0-100), 
         "explanation": "string",
         "strengths": ["string"],
         "weaknesses": ["string"]
@@ -490,20 +509,26 @@ module.exports = {
     `;
     try {
       const responseText = await llmService.generateCompletion('INTERVIEW_ANALYSIS', prompt);
-      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
       return sanitizeAIOutput(parsed);
     } catch (err) {
-      logger.warn(`AI Technical Evaluation Error: ${err.message}. Providing baseline scores.`);
+      logger.warn(`AI Technical Evaluation Error: ${err.message}. Using keyword-based scoring.`);
+      // Keyword-based fallback scoring
+      const kws = Array.isArray(keywords) ? keywords : [];
+      const matchedKws = kws.filter(kw => trimmedAnswer.toLowerCase().includes(kw.toLowerCase()));
+      const kwScore = kws.length > 0 ? Math.round((matchedKws.length / kws.length) * 70) : 30;
       return { 
-        score: 50, 
-        structure_score: 50, 
-        concept_coverage: 50, 
-        explanation: "AI analysis encountered an error. Falling back to semantic baseline.",
-        strengths: ["Baseline response provided"],
-        weaknesses: ["AI analysis was interrupted"]
+        score: kwScore, 
+        structure_score: trimmedAnswer.length > 100 ? 40 : 20, 
+        concept_coverage: kwScore,
+        explanation: `Keyword-based evaluation (AI unavailable). Matched ${matchedKws.length}/${kws.length} keywords.`,
+        strengths: matchedKws.length > 0 ? [`Keywords matched: ${matchedKws.join(', ')}`] : ["Answer provided"],
+        weaknesses: kwScore < 50 ? ["Key concepts not sufficiently addressed"] : []
       };
     }
   },
+
 
   /**
    * Module 2: Full Interview Analysis
