@@ -35,7 +35,7 @@ exports.getMDApplications = async (req, res) => {
     const applications = await Application.findAll({
       attributes: ['id', 'overall_score', 'status', 'applied_at'],
       include: [
-        { model: Candidate, attributes: ['id'], include: [{ model: User, attributes: ['name', 'email'] }] },
+        { model: Candidate, attributes: ['id', 'experience_years', 'candidate_type', 'domain', 'area_of_interest', 'current_company', 'working_address'], include: [{ model: User, attributes: ['name', 'email'] }] },
         { model: Job, attributes: ['title', 'department'] },
         { model: TechnicalRound, attributes: ['score', 'status'] },
         { model: MalpracticeEvent, attributes: ['severity'] },
@@ -57,7 +57,16 @@ exports.getMDApplications = async (req, res) => {
 
       return {
         ...app.toJSON(),
-        candidate: { name: app.Candidate?.User?.name || 'Unknown' },
+        candidate: {
+          name: app.Candidate?.User?.name || 'Unknown',
+          email: app.Candidate?.User?.email || '',
+          experience_years: app.Candidate?.experience_years || 0,
+          candidate_type: app.Candidate?.candidate_type || null,
+          domain: app.Candidate?.domain || null,
+          area_of_interest: app.Candidate?.area_of_interest || null,
+          current_company: app.Candidate?.current_company || null,
+          working_address: app.Candidate?.working_address || null,
+        },
         score: app.overall_score || 0,
         ai_recommendation: recommendation,
         malpracticeScore,

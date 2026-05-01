@@ -241,6 +241,13 @@ export const candidateApi = {
     skills?: string[];
     cgpa?: number;
     year_of_passout?: number;
+    summary?: string;
+    // Fresher / Working Professional
+    candidate_type?: string;
+    domain?: string;
+    area_of_interest?: string;
+    current_company?: string;
+    working_address?: string;
   }) => api.put("/dashboard/candidate/profile", data),
 
   // Assessment

@@ -129,6 +129,44 @@ module.exports = (sequelize) => {
       allowNull: true
     },
 
+    // ── FRESHER / WORKING PROFESSIONAL FIELDS ──────────────────────
+    candidate_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'FRESHER or WORKING_PROFESSIONAL'
+    },
+
+    // Fresher fields
+    domain: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Domain of interest'
+    },
+
+    area_of_interest: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Area of interest for freshers'
+    },
+
+    // Working Professional fields
+    current_company: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Current employer'
+    },
+
+    working_address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Work address'
+    },
+
   }, {
     tableName: "Candidates",
     timestamps: true,

@@ -436,7 +436,6 @@ export default function CandidateInterview() {
       // 'aborted' usually happens when we intentionally stop speech, ignore it to reduce log noise
       // 'no-speech' happens when there is silence, which is common
       if (e.error === 'aborted' || e.error === 'no-speech') return;
-      
       if (e.error === 'network') {
         console.warn("Speech Recognition Network Error");
         toast.warning("Speech recognition network error. Please check your connection.");

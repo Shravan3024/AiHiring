@@ -290,7 +290,7 @@ exports.uploadResume = async (req, res) => {
           contact_info: aiParsedData.contact_info || {},
           education: aiParsedData.education || [],
           experience: aiParsedData.experience || [],
-          total_years_experience: aiParsedData.experience_years || 0, // FIXED MAPPING
+          total_years_experience: aiParsedData.experience_years || 0, 
           skills: aiParsedData.skills || {},
           certifications: aiParsedData.certifications || [],
           ai_summary: aiParsedData.summary || 'No summary available',
@@ -320,8 +320,17 @@ exports.uploadResume = async (req, res) => {
         // Update application kpis
         await app.update({
           resume_score: Math.round(jdScores.overall_fit_percentage || aiParsedData.overall_score || 0),
-          skills: jdScores.matched_skills || []
+          skills: jdScores.matched_skills || [],
+          experience_years: aiParsedData.experience_years || 0
         });
+
+        if (candidate) {
+          await candidate.update({
+            experience_years: aiParsedData.experience_years || candidate.experience_years,
+            skills: aiParsedData.skills ? Object.values(aiParsedData.skills).flat() : candidate.skills,
+            education: aiParsedData.education?.[0]?.degree || candidate.education
+          });
+        }
 
         logger.info(`[Resume AI] Application ${app.id} updated. Score: ${app.resume_score}`);
         await checkAndTriggerAutoRejection(app.id, logger);
@@ -378,7 +387,9 @@ exports.reparseResume = async (req, res) => {
     }
 
     const path = require('path');
-    const absolutePath = path.join(__dirname, '../../', resumePath);
+    const fs = require('fs');
+    const cleanResumePath = resumePath.startsWith('/') ? resumePath.substring(1) : resumePath;
+    const absolutePath = path.resolve(process.cwd(), cleanResumePath);
 
     if (!require('fs').existsSync(absolutePath)) {
       return res.status(404).json({ success: false, message: `Resume file not found: ${resumePath}` });
@@ -425,6 +436,7 @@ exports.reparseResume = async (req, res) => {
       contact_info: aiParsedData.contact_info || {},
       education: aiParsedData.education || [],
       experience: aiParsedData.experience || [],
+      total_years_experience: aiParsedData.experience_years || 0,
       skills: aiParsedData.skills || {},
       certifications: aiParsedData.certifications || [],
       ai_summary: aiParsedData.summary || 'No summary available',
@@ -453,12 +465,14 @@ exports.reparseResume = async (req, res) => {
     const resumeScore = Math.round(aiAnalysis.jd_match_score || aiAnalysis.overall_score);
     await application.update({
       resume_score: resumeScore,
-      skills: aiAnalysis.jd_matched_skills || candidate.skills
+      skills: aiAnalysis.jd_matched_skills || candidate.skills,
+      experience_years: aiAnalysis.total_years_experience
     });
 
     await candidate.update({
         skills: aiParsedData.skills ? Object.values(aiParsedData.skills).flat() : candidate.skills,
-        education: aiParsedData.education?.[0]?.degree || candidate.education
+        education: aiParsedData.education?.[0]?.degree || candidate.education,
+        experience_years: aiAnalysis.total_years_experience || candidate.experience_years
     });
 
     logger.info(`[Reparse] Completed successfully for app ${applicationId}. Score: ${resumeScore}`);

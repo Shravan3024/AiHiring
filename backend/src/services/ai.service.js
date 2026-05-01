@@ -77,7 +77,11 @@ const parseResumeWithAI = async (filePath) => {
     } catch (geminiError) {
         logger.error(`[AI Service] Direct Gemini parse also failed: ${geminiError.message}. Falling back to local ML parser.`);
         // 3. Last Resort: Local ML Parser
-        return await localResumeParser(filePath);
+        const localData = await localResumeParser(filePath);
+        return {
+            ...localData,
+            total_years_experience: localData.experience_years || 0
+        };
     }
   }
 };
@@ -121,7 +125,11 @@ const parseResumeWithGeminiDirect = async (filePath) => {
 
         const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
         const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
-        return sanitizeAIOutput(parsed);
+        const sanitized = sanitizeAIOutput(parsed);
+        return {
+            ...sanitized,
+            total_years_experience: sanitized.experience_years || 0
+        };
     } catch (e) {
         logger.error(`[Gemini Direct] Failed: ${e.message}`);
         throw e;
@@ -327,13 +335,53 @@ const analyzeInterview = async (transcript, interviewDetails = {}) => {
 };
 
 /**
- * Generate Resume Summary (Deterministic Fallback)
+ * Generate Resume Summary (AI-enhanced)
  */
 const generateResumeSummary = async (parsedData) => {
-    const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : 'Various technical domains';
-    const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
-    
-    return `Candidate presents ${exp} years of industry experience with core competencies in ${skills}. Semantic density suggests a ${parsedData.role_fit?.fit_level || 'standard'} alignment with the specified role.`;
+    try {
+        const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : 
+                      (typeof parsedData.skills === 'object' ? Object.values(parsedData.skills).flat().join(', ') : 'Various technical domains');
+        const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
+        
+        const prompt = `
+            Task: Generate an executive summary and analysis for a candidate based on their parsed resume data.
+            Candidate Data:
+            - Experience: ${exp} years
+            - Skills: ${skills}
+            - Highest Qualification: ${parsedData.highest_qualification || 'N/A'}
+            - Top Achievements: ${parsedData.key_achievements?.join(', ') || 'N/A'}
+            
+            Return a JSON object:
+            {
+                "executive_summary": "A 2-3 sentence professional summary",
+                "key_strengths": ["List 5 distinct strengths"],
+                "weaknesses": ["List 3-5 potential areas for growth or gaps"],
+                "recommended_improvements": ["What the candidate should add or improve in their profile"]
+            }
+        `;
+
+        try {
+            const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
+            const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+            return sanitizeAIOutput(parsed);
+        } catch (llmErr) {
+            logger.warn(`LLM Summary generation failed: ${llmErr.message}. Using structured fallback.`);
+            return {
+                executive_summary: `Candidate presents ${exp} years of industry experience with core competencies in ${skills.substring(0, 100)}...`,
+                key_strengths: parsedData.strengths?.length > 0 ? parsedData.strengths : ["Clear professional background", "Documented technical skills", "Structured profile layout"],
+                weaknesses: parsedData.weaknesses?.length > 0 ? parsedData.weaknesses : ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
+                recommended_improvements: parsedData.recommendations?.length > 0 ? parsedData.recommendations : ["Add specific project impact metrics"]
+            };
+        }
+    } catch (e) {
+        logger.error(`[Summary Generator] Critical Error: ${e.message}`);
+        return {
+            executive_summary: "Error generating summary.",
+            key_strengths: [],
+            weaknesses: [],
+            recommended_improvements: []
+        };
+    }
 };
 
 /**

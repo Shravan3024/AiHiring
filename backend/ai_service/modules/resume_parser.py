@@ -116,12 +116,32 @@ class ResumeParser:
             education = self._extract_education(raw_text)
             experience = self._extract_experience(raw_text)
             
+            # Calculate total years of experience
+            total_exp_years = 0
+            if experience:
+                total_exp_years = max([exp.get('duration_years', 0) for exp in experience] + [parsed_data.get('experience_years', 0), 0])
+            else:
+                total_exp_years = parsed_data.get('experience_years', 0)
+
+            # Merge AI detected skills with regex matched skills
+            ai_skills = parsed_data.get('skills', [])
+            if isinstance(ai_skills, list):
+                if 'ai_detected' not in skills:
+                    skills['ai_detected'] = []
+                skills['ai_detected'] = list(set(skills.get('ai_detected', []) + ai_skills))
+            elif isinstance(ai_skills, dict):
+                for cat, sk_list in ai_skills.items():
+                    if cat not in skills:
+                        skills[cat] = []
+                    skills[cat] = list(set(skills[cat] + sk_list))
+
             # Combine all data
             result = {
                 'raw_text': raw_text,
                 'contact_info': contact_info,
                 'education': education,
                 'experience': experience,
+                'experience_years': total_exp_years,
                 'skills': skills,
                 'summary': parsed_data.get('summary'),
                 'strengths': parsed_data.get('strengths', []),
@@ -246,22 +266,57 @@ class ResumeParser:
         """Extract education details"""
         education = []
         
-        # Find degrees
-        for degree in self.EDUCATION_DEGREES:
-            if degree in text:
-                # Try to find associated specialization
-                spec = None
-                for specialization in self.SPECIALIZATIONS:
-                    if specialization in text:
-                        spec = specialization
-                        break
-                
-                education.append({
-                    'degree': degree,
-                    'specialization': spec,
-                    'cgpa': self._extract_cgpa(text),
-                    'year_of_passout': self._extract_year(text)
-                })
+        # Regex patterns for degrees to handle variations
+        degree_patterns = [
+            (r'\bB\.?Tech\b', 'B.Tech'),
+            (r'\bB\.?E\b', 'B.E'),
+            (r'\bM\.?Tech\b', 'M.Tech'),
+            (r'\bM\.?E\b', 'M.E'),
+            (r'\bB\.?Sc\b', 'B.Sc'),
+            (r'\bM\.?Sc\b', 'M.Sc'),
+            (r'\bB\.?S\b', 'B.S'),
+            (r'\bM\.?S\b', 'M.S'),
+            (r'\bB\.?A\b', 'B.A'),
+            (r'\bM\.?A\b', 'M.A'),
+            (r'\bB\.?Com\b', 'B.Com'),
+            (r'\bM\.?Com\b', 'M.Com'),
+            (r'\bBCA\b', 'BCA'),
+            (r'\bMCA\b', 'MCA'),
+            (r'\bMBA\b', 'MBA'),
+            (r'\bM\.?B\.?A\b', 'MBA'),
+            (r'\bBachelor\s+of\s+Technology\b', 'B.Tech'),
+            (r'\bBachelor\s+of\s+Engineering\b', 'B.E'),
+            (r'\bMaster\s+of\s+Technology\b', 'M.Tech'),
+            (r'\bMaster\s+of\s+Engineering\b', 'M.E'),
+            (r'\bBachelor\s+of\s+Science\b', 'B.Sc'),
+            (r'\bMaster\s+of\s+Science\b', 'M.Sc'),
+            (r'\bBachelor\s+of\s+Arts\b', 'B.A'),
+            (r'\bMaster\s+of\s+Arts\b', 'M.A'),
+            (r'\bDiploma\b', 'Diploma'),
+            (r'\bPhD\b', 'PhD'),
+            (r'\bPh\.?D\b', 'PhD'),
+            (r'\bDoctor\s+of\s+Philosophy\b', 'PhD')
+        ]
+        
+        found_degrees = []
+        for pattern, degree_name in degree_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                if degree_name not in found_degrees:
+                    found_degrees.append(degree_name)
+                    
+                    # Try to find associated specialization
+                    spec = None
+                    for specialization in self.SPECIALIZATIONS:
+                        if re.search(r'\b' + re.escape(specialization) + r'\b', text, re.IGNORECASE):
+                            spec = specialization
+                            break
+                    
+                    education.append({
+                        'degree': degree_name,
+                        'specialization': spec,
+                        'cgpa': self._extract_cgpa(text),
+                        'year_of_passout': self._extract_year(text)
+                    })
         
         return education
     

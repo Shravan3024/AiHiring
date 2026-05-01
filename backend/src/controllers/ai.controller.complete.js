@@ -37,7 +37,8 @@ exports.parseResumeWithAI = async (req, res) => {
         });
         if (app?.Candidate?.resume_path) {
           const path = require('path');
-          filePath = path.join(__dirname, '../../', app.Candidate.resume_path);
+          const cleanPath = app.Candidate.resume_path.startsWith('/') ? app.Candidate.resume_path.substring(1) : app.Candidate.resume_path;
+          filePath = path.resolve(process.cwd(), cleanPath);
         }
       }
     }
@@ -209,12 +210,15 @@ exports.reparseResume = async (req, res) => {
 
     const path = require('path');
     const fs = require('fs');
-    const absolutePath = path.join(__dirname, '../../../', resumePath);
+    // Ensure resumePath is relative for path.join to work correctly across OSs
+    const cleanResumePath = resumePath.startsWith('/') ? resumePath.substring(1) : resumePath;
+    const backendRoot = path.resolve(__dirname, '../..');
+    const absolutePath = path.join(backendRoot, cleanResumePath);
 
     if (!fs.existsSync(absolutePath)) {
       logger.warn(`[Reparse] File not found at ${absolutePath}, searching in alternate locations...`);
-      // Try alternate path if first one fails
-      const altPath = path.join(__dirname, '../../', resumePath);
+      // Try alternate: relative to current process working directory (backend root)
+      const altPath = path.resolve(process.cwd(), cleanResumePath);
       if (!fs.existsSync(altPath)) {
         return res.status(404).json({
           success: false,

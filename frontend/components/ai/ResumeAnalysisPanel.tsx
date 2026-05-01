@@ -216,9 +216,10 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
                     <Briefcase className="w-3 h-3" /> Experience
                   </p>
                   <p className="text-2xl font-bold text-indigo-600">
-                    {resumeData.total_years_experience > 0 ? `${resumeData.total_years_experience}y` : 'N/A'}
+                    {resumeData.total_years_experience !== undefined ? 
+                      (resumeData.total_years_experience > 0 ? `${resumeData.total_years_experience}y` : 'Fresher') 
+                      : 'N/A'}
                   </p>
-
                 </div>
               </div>
 
@@ -258,24 +259,37 @@ export const ResumeAnalysisPanel: React.FC<ResumeAnalysisPanelProps> = ({
               )}
 
               {/* Skills */}
-              {resumeData.skills && Object.keys(resumeData.skills).length > 0 && (
+              {resumeData.skills && (
                 <div className="p-3 bg-gray-50 rounded-lg space-y-3">
                   <h4 className="font-semibold text-sm text-gray-700">Skills</h4>
                   <div className="space-y-2">
-                    {Object.entries(resumeData.skills).map(([category, skills]: [string, any]) => (
-                      <div key={category}>
-                        <p className="text-xs text-gray-600 font-medium mb-1">
-                          {category.replace(/_/g, " ").toUpperCase()}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {Array.isArray(skills) && skills.map((skill: string) => (
-                            <Badge key={skill} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
+                    {/* Handle object format (categorized) */}
+                    {typeof resumeData.skills === 'object' && !Array.isArray(resumeData.skills) && (
+                      Object.entries(resumeData.skills).map(([category, skills]: [string, any]) => (
+                        <div key={category}>
+                          <p className="text-xs text-gray-600 font-medium mb-1">
+                            {category.replace(/_/g, " ").toUpperCase()}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {Array.isArray(skills) && skills.map((skill: string) => (
+                              <Badge key={skill} variant="outline" className="text-xs">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
+                      ))
+                    )}
+                    {/* Handle array format (flat list) */}
+                    {Array.isArray(resumeData.skills) && (
+                      <div className="flex flex-wrap gap-2">
+                        {resumeData.skills.map((skill: string) => (
+                          <Badge key={skill} variant="outline" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}

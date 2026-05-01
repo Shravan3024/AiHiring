@@ -67,7 +67,7 @@ export default function ContactPage() {
                      <div className="relative z-10 space-y-4">
                         <div className="flex items-center gap-3 mb-2">
                            <MapPin className="w-5 h-5 text-blue-500" />
-                           <span className="text-[10px] font-black tracking-[0.2em] uppercase">Headquarters</span>
+                           <span className="text-[10px] font-black tracking-[0.2em] uppercase">Headquarters</span>0
                         </div>
                         <p className="text-sm font-medium leading-relaxed text-slate-300">
                            Mask Polymers Industrial Hub,<br />
@@ -82,7 +82,6 @@ export default function ContactPage() {
                {/* Contact Form */}
                <div className="lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/40 rounded-[3rem] p-10 md:p-16 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[80px]" />
-
                   <div className="relative z-10 space-y-12">
                      <div className="space-y-4">
                         <h2 className="text-3xl font-black tracking-tight text-slate-900">General Inquiry Core</h2>

@@ -73,7 +73,13 @@ exports.getDashboardOverview = async (req, res) => {
           cgpa: candidate.cgpa,
           year_of_passout: candidate.year_of_passout,
           summary: candidate.summary || candidate.ai_summary,
-          updated_at: candidate.updated_at
+          updated_at: candidate.updated_at,
+          // ── Fresher / Working Professional fields ──
+          candidate_type: candidate.candidate_type || null,
+          domain: candidate.domain || null,
+          area_of_interest: candidate.area_of_interest || null,
+          current_company: candidate.current_company || null,
+          working_address: candidate.working_address || null,
         },
         applications: applications.map(app => ({
           _id: String(app.id),
@@ -134,7 +140,13 @@ exports.updateCandidateProfile = async (req, res) => {
       skills,
       cgpa,
       year_of_passout,
-      summary
+      summary,
+      // ── Fresher / Working Professional ──
+      candidate_type,
+      domain,
+      area_of_interest,
+      current_company,
+      working_address
     } = req.body;
 
     // Update only provided fields
@@ -147,6 +159,29 @@ exports.updateCandidateProfile = async (req, res) => {
     if (cgpa !== undefined) candidate.cgpa = cgpa;
     if (year_of_passout !== undefined) candidate.year_of_passout = year_of_passout;
     if (summary !== undefined) candidate.summary = summary;
+
+    // ── Fresher / Working Professional logic ──
+    // Auto-derive candidate_type from experience_years if not explicitly provided
+    if (candidate_type !== undefined) {
+      candidate.candidate_type = candidate_type;
+    } else if (experience_years !== undefined) {
+      candidate.candidate_type = Number(experience_years) === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL';
+    }
+
+    if (domain !== undefined) candidate.domain = domain;
+    if (area_of_interest !== undefined) candidate.area_of_interest = area_of_interest;
+    if (current_company !== undefined) candidate.current_company = current_company;
+    if (working_address !== undefined) candidate.working_address = working_address;
+
+    // When switching to FRESHER, clear professional fields
+    if (candidate.candidate_type === 'FRESHER') {
+      candidate.current_company = current_company || null;
+      candidate.working_address = working_address || null;
+    }
+    // When switching to WORKING_PROFESSIONAL, clear fresher-only fields
+    if (candidate.candidate_type === 'WORKING_PROFESSIONAL') {
+      candidate.area_of_interest = area_of_interest || null;
+    }
 
     await candidate.save();
 
@@ -162,7 +197,13 @@ exports.updateCandidateProfile = async (req, res) => {
         skills: candidate.skills,
         cgpa: candidate.cgpa,
         year_of_passout: candidate.year_of_passout,
-        summary: candidate.summary
+        summary: candidate.summary,
+        // ── Fresher / Working Professional ──
+        candidate_type: candidate.candidate_type,
+        domain: candidate.domain,
+        area_of_interest: candidate.area_of_interest,
+        current_company: candidate.current_company,
+        working_address: candidate.working_address,
       }
     });
 

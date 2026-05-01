@@ -51,7 +51,7 @@ class CandidateProfileController {
         include: [
           { 
             model: Candidate, 
-            attributes: ['id', 'user_id', 'phone', 'location', 'education', 'specialization', 'skills', 'cgpa', 'year_of_passout', 'summary', 'ai_summary', 'integrity_score', 'resume_path', 'profile_image_path'],
+            attributes: ['id', 'user_id', 'phone', 'location', 'education', 'specialization', 'skills', 'cgpa', 'year_of_passout', 'summary', 'ai_summary', 'integrity_score', 'resume_path', 'profile_image_path', 'candidate_type', 'domain', 'area_of_interest', 'current_company', 'working_address', 'experience_years'],
             include: [{ model: User, attributes: ['id', 'name', 'email'] }] 
           },
           { model: TechnicalRound, required: false, attributes: ['id', 'score', 'status', 'ai_feedback'] },
@@ -267,13 +267,19 @@ class CandidateProfileController {
             location:       application.Candidate?.location || null,
             education:      application.Candidate?.education || null,
             specialization: application.Candidate?.specialization || null,
-            experience:     application.experience_years || 0,
+            experience:     application.Candidate?.experience_years || application.experience_years || 0,
             skills:         application.Candidate?.skills || application.skills || [],
             cgpa:           application.Candidate?.cgpa || application.cgpa || null,
             year_of_passout: application.Candidate?.year_of_passout || application.year_of_passout || null,
             summary:         application.summary || application.Candidate?.summary || null,
             aiSummary:       application.Candidate?.ai_summary || null,
             profileImage:    application.Candidate?.profile_image_path ? `http://localhost:5000${application.Candidate.profile_image_path.startsWith('/') ? '' : '/'}${application.Candidate.profile_image_path}` : "/images/default-avatar.png",
+            // ── Fresher / Working Professional fields ──
+            candidate_type:    application.Candidate?.candidate_type || null,
+            domain:            application.Candidate?.domain || null,
+            area_of_interest:  application.Candidate?.area_of_interest || null,
+            current_company:   application.Candidate?.current_company || null,
+            working_address:   application.Candidate?.working_address || null,
           },
           job: {
             id:             application.job_id,
@@ -454,6 +460,12 @@ class CandidateProfileController {
             skills: candidate.skills || [],
             summary: candidate.summary,
             profileImage: candidate.profile_image_path ? `http://localhost:5000${candidate.profile_image_path.startsWith('/') ? '' : '/'}${candidate.profile_image_path}` : "/images/default-avatar.png",
+            // ── Fresher / Working Professional fields ──
+            candidate_type:   candidate.candidate_type || null,
+            domain:           candidate.domain || null,
+            area_of_interest: candidate.area_of_interest || null,
+            current_company:  candidate.current_company || null,
+            working_address:  candidate.working_address || null,
           },
           status: 'UNPROCESSED',
           scores: { resume: 0, technical: 0, interview: 0, aggregate: 0 },

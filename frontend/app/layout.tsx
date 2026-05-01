@@ -6,7 +6,7 @@ import Providers from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Mask Polymers - AI Recruitment Platform",
+  title: "AI Recruitment Platform",
   description: "End-to-end AI-powered recruitment management system",
 };
 

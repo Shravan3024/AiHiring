@@ -246,7 +246,7 @@ const AdvancedAnalytics = {
     const curriculum = {
       MANAGEMENT_TRAINEE_MARKETING: {
         module_1: "Polymer 101: Types, properties, applications",
-        module_2: "Mask Polymers product range & customer segments",
+        module_2: "Companies product range & customer segments",
         module_3: "Manufacturing overview & quality standards",
         module_4: "Sales fundamentals & customer interaction",
       },

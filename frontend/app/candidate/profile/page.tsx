@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Mail, Phone, MapPin, GraduationCap, Briefcase, 
-  Calendar, Save, Loader2, X, Sparkles, Search, 
+import {
+  Mail, Phone, MapPin, GraduationCap, Briefcase,
+  Calendar, Save, Loader2, X, Sparkles, Search,
   FileText, Camera, CheckCircle2, Star, Plus, PenTool, ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +42,12 @@ export default function CandidateProfilePage() {
     skills: [] as string[],
     cgpa: 0,
     year_of_passout: 0,
-    summary: ""
+    summary: "",
+    candidate_type: "" as "" | "FRESHER" | "WORKING_PROFESSIONAL",
+    domain: "",
+    area_of_interest: "",
+    current_company: "",
+    working_address: "",
   });
 
   const resetFormFromData = () => {
@@ -57,7 +62,12 @@ export default function CandidateProfilePage() {
         skills: c.skills || [],
         cgpa: Number(c.cgpa) || 0,
         year_of_passout: Number(c.year_of_passout) || 0,
-        summary: c.summary || ""
+        summary: c.summary || "",
+        candidate_type: (c.candidate_type as "" | "FRESHER" | "WORKING_PROFESSIONAL") || "",
+        domain: c.domain || "",
+        area_of_interest: c.area_of_interest || "",
+        current_company: c.current_company || "",
+        working_address: c.working_address || "",
       });
     }
   };
@@ -111,10 +121,10 @@ export default function CandidateProfilePage() {
   if (isLoading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
 
   const candidate = overview?.candidate;
-  const avatarSrc = candidate?.profile_image_path 
-    ? (candidate.profile_image_path.startsWith('http') 
-        ? candidate.profile_image_path 
-        : `http://localhost:5000${candidate.profile_image_path}`) 
+  const avatarSrc = candidate?.profile_image_path
+    ? (candidate.profile_image_path.startsWith('http')
+      ? candidate.profile_image_path
+      : `http://localhost:5000${candidate.profile_image_path}`)
     : null;
 
   return (
@@ -158,7 +168,7 @@ export default function CandidateProfilePage() {
               {form.location && <span className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-400" /> {form.location}</span>}
             </div>
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
-              {form.skills.slice(0, 3).map(s => <Badge key={s} variant="secondary" className="bg-slate-50 text-slate-600 border-none px-4 py-1.5">{s}</Badge>)}
+              {form.skills.map(s => <Badge key={s} variant="secondary" className="bg-slate-50 text-slate-600 border-none px-4 py-1.5">{s}</Badge>)}
               <Button variant="outline" size="sm" className="h-9 px-4 rounded-xl border-slate-100 text-blue-600 gap-2" onClick={() => skillInputRef.current?.focus()}><Plus className="w-3 h-3" /> Add</Button>
             </div>
           </div>
@@ -185,7 +195,7 @@ export default function CandidateProfilePage() {
           <CardContent className="p-8 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Highest Education</Label>
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Highest Qualification</Label>
                 <Input ref={educationInputRef} value={form.education} onChange={e => setForm(f => ({ ...f, education: e.target.value }))} className="h-12 bg-slate-50 border-none rounded-xl px-4 font-medium" />
               </div>
               <div className="space-y-2">
@@ -205,37 +215,176 @@ export default function CandidateProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Professional Info */}
+        {/* Professional Experience - Fresher / Working Professional Toggle */}
         <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden">
           <CardHeader className="p-8 pb-4">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><Briefcase className="w-6 h-6" /></div>
               Professional Experience
             </CardTitle>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Select your current status</p>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Years of Experience</Label>
-              <Input type="number" value={form.experience_years || ""} onChange={e => setForm(f => ({ ...f, experience_years: parseInt(e.target.value) || 0 }))} className="h-12 bg-slate-50 border-none rounded-xl px-4 font-medium" />
+
+            {/* Toggle Buttons */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, candidate_type: "FRESHER", experience_years: 0, current_company: "", working_address: "" }))}
+                className={`relative flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all font-bold text-sm ${
+                  form.candidate_type === "FRESHER"
+                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
+                    : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                }`}
+              >
+                <GraduationCap className="w-6 h-6" />
+                Fresher
+                {form.candidate_type === "FRESHER" && (
+                  <span className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, candidate_type: "WORKING_PROFESSIONAL", area_of_interest: "" }))}
+                className={`relative flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all font-bold text-sm ${
+                  form.candidate_type === "WORKING_PROFESSIONAL"
+                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
+                    : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                }`}
+              >
+                <Briefcase className="w-6 h-6" />
+                Working Professional
+                {form.candidate_type === "WORKING_PROFESSIONAL" && (
+                  <span className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Location</Label>
-              <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} className="h-12 bg-slate-50 border-none rounded-xl px-4 font-medium" />
+
+            {/* No selection hint */}
+            {!form.candidate_type && (
+              <p className="text-center text-xs text-slate-400 font-medium py-2">
+                Please select your current status above to fill in the details below.
+              </p>
+            )}
+
+            {/* ── FRESHER PANEL ── */}
+            <div className={`space-y-4 rounded-2xl p-5 border-2 transition-all ${
+              form.candidate_type === "FRESHER"
+                ? "border-blue-100 bg-blue-50/30"
+                : "border-slate-100 bg-slate-50/50 opacity-40 pointer-events-none select-none"
+            }`}>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-blue-400" />
+                Fresher Details
+                {form.candidate_type !== "FRESHER" && <span className="ml-auto text-slate-300">🔒 Locked</span>}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Domain</Label>
+                  <Input
+                    value={form.domain}
+                    onChange={e => setForm(f => ({ ...f, domain: e.target.value }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. Manufacturing, IT"
+                    disabled={form.candidate_type !== "FRESHER"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Area of Interest</Label>
+                  <Input
+                    value={form.area_of_interest}
+                    onChange={e => setForm(f => ({ ...f, area_of_interest: e.target.value }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. Quality Control, R&D"
+                    disabled={form.candidate_type !== "FRESHER"}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">+91</span>
-                <Input 
-                  value={form.phone.replace("+91", "")} 
-                  maxLength={10}
-                  onChange={e => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    if (val.length <= 10) setForm(f => ({ ...f, phone: val ? `+91${val}` : "" }));
-                  }} 
-                  className="h-12 bg-slate-50 border-none rounded-xl pl-12 font-medium" 
-                  placeholder="10-digit mobile number"
-                />
+
+            {/* ── WORKING PROFESSIONAL PANEL ── */}
+            <div className={`space-y-4 rounded-2xl p-5 border-2 transition-all ${
+              form.candidate_type === "WORKING_PROFESSIONAL"
+                ? "border-blue-100 bg-blue-50/30"
+                : "border-slate-100 bg-slate-50/50 opacity-40 pointer-events-none select-none"
+            }`}>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-blue-400" />
+                Employment Details
+                {form.candidate_type !== "WORKING_PROFESSIONAL" && <span className="ml-auto text-slate-300">🔒 Locked</span>}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Years of Experience</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.experience_years || ""}
+                    onChange={e => setForm(f => ({ ...f, experience_years: parseInt(e.target.value) || 0 }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. 3"
+                    disabled={form.candidate_type !== "WORKING_PROFESSIONAL"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Company</Label>
+                  <Input
+                    value={form.current_company}
+                    onChange={e => setForm(f => ({ ...f, current_company: e.target.value }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. Mask Polymers Ltd."
+                    disabled={form.candidate_type !== "WORKING_PROFESSIONAL"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Domain</Label>
+                  <Input
+                    value={form.domain}
+                    onChange={e => setForm(f => ({ ...f, domain: e.target.value }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. Polymer Technology"
+                    disabled={form.candidate_type !== "WORKING_PROFESSIONAL"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Working Address</Label>
+                  <Input
+                    value={form.working_address}
+                    onChange={e => setForm(f => ({ ...f, working_address: e.target.value }))}
+                    className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
+                    placeholder="e.g. Pune, Maharashtra"
+                    disabled={form.candidate_type !== "WORKING_PROFESSIONAL"}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Always visible: Phone & Location */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Location</Label>
+                <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} className="h-12 bg-slate-50 border-none rounded-xl px-4 font-medium" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">+91</span>
+                  <Input
+                    value={form.phone.replace("+91", "")}
+                    maxLength={10}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 10) setForm(f => ({ ...f, phone: val ? `+91${val}` : "" }));
+                    }}
+                    className="h-12 bg-slate-50 border-none rounded-xl pl-12 font-medium"
+                    placeholder="10-digit mobile number"
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -272,9 +421,9 @@ export default function CandidateProfilePage() {
           </div>
           <div className="relative mb-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
+            <Input
               ref={skillInputRef}
-              placeholder="Type a skill and press Enter..." 
+              placeholder="Type a skill and press Enter..."
               className="h-14 pl-12 bg-slate-50 border-none rounded-xl font-medium"
               value={skillsInput}
               onChange={e => setSkillsInput(e.target.value)}
@@ -306,39 +455,39 @@ export default function CandidateProfilePage() {
             <h4 className="text-2xl font-bold">Your Resume Information</h4>
             <p className="text-blue-100 leading-relaxed font-medium">We've parsed your resume to suggest profile details. You can override them above.</p>
           </div>
-           <Card className="bg-white text-slate-900 border-none rounded-2xl p-6 mt-8 flex items-center justify-between relative z-10 shadow-xl">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500"><FileText className="w-6 h-6" /></div>
-                <div>
-                   <p className="font-bold truncate max-w-[200px]">{candidate?.resume_path?.split("/").pop() || "Resume_Not_Found.pdf"}</p>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                     Uploaded on {candidate?.updated_at ? new Date(candidate.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-                   </p>
-                </div>
-             </div>
-             <div className="flex gap-2">
-                <input 
-                  type="file" 
-                  id="resume-upload" 
-                  className="hidden" 
-                  accept=".pdf,.doc,.docx" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadResumeMutation.mutate(file);
-                  }}
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="rounded-xl border-slate-100 text-blue-600 font-bold"
-                  onClick={() => document.getElementById('resume-upload')?.click()}
-                  disabled={uploadResumeMutation.isPending}
-                >
-                   {uploadResumeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
-                   Change Resume
-                </Button>
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500"><X className="w-4 h-4" /></Button>
-             </div>
+          <Card className="bg-white text-slate-900 border-none rounded-2xl p-6 mt-8 flex items-center justify-between relative z-10 shadow-xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500"><FileText className="w-6 h-6" /></div>
+              <div>
+                <p className="font-bold truncate max-w-[200px]">{candidate?.resume_path?.split("/").pop() || "Resume_Not_Found.pdf"}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                  Uploaded on {candidate?.updated_at ? new Date(candidate.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                id="resume-upload"
+                className="hidden"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadResumeMutation.mutate(file);
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-slate-100 text-blue-600 font-bold"
+                onClick={() => document.getElementById('resume-upload')?.click()}
+                disabled={uploadResumeMutation.isPending}
+              >
+                {uploadResumeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+                Change Resume
+              </Button>
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500"><X className="w-4 h-4" /></Button>
+            </div>
           </Card>
         </Card>
       </div>
