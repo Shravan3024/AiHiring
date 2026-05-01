@@ -59,7 +59,7 @@ class CandidateProfileController {
           { model: Offer,          as: "offer", required: false, attributes: ['id', 'salary', 'joining_date', 'status'] },
           { model: ResumeAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'why_to_hire', 'ai_model_used', 'overall_score', 'ai_summary', 'total_years_experience', 'jd_match_score', 'contact_info', 'education', 'skills'] },
 
-          { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score'] },
+          { model: AssessmentAnalysis, required: false, attributes: ['id', 'strengths', 'weaknesses', 'ai_model_used', 'overall_score', 'detailed_feedback', 'improvement_areas', 'estimated_skill_level', 'correctness_score', 'test_name'] },
           { 
             model: InterviewAnalysis, 
             required: false, 
@@ -91,7 +91,7 @@ class CandidateProfileController {
             model: require('../models').AssessmentAttempt,
             as: 'assessment_attempts',
             required: false,
-            attributes: ['id', 'assessment_type', 'status', 'final_score', 'structure_score', 'concept_coverage', 'answers', 'ml_score', 'ai_score', 'anti_cheating_data', 'started_at']
+            attributes: ['id', 'assessment_type', 'status', 'final_score', 'structure_score', 'concept_coverage', 'answers', 'ml_score', 'ai_score', 'anti_cheating_data', 'started_at', 'submitted_at', 'ai_feedback', 'metadata']
           }
         ]
       });
@@ -139,11 +139,15 @@ class CandidateProfileController {
         if (typeof answers === 'string') {
           try { answers = JSON.parse(answers); } catch (e) { answers = {}; }
         }
+        // Also collect question IDs from metadata.question_ids (for trace enrichment)
+        const metaQIds = att.metadata?.question_ids || [];
         if (answers) {
           Object.keys(answers).forEach(id => {
             if (id && id !== 'null' && id !== 'undefined') allQIds.add(id);
           });
         }
+        // Add metadata question IDs too (even if answers is empty)
+        metaQIds.forEach(id => { if (id) allQIds.add(String(id)); });
       });
 
       const questionMap = {};
@@ -224,18 +228,29 @@ class CandidateProfileController {
         if (typeof answers === 'string') {
           try { answers = JSON.parse(answers); } catch (e) { answers = {}; }
         }
-        
-        if (answers) {
-          const enrichedAnswers = {};
-          Object.keys(answers).forEach(qId => {
-            enrichedAnswers[qId] = {
-              ...answers[qId],
-              question_text: questionMap[qId]?.text || null,
-              correct_answer: questionMap[qId]?.correct || null
-            };
+        answers = answers || {};
+
+        // If answers is empty but metadata has question_ids, build skeleton trace entries
+        const metaQIds = attObj.metadata?.question_ids || [];
+        if (Object.keys(answers).length === 0 && metaQIds.length > 0) {
+          metaQIds.forEach(qId => {
+            const qIdStr = String(qId);
+            if (!answers[qIdStr]) {
+              answers[qIdStr] = { answer_text: null, question_text: null };
+            }
           });
-          attObj.answers = enrichedAnswers;
         }
+
+        const enrichedAnswers = {};
+        Object.keys(answers).forEach(qId => {
+          enrichedAnswers[qId] = {
+            ...answers[qId],
+            question_text: answers[qId]?.question_text || questionMap[qId]?.text || questionMap[String(qId).toLowerCase()]?.text || `Question ID: ${qId}`,
+            correct_answer: answers[qId]?.correct_answer || questionMap[qId]?.correct || null,
+            answer_text: answers[qId]?.answer_text || null
+          };
+        });
+        attObj.answers = enrichedAnswers;
         return attObj;
       });
 

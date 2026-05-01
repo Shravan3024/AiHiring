@@ -71,26 +71,39 @@ class HRDecisionController {
 
       if (decision === 'REQUEST_RE_INTERVIEW') {
         application.interview_score = null;
-        // Delete previous analysis to reset pros/cons
+        // Delete ALL previous interview data (analysis + sessions) for a fresh slate
         try {
+          const { AssessmentAnalysis: AA } = require('../models');
           await InterviewAnalysis.destroy({ where: { application_id: applicationId } });
-          // Ensure new session can be created
-          await InterviewSession.update({ status: 'CANCELLED' }, { where: { application_id: applicationId, status: { [Op.ne]: 'COMPLETED' } } });
-           // Create a fresh session for the re-interview
-           await InterviewSession.create({
-             application_id: applicationId,
-             status: 'SCHEDULED',
-             interview_type: 'VIDEO',
-             scheduled_at: new Date()
-           });
-        } catch (_) {}
+          // Cancel/delete ALL interview sessions (including COMPLETED ones) so candidate gets a fresh session
+          await InterviewSession.destroy({ where: { application_id: applicationId } });
+          // Create a fresh scheduled session for the re-interview
+          await InterviewSession.create({
+            application_id: applicationId,
+            status: 'SCHEDULED',
+            interview_type: 'VIDEO',
+            scheduled_at: new Date()
+          });
+          console.log(`[Re-Interview] Cleared all interview data for application ${applicationId}`);
+        } catch (cleanErr) {
+          console.error('Cleanup error in re-interview request:', cleanErr.message);
+        }
       }
       if (decision === 'REQUEST_RE_ASSESSMENT') {
         application.technical_score = null;
+        // Delete ALL previous assessment data (attempts + analysis) so old AI insights are wiped
+        try {
+          const { AssessmentAnalysis } = require('../models');
+          await AssessmentAnalysis.destroy({ where: { application_id: applicationId } });
+          console.log(`[Re-Assessment] Deleted AssessmentAnalysis for application ${applicationId}`);
+        } catch (cleanErr) {
+          console.error('AssessmentAnalysis cleanup error:', cleanErr.message);
+        }
         await AssessmentAttempt.update(
-          { status: 'NOT_STARTED', score: null, answers: null, submitted_at: null },
+          { status: 'NOT_STARTED', score: null, answers: null, submitted_at: null, ai_score: null, structure_score: null, concept_coverage: null, final_score: null, ai_feedback: null, metadata: null },
           { where: { application_id: applicationId } }
         );
+        console.log(`[Re-Assessment] Reset AssessmentAttempt for application ${applicationId}`);
       }
       
       // Handle Offer record creation for SEND_OFFER
@@ -338,19 +351,23 @@ class HRDecisionController {
       application.interview_score = null;
       await application.save();
 
-      // Clear old data for a fresh start
+      // Clear ALL old interview data for a truly fresh start
       try {
         await InterviewAnalysis.destroy({ where: { application_id: applicationId } });
-        await InterviewSession.update({ status: 'CANCELLED' }, { where: { application_id: applicationId, status: { [Op.ne]: 'COMPLETED' } } });
+        // Destroy ALL sessions (including COMPLETED) — candidate re-does interview from scratch
+        await InterviewSession.destroy({ where: { application_id: applicationId } });
+        // Create a fresh scheduled session
         await InterviewSession.create({
           application_id: applicationId,
           status: 'SCHEDULED',
           interview_type: 'VIDEO',
           scheduled_at: new Date()
         });
+        console.log(`[Re-Interview] All interview data cleared for app ${applicationId}`);
       } catch (e) {
-        console.error("Cleanup error in re-interview request:", e);
+        console.error("Cleanup error in re-interview request:", e.message);
       }
+
 
       try {
         await ApplicationStatusLog.create({
@@ -399,10 +416,20 @@ class HRDecisionController {
       application.hr_decision = 'REQUEST_RE_ASSESSMENT';
       await application.save();
 
+      // Destroy old AI analysis so fresh data is shown after re-assessment
+      try {
+        const { AssessmentAnalysis } = require('../models');
+        const deleted = await AssessmentAnalysis.destroy({ where: { application_id: applicationId } });
+        console.log(`[Re-Assessment] Deleted ${deleted} AssessmentAnalysis records for app ${applicationId}`);
+      } catch (e) {
+        console.error('AssessmentAnalysis cleanup error:', e.message);
+      }
+
       await AssessmentAttempt.update(
-        { status: 'NOT_STARTED', score: null, answers: null, submitted_at: null, metadata: null },
+        { status: 'NOT_STARTED', score: null, answers: null, submitted_at: null, ai_score: null, structure_score: null, concept_coverage: null, final_score: null, ai_feedback: null, metadata: null },
         { where: { application_id: applicationId } }
       );
+
 
       try {
         await ApplicationStatusLog.create({

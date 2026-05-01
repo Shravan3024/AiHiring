@@ -180,45 +180,8 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                 </Card>
               )}
 
-              {/* AI Assessment Executive Summary */}
-              {aiAnalysis && (
-                <Card className="border-blue-100 bg-blue-50/20 mb-6">
-                   <CardHeader className="pb-2 border-b border-blue-50">
-                      <CardTitle className="text-sm font-bold text-blue-800 flex items-center gap-2">
-                         <TrendingUp className="w-4 h-4" /> AI Performance Executive Summary
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent className="pt-4">
-                      <div className="text-sm text-slate-700 leading-relaxed">
-                         <div className="space-y-3">
-                            {(aiAnalysis.detailed_feedback || "").split('\n').filter((line: string) => line.trim()).map((line: string, i: number) => (
-                               <div key={i} className="flex gap-3 items-start">
-                                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                                  <span>{line.replace(/^[•\-\*\d\.]+\s*/, '')}</span>
-                               </div>
-                            ))}
-                            {(!aiAnalysis.detailed_feedback) && <p className="text-slate-400 italic">No summary points generated for this attempt.</p>}
-                         </div>
-                      </div>
-                      <div className="mt-6 flex gap-4">
-                         <div className="bg-white p-3 rounded-xl border border-blue-100 flex-1 shadow-sm">
-                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Domain Expertise</span>
-                            <div className="flex items-end gap-2">
-                               <span className="text-2xl font-black text-blue-700">{Math.round(attempt.concept_coverage || 0)}%</span>
-                               <span className="text-[10px] text-slate-400 mb-1 font-bold">Accuracy</span>
-                            </div>
-                         </div>
-                         <div className="bg-white p-3 rounded-xl border border-blue-100 flex-1 shadow-sm">
-                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Structural Integrity</span>
-                            <div className="flex items-end gap-2">
-                               <span className="text-2xl font-black text-blue-700">{Math.round(attempt.structure_score || 0)}/100</span>
-                               <span className="text-[10px] text-slate-400 mb-1 font-bold">Score</span>
-                            </div>
-                         </div>
-                      </div>
-                   </CardContent>
-                </Card>
-              )}
+
+
 
               {/* AI Strengths & Weaknesses from Analysis */}
               {aiAnalysis && (
@@ -282,21 +245,38 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                     </Button>
                  </CardHeader>
                 <CardContent className="p-0">
+                  {Object.keys(attempt.answers || {}).length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Scale className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-400 font-medium text-sm">
+                        {attempt.status === 'NOT_STARTED'
+                          ? 'Assessment has been reset — candidate has not started yet.'
+                          : attempt.status === 'SUBMITTED'
+                          ? 'Assessment submitted — answers pending enrichment.'
+                          : 'No answer trace available for this attempt.'}
+                      </p>
+                      {attempt.ai_feedback && (
+                        <p className="mt-3 text-xs text-slate-500 italic max-w-md mx-auto">
+                          AI Feedback: {attempt.ai_feedback}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
                   <Table>
                     <TableHeader className="bg-slate-50">
                       <TableRow>
-                        <TableHead className="font-bold text-slate-900 border-r">Question</TableHead>
+                        <TableHead className="font-bold text-slate-900 border-r w-1/2">Question</TableHead>
                         <TableHead className="font-bold text-slate-900">Candidate Input</TableHead>
-                        <TableHead className="font-bold text-slate-900 text-right">Metric Flags</TableHead>
+                        <TableHead className="font-bold text-slate-900 text-right w-32">Metric Flags</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {Object.keys(attempt.answers || {}).map((qId: string, idx: number) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-semibold text-slate-700 max-w-xs border-r">
-                             <div className="text-xs text-slate-400 mb-1 font-mono uppercase tracking-tighter">Question Trace</div>
-                             <p className="leading-relaxed">
-                                {attempt.answers[qId]?.question_text || qId}
+                          <TableCell className="font-semibold text-slate-700 max-w-xs border-r align-top">
+                             <div className="text-xs text-slate-400 mb-1 font-mono uppercase tracking-tighter">Q{idx + 1} — Trace</div>
+                             <p className="leading-relaxed text-sm">
+                                {attempt.answers[qId]?.question_text || `Question ID: ${qId}`}
                              </p>
                              {attempt.answers[qId]?.correct_answer && (
                                <div className="mt-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-[11px] text-emerald-700">
@@ -305,13 +285,15 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                                </div>
                              )}
                           </TableCell>
-                          <TableCell className="text-slate-600 text-sm">
+                          <TableCell className="text-slate-600 text-sm align-top">
                              <div className="text-xs text-slate-400 mb-1 font-mono uppercase tracking-tighter">Candidate Response</div>
-                             <p className="italic">
-                                "{attempt.answers[qId]?.answer_text || "No response provided"}"
-                             </p>
+                             {attempt.answers[qId]?.answer_text ? (
+                               <p className="italic text-slate-700">"{attempt.answers[qId].answer_text}"</p>
+                             ) : (
+                               <p className="italic text-slate-400">No response provided for this question.</p>
+                             )}
                           </TableCell>
-                          <TableCell className="text-right space-x-2">
+                          <TableCell className="text-right space-x-2 align-top">
                              <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 border-slate-200">
                                 Trace_{idx + 1}
                              </Badge>
@@ -323,8 +305,10 @@ export const AssessmentAnalysisPanel: React.FC<AssessmentPanelProps> = ({ applic
                       ))}
                     </TableBody>
                   </Table>
+                  )}
                 </CardContent>
               </Card>
+
             </TabsContent>
           ))}
         </Tabs>
