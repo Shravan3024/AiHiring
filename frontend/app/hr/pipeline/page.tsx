@@ -103,7 +103,7 @@ export default function PipelinePage() {
         </div>
 
         {/* TOP FILTERS */}
-        <div className="flex flex-wrap gap-4 bg-muted/20 p-3 rounded-2xl border border-border/40">
+        <div className="flex flex-wrap gap-4 bg-muted/20 p-3 rounded-lg border border-border/40">
            <select 
               className="bg-background border-border/40 rounded-xl h-9 px-3 text-[10px] font-black uppercase focus:ring-primary/20 min-w-[140px]"
               value={selectedRole}
@@ -146,12 +146,12 @@ export default function PipelinePage() {
                        </div>
                     </div>
                     
-                    <div className="space-y-3 min-h-[500px] p-2 bg-muted/5 rounded-2xl border border-dashed border-border/20 transition-colors hover:border-border/40">
+                    <div className="space-y-3 min-h-[500px] p-2 bg-muted/5 rounded-lg border border-dashed border-border/20 transition-colors hover:border-border/40">
                        {groupedCandidates[stage.id]?.length > 0 ? groupedCandidates[stage.id].map((cand: any, i: number) => (
                           <Card 
                             key={cand.applicationId} 
                             onClick={() => router.push(`/hr/applications/${cand.applicationId}`)}
-                            className="border-border/40 glass hover:shadow-2xl transition-all duration-300 group cursor-pointer hover:border-primary/30 relative overflow-hidden"
+                            className="border-border/40 hover:shadow-sm transition-all duration-300 group cursor-pointer hover:border-primary/30 relative overflow-hidden"
                           >
                              <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
                              <CardContent className="p-4 space-y-3">
@@ -211,7 +211,7 @@ export default function PipelinePage() {
               { label: "Avg. Time to Hire", value: `${kpiData?.avgTimeToHire || 0} Days`, trend: "-2 days", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10", inverse: true },
               { label: "Drop-off Rate", value: "31.6%", trend: "+1.2%", icon: AlertCircle, color: "text-rose-500", bg: "bg-rose-500/10" },
            ].map((stat, i) => (
-              <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden p-6 relative group hover:border-primary/20 transition-all">
+              <Card key={i} className="border-border/40 shadow-xl overflow-hidden p-6 relative group hover:border-primary/20 transition-all">
                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <stat.icon className="w-12 h-12" />
                  </div>

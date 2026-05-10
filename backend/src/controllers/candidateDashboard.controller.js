@@ -56,59 +56,59 @@ exports.getDashboardOverview = async (req, res) => {
       }
     });
 
-      res.json({
-        candidate: {
-          id: candidate.id,
-          name: candidate.User?.name,
-          email: candidate.User?.email,
-          education: candidate.education,
-          specialization: candidate.specialization,
-          experience_years: candidate.experience_years,
-          phone: candidate.phone,
-          location: candidate.location,
-          last_login_at: candidate.last_login_at,
-          resume_path: candidate.resume_path,
-          profile_image_path: candidate.profile_image_path,
-          skills: candidate.skills,
-          cgpa: candidate.cgpa,
-          year_of_passout: candidate.year_of_passout,
-          summary: candidate.summary || candidate.ai_summary,
-          updated_at: candidate.updated_at,
-          // ── Fresher / Working Professional fields ──
-          candidate_type: candidate.candidate_type || null,
-          domain: candidate.domain || null,
-          area_of_interest: candidate.area_of_interest || null,
-          current_company: candidate.current_company || null,
-          working_address: candidate.working_address || null,
-        },
-        applications: applications.map(app => ({
-          _id: String(app.id),
-          id: app.id,
-          jobId: app.Job ? { _id: String(app.Job.id), title: app.Job.title, department: app.Job.department } : null,
-          job_title: app.Job?.title,
-          status: app.status,
-          stage: app.status,
-          appliedAt: app.applied_at,
-          applied_at: app.applied_at,
-          offer: app.offer ? {
-            _id: String(app.offer.id),
-            id: app.offer.id,
-            salary: app.offer.salary,
-            position: app.offer.position_title,
-            startDate: app.offer.joining_date,
-            expiresAt: app.offer.expires_at,
-            benefits: app.offer.benefits,
-            details: app.offer.offer_letter_content,
-            status: app.offer.status
-          } : null
-        })),
-        dashboard: {
-          total_applications: stats.length,
-          status_counts: statusCounts,
-          unread_notifications: unreadNotifications,
-        },
-        nextAction: await findLatestActiveAction(applications, candidate.id),
-      });
+    res.json({
+      candidate: {
+        id: candidate.id,
+        name: candidate.User?.name,
+        email: candidate.User?.email,
+        education: candidate.education,
+        specialization: candidate.specialization,
+        experience_years: candidate.experience_years,
+        phone: candidate.phone,
+        location: candidate.location,
+        last_login_at: candidate.last_login_at,
+        resume_path: candidate.resume_path,
+        profile_image_path: candidate.profile_image_path,
+        skills: candidate.skills,
+        cgpa: candidate.cgpa,
+        year_of_passout: candidate.year_of_passout,
+        summary: candidate.summary || candidate.ai_summary,
+        updated_at: candidate.updated_at,
+        // ── Fresher / Working Professional fields ──
+        candidate_type: candidate.candidate_type || null,
+        domain: candidate.domain || null,
+        area_of_interest: candidate.area_of_interest || null,
+        current_company: candidate.current_company || null,
+        working_address: candidate.working_address || null,
+      },
+      applications: applications.map(app => ({
+        _id: String(app.id),
+        id: app.id,
+        jobId: app.Job ? { _id: String(app.Job.id), title: app.Job.title, department: app.Job.department } : null,
+        job_title: app.Job?.title,
+        status: app.status,
+        stage: app.status,
+        appliedAt: app.applied_at,
+        applied_at: app.applied_at,
+        offer: app.offer ? {
+          _id: String(app.offer.id),
+          id: app.offer.id,
+          salary: app.offer.salary,
+          position: app.offer.position_title,
+          startDate: app.offer.joining_date,
+          expiresAt: app.offer.expires_at,
+          benefits: app.offer.benefits,
+          details: app.offer.offer_letter_content,
+          status: app.offer.status
+        } : null
+      })),
+      dashboard: {
+        total_applications: stats.length,
+        status_counts: statusCounts,
+        unread_notifications: unreadNotifications,
+      },
+      nextAction: await findLatestActiveAction(applications, candidate.id),
+    });
 
   } catch (error) {
     console.error("Dashboard overview error:", error);
@@ -360,7 +360,7 @@ exports.getNextAction = async (req, res) => {
           is_available: false
         };
         break;
-      
+
       case "RE_INTERVIEW_REQUESTED":
       case "INTERVIEW_UNLOCKED":
       case "INTERVIEW_SCHEDULED":
@@ -399,7 +399,7 @@ exports.getNextAction = async (req, res) => {
         nextAction = {
           action: "ONBOARDING",
           title: "Hired!",
-          description: "Welcome to Mask Polymers! Your onboarding will begin soon.",
+          description: "Welcome to AI Hiring System! Your onboarding will begin soon.",
           is_available: false
         };
         break;
@@ -476,7 +476,7 @@ function formatStatusLabel(status) {
  * PRODUCTION ACTION SEEKER
  */
 async function findLatestActiveAction(applications, candidateId) {
-  const activeApp = applications.find(app => 
+  const activeApp = applications.find(app =>
     !["REJECTED", "AUTO_REJECTED", "HIRED", "APPLICATION_CLOSED"].includes(app.status)
   );
 

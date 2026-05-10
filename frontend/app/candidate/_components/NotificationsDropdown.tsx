@@ -53,7 +53,7 @@ export function NotificationsDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-4 w-96 bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+        <div className="absolute right-0 mt-4 w-96 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
           <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
             <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">Notifications</h3>
             <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg">{unreadCount} New</span>
@@ -61,10 +61,10 @@ export function NotificationsDropdown() {
 
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {isLoading ? (
-              <div className="p-10 text-center text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Fetching updates...</div>
+              <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Fetching updates...</div>
             ) : notifications.length === 0 ? (
               <div className="p-12 text-center space-y-4">
-                 <div className="w-12 h-12 bg-slate-50 text-slate-200 rounded-2xl flex items-center justify-center mx-auto"><Bell className="w-6 h-6" /></div>
+                 <div className="w-12 h-12 bg-slate-50 text-slate-200 rounded-lg flex items-center justify-center mx-auto"><Bell className="w-6 h-6" /></div>
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No new alerts</p>
               </div>
             ) : (

@@ -54,9 +54,9 @@ export default function HighFidelityRiskMonitorV3() {
               <Skeleton className="h-10 w-96" />
            </div>
            <div className="grid grid-cols-5 gap-4">
-              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-32 rounded-3xl" />)}
+              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-32 rounded-lg" />)}
            </div>
-           <Skeleton className="h-[600px] w-full rounded-[2.5rem]" />
+           <Skeleton className="h-[600px] w-full rounded-lg" />
         </div>
       </PanelLayout>
     );
@@ -114,7 +114,7 @@ export default function HighFidelityRiskMonitorV3() {
               { title: "Compliance Issues", value: kpis.complianceIssues, sub: "Unresolved", icon: Gavel, color: "text-purple-500", trend: "-7%" },
               { title: "Actions Required", value: Math.round(kpis.highRisk * 1.5), sub: "Due for review", icon: AlertTriangle, color: "text-blue-500", trend: "0%" },
            ].map((k, i) => (
-              <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden group hover:border-primary/20 transition-all">
+              <Card key={i} className="border-border/40 shadow-xl overflow-hidden group hover:border-primary/20 transition-all">
                  <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-4">
                        <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", k.color)}>
@@ -167,7 +167,7 @@ export default function HighFidelityRiskMonitorV3() {
                  </div>
               </div>
 
-              <Card className="border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardContent className="p-0">
                     <div className="overflow-x-auto">
                        <table className="w-full text-left">
@@ -265,13 +265,13 @@ export default function HighFidelityRiskMonitorV3() {
            <div className="lg:col-span-3 space-y-6 pb-12">
               
               {/* Risk Distribution */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden p-6">
                  <div className="flex items-center justify-between mb-8">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Risk Distribution</CardTitle>
                     <Badge variant="outline" className="bg-muted/30 text-[8px] font-black border-none uppercase">Live</Badge>
                  </div>
                  <div className="relative h-40 w-full mb-8">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                        <PieChart>
                           <Pie data={riskDistribution} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
                              {riskDistribution.map((entry: any, index: number) => <Cell key={index} fill={entry.color} />)}
@@ -301,7 +301,7 @@ export default function HighFidelityRiskMonitorV3() {
               </Card>
 
               {/* Top Risk Factors */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden p-6">
                  <div className="flex items-center justify-between mb-6">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Top Risk Factors</CardTitle>
                  </div>
@@ -321,7 +321,7 @@ export default function HighFidelityRiskMonitorV3() {
               </Card>
 
               {/* Recent Alerts */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Recent Alerts</CardTitle>
                  </CardHeader>
@@ -351,12 +351,12 @@ export default function HighFidelityRiskMonitorV3() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            
            {/* Risk Trend */}
-           <Card className="lg:col-span-6 border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden p-8">
+           <Card className="lg:col-span-6 border-border/40 shadow-sm rounded-lg overflow-hidden p-8">
               <div className="flex items-center justify-between mb-8">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Risk Trend</CardTitle>
               </div>
               <div className="h-[250px] w-full">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <LineChart data={riskTrend}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                        <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
@@ -372,7 +372,7 @@ export default function HighFidelityRiskMonitorV3() {
            </Card>
 
            {/* Risk by Stage */}
-           <Card className="lg:col-span-6 border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden p-8">
+           <Card className="lg:col-span-6 border-border/40 shadow-sm rounded-lg overflow-hidden p-8">
               <div className="flex items-center justify-between mb-8">
                  <div className="space-y-1">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Risk by Stage</CardTitle>
@@ -380,7 +380,7 @@ export default function HighFidelityRiskMonitorV3() {
                  </div>
               </div>
               <div className="h-[250px] w-full">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <BarChart data={riskByStage}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                        <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
@@ -408,7 +408,7 @@ export default function HighFidelityRiskMonitorV3() {
                   { title: "Re-assess Candidates", sub: "18 recommended", btn: "Re-assess", icon: UserPlus, color: "text-blue-500", filter: "Assessment" },
                   { title: "Update Policies", sub: "3 outdated", btn: "Update Now", icon: ShieldCheck, color: "text-emerald-500", filter: "All" },
                ].map((ma, i) => (
-                  <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden p-6 group hover:border-primary/30 transition-all cursor-pointer bg-gradient-to-br from-card to-background/50">
+                  <Card key={i} className="border-border/40 shadow-xl overflow-hidden p-6 group hover:border-primary/30 transition-all cursor-pointer bg-gradient-to-br from-card to-background/50">
                      <div className="flex items-center gap-3 mb-4">
                         <div className={cn("p-1.5 rounded-lg bg-muted border border-border/50 group-hover:bg-primary/10 transition-colors", ma.color)}>
                            <ma.icon className="w-4 h-4" />

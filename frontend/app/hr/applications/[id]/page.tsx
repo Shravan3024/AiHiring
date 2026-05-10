@@ -226,7 +226,7 @@ export default function HRApplicationDetailsPage() {
                 <div className="space-y-4">
                   <div className="flex items-start gap-2">
                     <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 rounded-2xl bg-white border-2 border-blue-200 overflow-hidden shadow-lg shrink-0">
+                      <div className="w-16 h-16 rounded-lg bg-white border-2 border-blue-200 overflow-hidden shadow-lg shrink-0">
                         <img
                           src={appData.candidate?.profileImage || "/images/default-avatar.png"}
                           alt={appData.candidate?.name}
@@ -469,7 +469,7 @@ export default function HRApplicationDetailsPage() {
             
             {/* Manual Decision Logic - Always visible for HR control */}
             {true && (
-              <div className="p-6 bg-white rounded-2xl border border-blue-100 shadow-sm space-y-4">
+              <div className="p-6 bg-white rounded-lg border border-blue-100 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-black uppercase tracking-widest text-slate-800">Manual Review & Pipeline Movement</h4>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Awaiting HR Decision</Badge>

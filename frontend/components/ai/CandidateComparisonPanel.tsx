@@ -176,7 +176,7 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
             <BarChart data={comparisonData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" />
@@ -202,7 +202,7 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={350}>
               <RadarChart data={skillsData}>
                 <PolarGrid stroke="#e5e7eb" />
                 <PolarAngleAxis dataKey="name" tick={{ fontSize: 12 }} />

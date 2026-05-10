@@ -59,7 +59,7 @@ export default function ProductsPage() {
 
            <div className="relative group">
               <div className="absolute inset-0 bg-blue-600/20 rounded-[3rem] blur-[120px] animate-pulse" />
-              <div className="relative bg-white/40 backdrop-blur-md border border-white/20 p-2 rounded-[3.5rem] shadow-2xl overflow-hidden transition-transform duration-700 group-hover:scale-[1.02]">
+              <div className="relative bg-white/40 backdrop-blur-md border border-white/20 p-2 rounded-[3.5rem] shadow-sm overflow-hidden transition-transform duration-700 group-hover:scale-[1.02]">
                  <img 
                     src="/products-collage.png" 
                     alt="Product Catalog Collage" 
@@ -76,7 +76,7 @@ export default function ProductsPage() {
                  <h2 className="text-4xl font-black tracking-tight text-slate-900">Catalogue Architecture</h2>
                  <p className="text-slate-400 text-[11px] uppercase tracking-[0.3em] font-black">Segmented by Industrial Application</p>
               </div>
-              <div className="flex items-center gap-4 bg-white/50 backdrop-blur-sm px-6 py-3 rounded-2xl border border-slate-200/60">
+              <div className="flex items-center gap-4 bg-white/50 backdrop-blur-sm px-6 py-3 rounded-lg border border-slate-200/60">
                  <ShieldCheck className="w-5 h-5 text-emerald-500" />
                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">OEM Quality Guaranteed</span>
               </div>
@@ -84,9 +84,9 @@ export default function ProductsPage() {
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {categories.map((cat, idx) => (
-                <div key={idx} className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-10 rounded-[2.5rem] hover:shadow-2xl transition-all duration-500 group">
+                <div key={idx} className="bg-white/70 backdrop-blur-md border border-slate-200/60 p-10 rounded-lg hover:shadow-sm transition-all duration-500 group">
                    <div className="flex items-center justify-between mb-8">
-                      <div className="p-3 bg-slate-900 rounded-2xl text-white group-hover:bg-blue-600 transition-colors">
+                      <div className="p-3 bg-slate-900 rounded-lg text-white group-hover:bg-blue-600 transition-colors">
                         <Box className="w-6 h-6" />
                       </div>
                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">0{idx + 1}</span>
@@ -113,10 +113,10 @@ export default function ProductsPage() {
                 Need a bespoke <span className="uppercase">polymer</span> solution for your next project?
               </h2>
               <div className="flex flex-wrap items-center justify-center gap-6">
-                 <button className="bg-white text-blue-600 px-10 py-4 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-slate-900 hover:text-white transition-all shadow-xl shadow-blue-900/10">
+                 <button className="bg-white text-blue-600 px-10 py-4 rounded-lg font-black text-xs tracking-widest uppercase hover:bg-slate-900 hover:text-white transition-all shadow-xl shadow-blue-900/10">
                     Request Technical Datasheet
                  </button>
-                 <button className="bg-blue-700/50 text-white border border-blue-400/30 px-10 py-4 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-white hover:text-blue-600 transition-all">
+                 <button className="bg-blue-700/50 text-white border border-blue-400/30 px-10 py-4 rounded-lg font-black text-xs tracking-widest uppercase hover:bg-white hover:text-blue-600 transition-all">
                     Consult Engineering Team
                  </button>
               </div>

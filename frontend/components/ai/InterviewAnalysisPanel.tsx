@@ -47,8 +47,8 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
 
   const interviewData = profileRes?.data?.interviewAnalysis;
   // interview_session.questions_asked holds the real response_text from the candidate
-  const sessionData   = profileRes?.data?.interview_session;
-  const highlights    = profileRes?.data?.interviewHighlights;
+  const sessionData = profileRes?.data?.interview_session;
+  const highlights = profileRes?.data?.interviewHighlights;
 
   // Build Q&A trace rows:
   // sessionData.questions_asked has response_text → use it first
@@ -93,7 +93,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
             <Button
               onClick={() => analyzeInterview()}
               disabled={isPending}
-              className="bg-blue-600 hover:bg-blue-700 px-10 h-14 rounded-2xl font-black text-sm gap-3 shadow-xl"
+              className="bg-blue-600 hover:bg-blue-700 px-10 h-14 rounded-lg font-black text-sm gap-3 shadow-xl"
             >
               {isPending ? <RefreshCw className="animate-spin w-5 h-5" /> : <Brain className="w-5 h-5" />}
               INITIATE NEURAL ANALYSIS
@@ -119,7 +119,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                 </div>
                 <div className="mt-6 space-y-4">
                   {[["AI Scored Weight (LLM)", "70%", "70%", "bg-blue-600"],
-                    ["ML Deterministic Match", "30%", "30%", "bg-slate-400"]].map(([label, pct, w, color]) => (
+                  ["ML Deterministic Match", "30%", "30%", "bg-slate-400"]].map(([label, pct, w, color]) => (
                     <div key={label}>
                       <div className="flex justify-between text-xs font-bold text-slate-500 uppercase mb-1">
                         <span>{label}</span><span>{pct}</span>
@@ -141,10 +141,20 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
 
           {/* Executive Summary */}
           <Card className="border-blue-100 bg-blue-50/20">
-            <CardHeader className="pb-2 border-b border-blue-50">
+            <CardHeader className="pb-2 border-b border-blue-50 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-bold text-blue-800 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" /> AI Performance Executive Summary
               </CardTitle>
+              <Button
+                onClick={() => analyzeInterview()}
+                disabled={isPending}
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-blue-600 border-blue-200 hover:bg-blue-100 m-0"
+              >
+                {isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                Re-analyze Session
+              </Button>
             </CardHeader>
             <CardContent className="pt-4">
               <p className="font-bold text-blue-900 text-sm">
@@ -242,13 +252,13 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                 </TableHeader>
                 <TableBody>
                   {traceRows.map((pair: any, idx: number) => {
-                    const questionText   = pair.question_text || pair.question || `Interview Question ${idx + 1}`;
+                    const questionText = pair.question_text || pair.question || `Interview Question ${idx + 1}`;
                     // response_text is saved by the backend on every submitResponsePhase5 call
-                    const responseText   = pair.response_text || pair.answer_text || pair.candidate_response || pair.answer || "";
-                    const expectedAns    = pair.expectedAnswer || pair.expected_answer || null;
+                    const responseText = pair.response_text || pair.answer_text || pair.candidate_response || pair.answer || "";
+                    const expectedAns = pair.expectedAnswer || pair.expected_answer || null;
                     const relevanceScore = pair.analysis?.relevance != null ? Math.round(pair.analysis.relevance * 100) : null;
-                    const confRaw        = pair.analysis?.confidence;
-                    const confLabel      = confRaw != null ? (confRaw > 0.7 ? "High" : confRaw > 0.4 ? "Med" : "Low") : null;
+                    const confRaw = pair.analysis?.confidence;
+                    const confLabel = confRaw != null ? (confRaw > 0.7 ? "High" : confRaw > 0.4 ? "Med" : "Low") : null;
                     return (
                       <TableRow key={idx}>
                         <TableCell className="font-semibold text-slate-700 border-r align-top">
@@ -287,7 +297,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                             {relevanceScore !== null && (
                               <Badge className={cn("text-[10px] font-bold border-transparent",
                                 relevanceScore >= 70 ? "bg-emerald-100 text-emerald-700" :
-                                relevanceScore >= 40 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
+                                  relevanceScore >= 40 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
                               )}>
                                 Relevance: {relevanceScore}%
                               </Badge>
@@ -349,13 +359,13 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
 
                 {/* Main video player */}
                 {highlights.videoUrl ? (
-                  <div className="rounded-2xl overflow-hidden bg-black aspect-video border border-slate-200 shadow-lg">
+                  <div className="rounded-lg overflow-hidden bg-black aspect-video border border-slate-200 shadow-lg">
                     <video controls className="w-full h-full" src={highlights.videoUrl}>
                       Your browser does not support video playback.
                     </video>
                   </div>
                 ) : (
-                  <div className="rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 aspect-video flex items-center justify-center">
+                  <div className="rounded-lg bg-slate-50 border-2 border-dashed border-slate-200 aspect-video flex items-center justify-center">
                     <div className="text-center space-y-3">
                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
                         <Video className="w-8 h-8 text-slate-300" />
@@ -368,7 +378,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
 
                 {/* AI session highlights bullets */}
                 {(highlights.aiHighlights || []).length > 0 && (
-                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                     <h4 className="text-xs font-black text-blue-800 uppercase tracking-widest mb-3">AI-Generated Highlights</h4>
                     <div className="space-y-2">
                       {highlights.aiHighlights.map((h: any, i: number) => (
@@ -389,7 +399,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                     </h4>
                     <div className="space-y-4">
                       {highlights.highlights.map((h: any, idx: number) => (
-                        <div key={idx} className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+                        <div key={idx} className="border border-slate-100 rounded-lg overflow-hidden bg-white shadow-sm">
                           {/* Header row */}
                           <div className="flex items-center justify-between p-4 bg-slate-50 border-b border-slate-100">
                             <div className="flex items-center gap-3">
@@ -406,7 +416,7 @@ export const InterviewAnalysisPanel: React.FC<InterviewAnalysisPanelProps> = ({
                             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                               <Badge className={cn("text-[10px] font-bold border-transparent",
                                 h.score >= 70 ? "bg-emerald-100 text-emerald-700" :
-                                h.score >= 40 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
+                                  h.score >= 40 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
                               )}>
                                 {h.score}% relevance
                               </Badge>

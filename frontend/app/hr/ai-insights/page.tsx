@@ -129,7 +129,7 @@ export default function IndustryReadyAIInsights() {
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
        {[1,2,3,4,5].map(i => (
-         <Card key={i} className="border-border/40 glass">
+         <Card key={i} className="border-border/40">
             <CardContent className="p-6 space-y-4">
                <Skeleton className="h-8 w-8 rounded-xl" />
                <Skeleton className="h-4 w-24" />
@@ -151,14 +151,14 @@ export default function IndustryReadyAIInsights() {
                  <Skeleton className="h-4 w-48" />
               </div>
               <div className="flex gap-4">
-                 <Skeleton className="h-11 w-32 rounded-2xl" />
-                 <Skeleton className="h-11 w-48 rounded-2xl" />
+                 <Skeleton className="h-11 w-32 rounded-lg" />
+                 <Skeleton className="h-11 w-48 rounded-lg" />
               </div>
            </div>
            <LoadingSkeleton />
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <Skeleton className="lg:col-span-8 h-[400px] rounded-[2.5rem]" />
-              <Skeleton className="lg:col-span-4 h-[400px] rounded-[2.5rem]" />
+              <Skeleton className="lg:col-span-8 h-[400px] rounded-lg" />
+              <Skeleton className="lg:col-span-4 h-[400px] rounded-lg" />
            </div>
         </div>
       </PanelLayout>
@@ -193,14 +193,14 @@ export default function IndustryReadyAIInsights() {
               <Button 
                 variant="outline" 
                 onClick={handleDownloadInsights}
-                className="h-11 rounded-2xl border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted/50 transition-all px-6"
+                className="h-11 rounded-lg border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted/50 transition-all px-6"
               >
                  <Download className="w-4 h-4" /> Export Strategic Dossier
               </Button>
               <Button 
                 onClick={handleGenerateAIReport}
                 disabled={isGenerating}
-                className="h-11 rounded-2xl industrial-gradient text-white text-[10px] font-black uppercase tracking-widest gap-2 shadow-2xl shadow-primary/30 px-8 hover:scale-105 active:scale-95 transition-all"
+                className="h-11 rounded-lg industrial-gradient text-white text-[10px] font-black uppercase tracking-widest gap-2 shadow-sm shadow-primary/30 px-8 hover:scale-105 active:scale-95 transition-all"
               >
                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                  {isGenerating ? "Synthesizing Dataset..." : "Generate AI Strategic Report"}
@@ -209,7 +209,7 @@ export default function IndustryReadyAIInsights() {
         </div>
 
         {/* TAB NAVIGATION */}
-        <div className="flex bg-muted/10 p-1 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar shadow-inner backdrop-blur-xl sticky top-4 z-50 shadow-2xl shadow-primary/5">
+        <div className="flex bg-muted/10 p-1 rounded-lg border border-border/40 overflow-x-auto no-scrollbar shadow-inner backdrop-blur-xl sticky top-4 z-50 shadow-sm shadow-primary/5">
            {tabs.map((t, i) => (
               <Button 
                 key={i} 
@@ -218,7 +218,7 @@ export default function IndustryReadyAIInsights() {
                 className={cn(
                   "h-10 text-[10px] font-black uppercase tracking-[0.25em] px-10 rounded-xl transition-all whitespace-nowrap",
                   activeTab === t 
-                     ? "bg-card text-primary shadow-2xl shadow-primary/20 border border-border/50 scale-[1.02]" 
+                     ? "bg-card text-primary shadow-sm shadow-primary/20 border border-border/50 scale-[1.02]" 
                      : "text-muted-foreground opacity-30 hover:opacity-100 hover:bg-white/5"
                )}>{t}</Button>
            ))}
@@ -228,10 +228,10 @@ export default function IndustryReadyAIInsights() {
         {activeTab === "Overview" && (
            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
               {data.kpis.map((k: any, i: number) => (
-                 <Card key={i} className="border-border/40 glass shadow-2xl overflow-hidden group hover:scale-[1.02] transition-all duration-500 border-b-4 border-b-transparent hover:border-b-primary">
+                 <Card key={i} className="border-border/40 shadow-sm overflow-hidden group hover:scale-[1.02] transition-all duration-500 border-b-4 border-b-transparent hover:border-b-primary">
                     <CardContent className="p-6 space-y-5">
                        <div className="flex items-center justify-between">
-                          <div className={cn("p-2.5 rounded-2xl bg-muted/50 border border-border/50", k.color)}>
+                          <div className={cn("p-2.5 rounded-lg bg-muted/50 border border-border/50", k.color)}>
                              <Layers className="w-4 h-4" />
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -263,7 +263,7 @@ export default function IndustryReadyAIInsights() {
            
            {/* Hiring Intelligence: Quality Trends */}
            {(activeTab === "Overview" || activeTab === "Hiring Intelligence") && (
-              <Card className="lg:col-span-8 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500">
+              <Card className="lg:col-span-8 border-border/40 shadow-sm rounded-lg overflow-hidden group hover:border-primary/30 transition-all duration-500">
                  <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
                     <div className="space-y-1">
                        <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
@@ -274,7 +274,7 @@ export default function IndustryReadyAIInsights() {
                  </CardHeader>
                  <CardContent className="p-8">
                     <div className="h-[300px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
+                       <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                           <AreaChart data={data.qualityTrend}>
                              <defs>
                                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -299,7 +299,7 @@ export default function IndustryReadyAIInsights() {
                           { label: "Avg Quality", val: `${data.kpis[0].value}%`, col: "text-purple-500" },
                           { label: "Efficiency", val: data.kpis[2].value, col: "text-amber-500" }
                         ].map((stat, idx) => (
-                           <div key={idx} className="p-5 rounded-3xl bg-muted/20 border border-border/40 space-y-1">
+                           <div key={idx} className="p-5 rounded-lg bg-muted/20 border border-border/40 space-y-1">
                               <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
                               <p className={cn("text-xl font-black tracking-tighter", stat.col)}>{stat.val}</p>
                            </div>
@@ -311,7 +311,7 @@ export default function IndustryReadyAIInsights() {
 
            {/* Talent Intelligence: Dynamic Observations */}
            {(activeTab === "Overview" || activeTab === "Talent Intelligence") && (
-              <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+              <Card className="lg:col-span-4 border-border/40 shadow-sm rounded-lg overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
                  <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Talent Intelligence</CardTitle>
                     {analyzingSection === "Talent Intelligence" ? <Loader2 className="w-5 h-5 animate-spin text-emerald-500" /> : <Brain className="w-5 h-5 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
@@ -324,7 +324,7 @@ export default function IndustryReadyAIInsights() {
                             className="p-8 hover:bg-emerald-500/5 transition-all cursor-pointer group space-y-4">
                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                   <div className={cn("p-2.5 rounded-2xl border border-border/50 bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform")}>
+                                   <div className={cn("p-2.5 rounded-lg border border-border/50 bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform")}>
                                       <TrendingUp className="w-4 h-4" />
                                    </div>
                                    <h4 className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover:text-emerald-500 transition-colors">{ins.title}</h4>
@@ -341,13 +341,13 @@ export default function IndustryReadyAIInsights() {
 
            {/* Predictive Analytics: Yield & Attrition */}
            {(activeTab === "Overview" || activeTab === "Predictive Analytics") && (
-              <Card className="lg:col-span-6 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+              <Card className="lg:col-span-6 border-border/40 shadow-sm rounded-lg overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
                  <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Neural Predictive Models</CardTitle>
                     {analyzingSection === "Predictive Analytics" ? <Loader2 className="w-5 h-5 animate-spin text-blue-500" /> : <Sparkles className="w-5 h-5 text-blue-500 opacity-50 group-hover:opacity-100 animate-pulse transition-all" />}
                  </CardHeader>
                  <CardContent className="p-8 space-y-8">
-                    <div className="flex bg-muted/30 p-1.5 rounded-2xl gap-1.5 border border-border/40 shadow-inner">
+                    <div className="flex bg-muted/30 p-1.5 rounded-lg gap-1.5 border border-border/40 shadow-inner">
                        <Button 
                          variant="ghost" 
                          onClick={() => setPredictiveView("success")}
@@ -365,7 +365,7 @@ export default function IndustryReadyAIInsights() {
                        {data.predictions.map((r: any, i: number) => (
                           <div key={i} 
                             onClick={() => handleDeepAnalyze("Predictive Analytics", r)}
-                            className="flex items-center justify-between group/row cursor-pointer hover:bg-blue-500/5 p-3 rounded-2xl transition-all border border-transparent hover:border-blue-500/20">
+                            className="flex items-center justify-between group/row cursor-pointer hover:bg-blue-500/5 p-3 rounded-lg transition-all border border-transparent hover:border-blue-500/20">
                              <div className="space-y-1">
                                 <span className="text-[12px] font-black text-foreground uppercase tracking-tight group-hover/row:text-blue-500 transition-colors">{r.role}</span>
                                 <div className="flex items-center gap-2">
@@ -384,7 +384,7 @@ export default function IndustryReadyAIInsights() {
                       variant="outline" 
                       onClick={handleNeuralMap}
                       disabled={analyzingSection === "Neural Map"}
-                      className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-primary/5 hover:border-primary/30 transition-all gap-3 group relative overflow-hidden">
+                      className="w-full h-14 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-primary/5 hover:border-primary/30 transition-all gap-3 group relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         {analyzingSection === "Neural Map" ? <Loader2 className="w-5 h-5 animate-spin" /> : <Network className="w-5 h-5 text-primary" />}
                         {analyzingSection === "Neural Map" ? "Mapping Neural Vectors..." : "Synthesize Full Neural Roadmap"} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -395,7 +395,7 @@ export default function IndustryReadyAIInsights() {
 
            {/* Market Skill Gap Analysis: Real-time Supply/Demand */}
            {(activeTab === "Overview" || activeTab === "Market Insights") && (
-              <Card className="lg:col-span-6 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden p-8 group">
+              <Card className="lg:col-span-6 border-border/40 shadow-sm rounded-lg overflow-hidden p-8 group">
                  <div className="flex items-center justify-between mb-10">
                     <div className="space-y-1">
                        <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
@@ -413,7 +413,7 @@ export default function IndustryReadyAIInsights() {
                        <span className="col-span-1 text-right">Strategic Gap</span>
                     </div>
                     {data.skillGap.map((s: any, i: number) => (
-                       <div key={i} className="grid grid-cols-4 items-center gap-6 group/skill hover:bg-white/5 p-3 rounded-2xl transition-all">
+                       <div key={i} className="grid grid-cols-4 items-center gap-6 group/skill hover:bg-white/5 p-3 rounded-lg transition-all">
                           <span className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover/skill:text-blue-500 transition-colors">{s.skill}</span>
                           <div className="flex flex-col gap-2 items-center">
                              <div className="text-[10px] font-black text-blue-500 tabular-nums">{s.current || 0}%</div>
@@ -436,7 +436,7 @@ export default function IndustryReadyAIInsights() {
 
            {/* Strategic AI Recommendations */}
            {(activeTab === "Overview" || activeTab === "Recommendations") && (
-              <Card className="lg:col-span-12 border-border/40 glass shadow-2xl rounded-[2.5rem] overflow-hidden group">
+              <Card className="lg:col-span-12 border-border/40 shadow-sm rounded-lg overflow-hidden group">
                  <CardHeader className="border-b border-white/5 px-8 py-6 flex flex-row items-center justify-between bg-muted/10">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Autonomous Strategic Action Plan</CardTitle>
                     {analyzingSection === "Recommendations" ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <Lightbulb className="w-5 h-5 text-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
@@ -447,7 +447,7 @@ export default function IndustryReadyAIInsights() {
                           <div key={i} 
                             onClick={() => handleDeepAnalyze("Recommendations", rec)}
                             className="p-10 hover:bg-amber-500/5 transition-all cursor-pointer group/rec space-y-5">
-                             <div className="p-4 rounded-2xl bg-muted/50 border border-border/50 w-fit group-hover/rec:bg-amber-500/10 group-hover/rec:border-amber-500/30 transition-all shadow-xl">
+                             <div className="p-4 rounded-lg bg-muted/50 border border-border/50 w-fit group-hover/rec:bg-amber-500/10 group-hover/rec:border-amber-500/30 transition-all shadow-xl">
                                 <Target className={cn("w-6 h-6", rec.color)} />
                              </div>
                              <div className="space-y-2">
@@ -492,13 +492,13 @@ export default function IndustryReadyAIInsights() {
               <Button 
                 onClick={() => fetchData(true)}
                 variant="outline"
-                className="h-12 rounded-2xl border border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted transition-all px-8">
+                className="h-12 rounded-lg border border-border/50 bg-background/50 backdrop-blur-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-muted transition-all px-8">
                  <RefreshCw className="w-4 h-4" /> Refresh Talent Pool
               </Button>
            </div>
            <div className="flex flex-wrap items-stretch justify-center gap-8">
               {data.topCandidates.map((c: any, i: number) => (
-                 <Card key={i} className="w-full md:w-[calc(33.33%-2rem)] lg:w-[calc(20%-2rem)] min-w-[280px] border-border/40 glass shadow-2xl rounded-[3rem] overflow-hidden group hover:scale-105 hover:border-primary/40 transition-all duration-500 cursor-pointer bg-gradient-to-b from-card to-background relative">
+                 <Card key={i} className="w-full md:w-[calc(33.33%-2rem)] lg:w-[calc(20%-2rem)] min-w-[280px] border-border/40 shadow-sm rounded-[3rem] overflow-hidden group hover:scale-105 hover:border-primary/40 transition-all duration-500 cursor-pointer bg-gradient-to-b from-card to-background relative">
                     <div className="absolute top-6 right-6 z-10">
                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
                     </div>
@@ -511,7 +511,7 @@ export default function IndustryReadyAIInsights() {
                           </svg>
                           
                           {/* Avatar Core */}
-                          <div className="relative w-32 h-32 rounded-full border-4 border-background bg-muted overflow-hidden shadow-2xl z-10 ring-8 ring-primary/5">
+                          <div className="relative w-32 h-32 rounded-full border-4 border-background bg-muted overflow-hidden shadow-sm z-10 ring-8 ring-primary/5">
                              <img 
                                 src={c.img || "/images/default-avatar.png"} 
                                 alt={c.name} 

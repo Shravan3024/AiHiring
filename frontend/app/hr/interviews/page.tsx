@@ -51,7 +51,7 @@ function InterviewAuditModal({ interviewId }: { interviewId: string | number | n
   const qaPairs = data?.qaPairs || [];
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col glass-dark border-border/40 p-0 shadow-2xl">
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-border/40 p-0 shadow-sm">
       <DialogHeader className="p-8 border-b border-border/10 bg-muted/5">
         <div className="flex items-center justify-between gap-6">
            <div className="space-y-1">
@@ -83,7 +83,7 @@ function InterviewAuditModal({ interviewId }: { interviewId: string | number | n
           <div className="space-y-10">
             {/* OVERALL SUMMARY */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <Card className="col-span-2 border-border/40 bg-primary/5 p-6 rounded-3xl relative overflow-hidden group">
+               <Card className="col-span-2 border-border/40 bg-primary/5 p-6 rounded-lg relative overflow-hidden group">
                   <Quote className="absolute -top-2 -right-2 w-24 h-24 opacity-[0.03] text-primary rotate-12" />
                   <div className="relative z-10">
                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -94,7 +94,7 @@ function InterviewAuditModal({ interviewId }: { interviewId: string | number | n
                      </p>
                   </div>
                </Card>
-               <Card className="border-border/40 bg-muted/20 p-6 rounded-3xl flex flex-col justify-center items-center text-center">
+               <Card className="border-border/40 bg-muted/20 p-6 rounded-lg flex flex-col justify-center items-center text-center">
                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Overall Score</p>
                   <div className="text-4xl font-black text-primary tracking-tighter tabular-nums">
                      {session?.overall_score || analysis?.overall_score || "4.2"}<span className="text-sm text-muted-foreground/50 ml-1">/5</span>
@@ -126,7 +126,7 @@ function InterviewAuditModal({ interviewId }: { interviewId: string | number | n
                        </div>
                        
                        {/* Answer */}
-                       <div className="ml-12 p-6 rounded-2xl bg-muted/10 border border-border/40 relative group">
+                       <div className="ml-12 p-6 rounded-lg bg-muted/10 border border-border/40 relative group">
                           <div className="absolute top-0 left-0 w-1 h-full bg-primary/30 rounded-full" />
                           <div className="flex items-center gap-2 mb-3">
                              <User className="w-3.5 h-3.5 text-muted-foreground" />
@@ -223,7 +223,7 @@ function ScheduleInterviewModal({ isOpen, onOpenChange }: { isOpen: boolean; onO
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl border-border/40 glass shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] rounded-lg border-border/40 shadow-sm p-0 overflow-hidden">
         <DialogHeader className="p-8 border-b border-border/10 bg-primary/5">
            <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-xl bg-primary/20 text-primary border border-primary/20">
@@ -311,7 +311,7 @@ function ScheduleInterviewModal({ isOpen, onOpenChange }: { isOpen: boolean; onO
               </div>
            </div>
 
-           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex gap-3">
+           <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 flex gap-3">
               <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <p className="text-[9px] font-medium text-muted-foreground leading-relaxed">
                  <span className="font-black text-primary uppercase">Security Protocol:</span> The interview link will remain active for exactly <span className="text-foreground font-black">10 hours</span> from the scheduled start time. After this window, the session will be automatically locked.
@@ -447,7 +447,7 @@ export default function HighFidelityInterviewsV2() {
         </div>
 
         {/* TABS */}
-        <div className="flex bg-muted/20 p-1.5 rounded-2xl gap-2 border border-border/40 overflow-x-auto no-scrollbar">
+        <div className="flex bg-muted/20 p-1.5 rounded-lg gap-2 border border-border/40 overflow-x-auto no-scrollbar">
            {["Overview", "Scheduled", "Completed", "Cancelled", "All"].map((t) => (
               <Button 
                 key={t} 
@@ -472,7 +472,7 @@ export default function HighFidelityInterviewsV2() {
               { title: "Cancelled", value: kpis.cancelled, icon: VideoOff, color: "text-rose-500", trend: "+5.6%" },
               { title: "Avg. Score", value: `${kpis.avgScore} / 5`, icon: Star, color: "text-amber-500", trend: "+6.3%" },
            ].map((k, i) => (
-              <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden group">
+              <Card key={i} className="border-border/40 shadow-xl overflow-hidden group">
                  <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-4">
                        <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", k.color)}>
@@ -500,7 +500,7 @@ export default function HighFidelityInterviewsV2() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {highlights.map((h: any, i: number) => (
-                  <Card key={i} className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden border-l-4 border-l-primary/50 relative group hover:border-primary/30 transition-all cursor-pointer">
+                  <Card key={i} className="border-border/40 shadow-xl rounded-lg overflow-hidden border-l-4 border-l-primary/50 relative group hover:border-primary/30 transition-all cursor-pointer">
                       <CardContent className="p-6">
                         <Quote className="absolute top-4 right-4 w-12 h-12 opacity-5 text-primary group-hover:scale-110 transition-transform" />
                         <Badge className="text-[8px] font-black uppercase mb-4 bg-primary/10 text-primary border-none">AI INSIGHT</Badge>
@@ -535,7 +535,7 @@ export default function HighFidelityInterviewsV2() {
                  </div>
               </div>
 
-              <Card className="border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardContent className="p-0">
                     <div className="overflow-x-auto">
                        <table className="w-full text-left">
@@ -600,7 +600,7 @@ export default function HighFidelityInterviewsV2() {
                                             <DropdownMenuTrigger asChild>
                                                <Button variant="ghost" size="icon" className="w-7 h-7 rounded-lg"><MoreVertical className="w-3.5 h-3.5" /></Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="glass-dark border-border/40">
+                                            <DropdownMenuContent align="end" className="border-border/40">
                                                <DropdownMenuItem className="text-[10px] font-black uppercase gap-2 cursor-pointer">
                                                   <FileDown className="w-3 h-3" /> Download Report
                                                </DropdownMenuItem>
@@ -630,7 +630,7 @@ export default function HighFidelityInterviewsV2() {
            <div className="lg:col-span-4 space-y-6">
               
               {/* Interview Summary */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden p-6">
                  <div className="flex items-center justify-between mb-8">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Pipeline Efficiency</CardTitle>
                  </div>
@@ -660,12 +660,12 @@ export default function HighFidelityInterviewsV2() {
               </Card>
 
               {/* Score Distribution */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-8">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden p-8">
                  <div className="flex items-center justify-between mb-8">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Hiring Recommendation</CardTitle>
                  </div>
                  <div className="relative h-48 w-full mb-8">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                        <PieChart>
                           <Pie 
                             data={distribution} 
@@ -707,7 +707,7 @@ export default function HighFidelityInterviewsV2() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
            
            {/* Interview Analytics */}
-           <Card className="lg:col-span-12 border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+           <Card className="lg:col-span-12 border-border/40 shadow-sm rounded-lg overflow-hidden">
               <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Neural Video Intelligence</CardTitle>
                  <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">Explore All Clips</Button>
@@ -720,7 +720,7 @@ export default function HighFidelityInterviewsV2() {
                        { name: "Problem Solving", cand: "Arjun Nair", duration: "0:30", tag: "Algorithm", color: "from-purple-500/20 to-transparent", img: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&q=80" },
                        { name: "Architecture Vision", cand: "Sarthak Giri", duration: "2:15", tag: "High Potential", color: "from-amber-500/20 to-transparent", img: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&q=80" },
                     ].map((v, i) => (
-                       <div key={i} className="relative aspect-video rounded-2xl overflow-hidden group border border-border/40 cursor-pointer">
+                       <div key={i} className="relative aspect-video rounded-lg overflow-hidden group border border-border/40 cursor-pointer">
                           <img src={v.img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                              <div className="w-10 h-10 rounded-full industrial-gradient flex items-center justify-center">

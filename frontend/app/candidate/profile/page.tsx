@@ -130,10 +130,10 @@ export default function CandidateProfilePage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
       {/* Profile Header */}
-      <Card className="border-none shadow-sm rounded-[40px] bg-white p-10 overflow-hidden relative">
-        <div className="flex flex-col lg:flex-row items-center gap-10">
+      <Card className="border-none shadow-sm rounded-[40px] bg-white p-6 overflow-hidden relative">
+        <div className="flex flex-col lg:flex-row items-center gap-6">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-50 shadow-xl">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-50 shadow-sm">
               <img
                 src={avatarSrc || "/images/default-avatar.png"}
                 alt="Profile"
@@ -157,7 +157,7 @@ export default function CandidateProfilePage() {
 
           <div className="flex-1 text-center lg:text-left space-y-4">
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
-              <h1 className="text-3xl font-bold text-slate-900">{candidate?.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900">{candidate?.name}</h1>
               <Badge className="bg-blue-50 text-blue-600 border-blue-100 px-3 py-1 gap-1.5 font-bold">
                 <CheckCircle2 className="w-3 h-3" /> Verified
               </Badge>
@@ -174,7 +174,7 @@ export default function CandidateProfilePage() {
           </div>
 
           <div className="flex flex-col items-end gap-4">
-            <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-10 rounded-xl shadow-lg shadow-blue-200 font-bold gap-2" onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
+            <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-6 rounded-xl shadow-lg shadow-blue-200 font-bold gap-2" onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Changes
             </Button>
@@ -183,16 +183,16 @@ export default function CandidateProfilePage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Academic Info */}
-        <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden">
-          <CardHeader className="p-8 pb-4">
+        <Card className="border-none shadow-sm rounded-xl bg-white overflow-hidden">
+          <CardHeader className="p-5 pb-4">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><GraduationCap className="w-6 h-6" /></div>
               Academic Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Highest Qualification</Label>
@@ -216,26 +216,25 @@ export default function CandidateProfilePage() {
         </Card>
 
         {/* Professional Experience - Fresher / Working Professional Toggle */}
-        <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden">
-          <CardHeader className="p-8 pb-4">
+        <Card className="border-none shadow-sm rounded-xl bg-white overflow-hidden">
+          <CardHeader className="p-5 pb-4">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><Briefcase className="w-6 h-6" /></div>
               Professional Experience
             </CardTitle>
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Select your current status</p>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
 
             {/* Toggle Buttons */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, candidate_type: "FRESHER", experience_years: 0, current_company: "", working_address: "" }))}
-                className={`relative flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all font-bold text-sm ${
-                  form.candidate_type === "FRESHER"
+                className={`relative flex flex-col items-center gap-2 p-5 rounded-lg border-2 transition-all font-bold text-sm ${form.candidate_type === "FRESHER"
                     ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
                     : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
-                }`}
+                  }`}
               >
                 <GraduationCap className="w-6 h-6" />
                 Fresher
@@ -249,11 +248,10 @@ export default function CandidateProfilePage() {
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, candidate_type: "WORKING_PROFESSIONAL", area_of_interest: "" }))}
-                className={`relative flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all font-bold text-sm ${
-                  form.candidate_type === "WORKING_PROFESSIONAL"
+                className={`relative flex flex-col items-center gap-2 p-5 rounded-lg border-2 transition-all font-bold text-sm ${form.candidate_type === "WORKING_PROFESSIONAL"
                     ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
                     : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
-                }`}
+                  }`}
               >
                 <Briefcase className="w-6 h-6" />
                 Working Professional
@@ -273,11 +271,10 @@ export default function CandidateProfilePage() {
             )}
 
             {/* ── FRESHER PANEL ── */}
-            <div className={`space-y-4 rounded-2xl p-5 border-2 transition-all ${
-              form.candidate_type === "FRESHER"
+            <div className={`space-y-4 rounded-lg p-5 border-2 transition-all ${form.candidate_type === "FRESHER"
                 ? "border-blue-100 bg-blue-50/30"
                 : "border-slate-100 bg-slate-50/50 opacity-40 pointer-events-none select-none"
-            }`}>
+              }`}>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-blue-400" />
                 Fresher Details
@@ -308,11 +305,10 @@ export default function CandidateProfilePage() {
             </div>
 
             {/* ── WORKING PROFESSIONAL PANEL ── */}
-            <div className={`space-y-4 rounded-2xl p-5 border-2 transition-all ${
-              form.candidate_type === "WORKING_PROFESSIONAL"
+            <div className={`space-y-4 rounded-lg p-5 border-2 transition-all ${form.candidate_type === "WORKING_PROFESSIONAL"
                 ? "border-blue-100 bg-blue-50/30"
                 : "border-slate-100 bg-slate-50/50 opacity-40 pointer-events-none select-none"
-            }`}>
+              }`}>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-blue-400" />
                 Employment Details
@@ -337,7 +333,7 @@ export default function CandidateProfilePage() {
                     value={form.current_company}
                     onChange={e => setForm(f => ({ ...f, current_company: e.target.value }))}
                     className="h-12 bg-white border-slate-100 rounded-xl px-4 font-medium"
-                    placeholder="e.g. Mask Polymers Ltd."
+                    placeholder="e.g. AI Hiring System Ltd."
                     disabled={form.candidate_type !== "WORKING_PROFESSIONAL"}
                   />
                 </div>
@@ -392,7 +388,7 @@ export default function CandidateProfilePage() {
       </div>
 
       {/* Professional Summary */}
-      <Card className="border-none shadow-sm rounded-[32px] bg-white p-8">
+      <Card className="border-none shadow-sm rounded-xl bg-white p-5">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><FileText className="w-6 h-6" /></div>
           <h4 className="text-xl font-bold">Professional Summary</h4>
@@ -400,15 +396,15 @@ export default function CandidateProfilePage() {
         <textarea
           value={form.summary}
           onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
-          className="w-full min-h-[160px] p-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 transition-all text-slate-700 font-medium leading-relaxed"
+          className="w-full min-h-[160px] p-6 bg-slate-50 border-none rounded-lg focus:ring-2 focus:ring-blue-100 transition-all text-slate-700 font-medium leading-relaxed"
           placeholder="Briefly describe your career goals, key achievements, and what you bring to the table."
         />
         <p className="text-right text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">{form.summary.length} / 1000</p>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
         {/* Skills Section */}
-        <Card className="lg:col-span-3 border-none shadow-sm rounded-[32px] bg-white p-8">
+        <Card className="lg:col-span-3 border-none shadow-sm rounded-xl bg-white p-5">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><PenTool className="w-6 h-6" /></div>
@@ -446,16 +442,16 @@ export default function CandidateProfilePage() {
         </Card>
 
         {/* Resume Info */}
-        <Card className="lg:col-span-2 border-none shadow-sm rounded-[32px] bg-blue-600 text-white p-10 flex flex-col justify-between overflow-hidden relative">
+        <Card className="lg:col-span-2 border-none shadow-sm rounded-xl bg-blue-600 text-white p-6 flex flex-col justify-between overflow-hidden relative">
           <div className="absolute -right-10 -bottom-10 opacity-10">
             <ShieldCheck className="w-64 h-64" />
           </div>
           <div className="space-y-4 relative z-10">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md"><FileText className="w-6 h-6" /></div>
-            <h4 className="text-2xl font-bold">Your Resume Information</h4>
+            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-md"><FileText className="w-6 h-6" /></div>
+            <h4 className="text-lg font-bold">Your Resume Information</h4>
             <p className="text-blue-100 leading-relaxed font-medium">We've parsed your resume to suggest profile details. You can override them above.</p>
           </div>
-          <Card className="bg-white text-slate-900 border-none rounded-2xl p-6 mt-8 flex items-center justify-between relative z-10 shadow-xl">
+          <Card className="bg-white text-slate-900 border-none rounded-lg p-6 mt-8 flex items-center justify-between relative z-10 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500"><FileText className="w-6 h-6" /></div>
               <div>
@@ -493,7 +489,7 @@ export default function CandidateProfilePage() {
       </div>
 
       {/* Safety Banner */}
-      <Card className="border-none shadow-sm rounded-[32px] bg-blue-50/50 p-8 flex items-center gap-6">
+      <Card className="border-none shadow-sm rounded-xl bg-blue-50/50 p-5 flex items-center gap-6">
         <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><ShieldCheck className="w-6 h-6" /></div>
         <div>
           <h4 className="font-bold text-slate-900">Your Data is Safe</h4>

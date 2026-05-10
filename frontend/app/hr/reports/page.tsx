@@ -167,9 +167,9 @@ export default function HighFidelityReportsV2() {
            </div>
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {reportTypes.map((rt, i) => (
-                 <Card key={i} className="border-border/40 glass shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group border-b-4 border-b-primary/50">
+                 <Card key={i} className="border-border/40 shadow-xl hover:shadow-sm transition-all duration-500 overflow-hidden group border-b-4 border-b-primary/50">
                     <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-                       <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", rt.bg)}>
+                       <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110", rt.bg)}>
                           <rt.icon className={cn("w-6 h-6", rt.color)} />
                        </div>
                        <div>
@@ -216,7 +216,7 @@ export default function HighFidelityReportsV2() {
                  </div>
               </div>
 
-              <Card className="border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardContent className="p-0">
                     <div className="overflow-x-auto">
                        <table className="w-full text-left">
@@ -273,7 +273,7 @@ export default function HighFidelityReportsV2() {
                                             <DropdownMenuTrigger asChild>
                                                <Button variant="ghost" size="icon" className="w-7 h-7 rounded-lg"><MoreVertical className="w-3.5 h-3.5" /></Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="glass-dark border-border/40">
+                                            <DropdownMenuContent align="end" className="border-border/40">
                                                <DropdownMenuItem className="text-[10px] font-black uppercase gap-2 cursor-pointer">
                                                   <Share2 className="w-3 h-3" /> Share with Team
                                                </DropdownMenuItem>
@@ -303,7 +303,7 @@ export default function HighFidelityReportsV2() {
            <div className="lg:col-span-3 space-y-6 pb-12">
               
               {/* Popular Reports */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Recent Activity</CardTitle>
                     <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit">View All</Button>
@@ -326,7 +326,7 @@ export default function HighFidelityReportsV2() {
               </Card>
 
               {/* Report Storage */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-6">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden p-6">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-6">Report Storage</CardTitle>
                  <div className="relative h-32 w-32 mx-auto mb-6">
                     <svg className="w-full h-full transform -rotate-90">
@@ -361,7 +361,7 @@ export default function HighFidelityReportsV2() {
               </Card>
 
               {/* Recent Downloads (Real Data) */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Recent Downloads</CardTitle>
                  </CardHeader>
@@ -402,7 +402,7 @@ export default function HighFidelityReportsV2() {
                  { title: "Scheduled Reports", value: kpis.scheduledReports, trend: "up", trendVal: "0%", icon: Clock, color: "text-purple-500" },
                  { title: "Report Accuracy", value: `${kpis.accuracy}%`, trend: "up", trendVal: "3%", icon: Target, color: "text-amber-500" },
               ].map((ins, i) => (
-                 <Card key={i} className="border-border/40 glass shadow-xl overflow-hidden p-6 relative group hover:border-primary/30 transition-all">
+                 <Card key={i} className="border-border/40 shadow-xl overflow-hidden p-6 relative group hover:border-primary/30 transition-all">
                     <div className="flex items-center justify-between mb-4">
                        <div className={cn("p-1.5 rounded-lg bg-muted border border-border/50 group-hover:text-primary transition-colors", ins.color)}>
                           <ins.icon className="w-4 h-4" />

@@ -28,19 +28,19 @@ export default function PanelLayout({
         fullScreen ? "w-screen" : "w-full industrial-grid"
       )}>
         {!fullScreen && <Sidebar />}
-        
+
         <div className={cn(
           "relative flex flex-col flex-1 overflow-hidden z-10 transition-all duration-300",
           fullScreen && "w-full"
         )}>
           {!fullScreen && <Topbar title={title} />}
-          
+
           <main className={cn(
             "flex-1 overflow-y-auto custom-scrollbar",
-            !fullScreen ? "p-4 md:p-6 lg:p-10" : "p-0 min-h-screen w-full"
+            !fullScreen ? "p-3 md:p-4 lg:p-5" : "p-0 min-h-screen w-full"
           )}>
             <div className={cn(
-              "mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700",
+              "mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500",
               !fullScreen ? "max-w-[1600px]" : "w-full min-h-screen"
             )}>
               {children}

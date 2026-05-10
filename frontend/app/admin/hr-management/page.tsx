@@ -129,14 +129,14 @@ export default function HRManagementPage() {
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                  <Input 
                    placeholder="Filter identities..." 
-                   className="h-11 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
+                   className="h-11 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
                    value={search} 
                    onChange={e => setSearch(e.target.value)} 
                  />
               </div>
               <Button 
                 onClick={() => setOpen(true)} 
-                className="h-11 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2"
+                className="h-11 px-6 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" /> Provision Account
               </Button>
@@ -150,7 +150,7 @@ export default function HRManagementPage() {
           </TabsList>
           
           <TabsContent value="team" className="mt-0">
-            <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+            <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden backdrop-blur-xl">
                {isLoading ? (
                  <div className="p-20 flex flex-col items-center justify-center space-y-4">
                    <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
@@ -242,7 +242,7 @@ export default function HRManagementPage() {
           </TabsContent>
           
           <TabsContent value="rules" className="mt-0">
-            <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] p-10 min-h-[400px] backdrop-blur-xl relative overflow-hidden group">
+            <div className="bg-white shadow-sm border border-slate-200 rounded-lg p-10 min-h-[400px] backdrop-blur-xl relative overflow-hidden group">
                <div className="absolute top-0 left-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-1000">
                   <Fingerprint className="w-32 h-32 text-blue-500" />
                </div>
@@ -250,7 +250,7 @@ export default function HRManagementPage() {
                <div className="relative z-10 space-y-12">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                      <div className="space-y-2">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-lg bg-indigo-500/20 flex items-center justify-center">
                            <Settings2 className="w-6 h-6 text-indigo-400" />
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Validation Matrix</h3>
@@ -258,7 +258,7 @@ export default function HRManagementPage() {
                           Define multi-factor concurrence requirements. The ecosystem enforces exact threshold bounds, auto-escalation SLAs, and mandatory review matrices per role stage.
                         </p>
                      </div>
-                     <Button className="bg-indigo-600 hover:bg-indigo-500 h-14 px-8 rounded-2xl font-bold shadow-xl shadow-indigo-900/40 shrink-0" onClick={() => setRulesOpen(true)}>
+                     <Button className="bg-indigo-600 hover:bg-indigo-500 h-14 px-8 rounded-lg font-bold shadow-xl shadow-indigo-900/40 shrink-0" onClick={() => setRulesOpen(true)}>
                         Deploy Global Rule
                      </Button>
                   </div>
@@ -270,7 +270,7 @@ export default function HRManagementPage() {
                       { icon: Clock, label: "SLA Timeout", val: activeRule ? `${activeRule.slaHours}H` : "48H", color: "text-rose-400" },
                       { icon: Users, label: "Escalation", val: activeRule?.role || "SR. HR", color: "text-purple-400" },
                     ].map((stat, i) => (
-                      <div key={i} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-200 space-y-4 hover:border-slate-200 transition-all">
+                      <div key={i} className="p-8 rounded-lg bg-slate-50 border border-slate-200 space-y-4 hover:border-slate-200 transition-all">
                          <div className={cn("p-3 rounded-xl bg-white shadow-sm w-fit", stat.color)}>
                             <stat.icon className="w-5 h-5" />
                          </div>
@@ -282,7 +282,7 @@ export default function HRManagementPage() {
                     ))}
                   </div>
 
-                  <div className="p-8 rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-center space-y-4 py-20">
+                  <div className="p-8 rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-center space-y-4 py-20">
                      <Lock className="w-12 h-12 text-slate-900/5 animate-pulse" />
                      <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 uppercase tracking-widest">Active Rule Registry Encrypted</p>
                      <p className="text-[10px] text-slate-400 max-w-sm font-medium">Policy orchestration is handled via <code>hrApprovalRule.js</code> secure middleware layer for real-time compliance enforcement.</p>
@@ -295,9 +295,9 @@ export default function HRManagementPage() {
 
       {/* DIALOGS - Redesigned to match dark theme */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 p-0 overflow-hidden rounded-[2.5rem]">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 p-0 overflow-hidden rounded-lg">
           <DialogHeader className="p-8 bg-slate-50 border-b border-slate-200 relative">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
                <UserPlus className="w-6 h-6 text-blue-400" />
             </div>
             <DialogTitle className="text-2xl font-bold tracking-tight">Identity Provisioning</DialogTitle>
@@ -356,7 +356,7 @@ export default function HRManagementPage() {
       </Dialog>
 
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-[2.5rem]">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Policy Configuration</DialogTitle>
             <DialogDescription className="text-slate-500">
@@ -411,7 +411,7 @@ export default function HRManagementPage() {
       </Dialog>
 
       <Dialog open={rulesOpen} onOpenChange={setRulesOpen}>
-        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-[2.5rem]">
+        <DialogContent className="max-w-md bg-white border-slate-200 text-slate-900 rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Deploy Governance Rule</DialogTitle>
             <DialogDescription className="text-slate-500">

@@ -1,6 +1,6 @@
 /**
  * Database Seeding Script
- * Populates Jobs, Question Banks, and Approval Rules with Mask Polymers data
+ * Populates Jobs, Question Banks, and Approval Rules with AI Hiring System data
  */
 
 const { MARKETING_QUESTIONS } = require("./marketingQuestions.seeder");

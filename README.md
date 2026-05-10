@@ -1,4 +1,4 @@
-# 🏭 Mask Polymers Recruitment Platform (MPRP)
+# 🏭 AI Hiring System Recruitment Platform (MPRP)
 ### *AI-Driven Professional Assessment & Pipeline Management Infrastructure*
 
 MPRP is a mission-critical, end-to-end recruitment orchestration system designed for high-stakes industrial evaluation. It leverages a hybrid AI/ML engine to deliver precise candidate scoring, real-time proctoring, and automated hiring workflows.
@@ -98,5 +98,5 @@ npm run dev
 - [ ] **Industrial Knowledge Graphs**: Automated technical depth mapping.
 
 ---
-**Maintained by the Mask Polymers Engineering Team.**
+**Maintained by the AI Hiring System Engineering Team.**
 **SEC LEVEL 4 ACCREDITED**

@@ -37,14 +37,14 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
   // Adaptive Skill Data
   const skills = Array.isArray(candidate?.skills) ? candidate.skills : [];
   const skillData = skills.length > 0 
-    ? skills.slice(0, 6).map(s => ({ subject: s, A: 70 + Math.random() * 25, fullMark: 100 }))
+    ? skills.slice(0, 6).map((s: string) => ({ subject: s.toUpperCase(), A: 70 + Math.random() * 25, fullMark: 100 }))
     : [
-        { subject: 'Communication', A: 85, fullMark: 100 },
-        { subject: 'Problem Solving', A: 80, fullMark: 100 },
-        { subject: 'Teamwork', A: 75, fullMark: 100 },
-        { subject: 'Technical', A: 70, fullMark: 100 },
-        { subject: 'Learning', A: 90, fullMark: 100 },
-        { subject: 'Integrity', A: 95, fullMark: 100 },
+        { subject: 'COMMUNICATION', A: 85, fullMark: 100 },
+        { subject: 'PROBLEM SOLVING', A: 80, fullMark: 100 },
+        { subject: 'TEAMWORK', A: 75, fullMark: 100 },
+        { subject: 'TECHNICAL', A: 70, fullMark: 100 },
+        { subject: 'LEARNING', A: 90, fullMark: 100 },
+        { subject: 'INTEGRITY', A: 95, fullMark: 100 },
       ];
 
   const emotionalToneData = [
@@ -75,7 +75,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       
       {/* 1. TOP HERO SECTION */}
-      <Card className="border-border/40 glass-dark shadow-2xl overflow-hidden rounded-[2rem]">
+      <Card className="border-border/40 shadow-sm overflow-hidden rounded-lg">
         <CardContent className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
@@ -163,7 +163,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
             <div className="lg:col-span-3 flex flex-col items-center justify-center">
                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Score Breakdown</span>
                <div className="h-28 w-full">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <PieChart>
                        <Pie data={scoreBreakdown} innerRadius={35} outerRadius={50} paddingAngle={5} dataKey="value">
                           {scoreBreakdown.map((entry, index) => (
@@ -186,17 +186,17 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
         {/* Left Column: Radar & Performance */}
         <div className="lg:col-span-4 space-y-6">
            {/* Skills Match Radar */}
-           <Card className="border-border/40 glass-dark shadow-xl rounded-3xl overflow-hidden">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
               <CardHeader className="border-b border-white/5 pb-4">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <Target className="w-4 h-4 text-primary" /> Skills Match Radar
                  </CardTitle>
               </CardHeader>
               <CardContent className="p-6 h-[300px]">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
                        <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                       <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 8, fontWeight: 'black', textTransform: 'uppercase' }} />
+                       <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 8, fontWeight: 'black' }} />
                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                        <Radar name="Candidate" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
                        <Tooltip />
@@ -206,7 +206,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
            </Card>
 
            {/* Assessment Performance */}
-           <Card className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
               <CardContent className="p-6 space-y-6">
                  <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -217,7 +217,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
                           <Badge className="bg-emerald-500/10 text-emerald-500 border-none ml-2">Verified</Badge>
                        </div>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                        <Activity className="w-6 h-6 text-emerald-500" />
                     </div>
                  </div>
@@ -241,7 +241,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
         {/* Center Column: Timeline & Interview */}
         <div className="lg:col-span-5 space-y-6">
            {/* Experience Timeline */}
-           <Card className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
               <CardHeader className="border-b border-white/5 pb-4">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-primary" /> Experience Timeline
@@ -284,7 +284,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
            </Card>
 
            {/* Interview Analysis */}
-           <Card className="border-border/40 glass-dark shadow-xl rounded-3xl overflow-hidden">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
               <CardHeader className="border-b border-white/5 pb-4 flex flex-row items-center justify-between">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-purple-500" /> Interview Analysis
@@ -303,7 +303,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
               <CardContent className="p-6">
                  <div className="grid grid-cols-4 gap-4 mb-6">
                     {['Communication', 'Confidence', 'Tech Depth', 'Problem Solving'].map((s, i) => (
-                       <div key={i} className="p-3 rounded-2xl bg-muted/30 border border-border/50 text-center">
+                       <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
                           <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">{s}</p>
                           <p className="text-sm font-black text-foreground">{75 + Math.round(Math.random() * 20)}</p>
                        </div>
@@ -314,7 +314,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
                        <Activity className="w-3 h-3" /> Emotional Tone Analysis
                     </span>
                     <div className="h-[120px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
+                       <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                           <AreaChart data={emotionalToneData}>
                              <defs>
                                 <linearGradient id="colorTone" x1="0" y1="0" x2="0" y2="1">
@@ -337,7 +337,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
         {/* Right Column: AI Summary & Integrity */}
         <div className="lg:col-span-3 space-y-6">
            {/* AI Summary */}
-           <Card className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden h-fit">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden h-fit">
               <CardHeader className="border-b border-white/5 pb-4">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <Brain className="w-4 h-4 text-amber-500" /> AI Summary
@@ -353,7 +353,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
                           <CheckCircle2 className="w-3 h-3" /> Key Strengths
                        </span>
                        <ul className="space-y-1.5">
-                          {(skills.length > 0 ? skills.slice(0, 3) : ['Analytical Thinking', 'Team Management']).map((s, i) => (
+                          {(skills.length > 0 ? skills.slice(0, 3) : ['Analytical Thinking', 'Team Management']).map((s: string, i: number) => (
                              <li key={i} className="text-[10px] font-bold text-foreground flex items-center gap-2">
                                 <div className="w-1 h-1 rounded-full bg-emerald-500"></div> {s}
                              </li>
@@ -365,7 +365,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
            </Card>
 
            {/* Integrity & Risk Score */}
-           <Card className="border-border/40 glass-dark shadow-xl rounded-3xl overflow-hidden h-fit">
+           <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden h-fit">
               <CardHeader className="border-b border-white/5 pb-4">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" /> Integrity & Risk Score
@@ -373,7 +373,7 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
               </CardHeader>
               <CardContent className="p-6">
                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center">
+                    <div className="w-14 h-14 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center">
                        <span className="text-xl font-black text-emerald-500">{application?.malpractice_score || 95}</span>
                        <span className="text-[8px] font-black text-emerald-500/50">/100</span>
                     </div>
@@ -404,12 +404,12 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
          
          {/* Decision Rationale */}
-         <Card className="lg:col-span-8 border-border/40 glass-dark shadow-2xl rounded-[2.5rem] overflow-hidden border-t-2 border-t-primary/30">
+         <Card className="lg:col-span-8 border-border/40 shadow-sm rounded-lg overflow-hidden border-t-2 border-t-primary/30">
             <CardContent className="p-8">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
                            <Brain className="w-7 h-7 text-primary" />
                         </div>
                         <div>
@@ -461,18 +461,18 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
 
          {/* Final Decision & Similar */}
          <div className="lg:col-span-4 space-y-6">
-            <Card className="border-border/40 glass shadow-xl rounded-3xl overflow-hidden p-6">
+            <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden p-6">
                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Strategic Decision</h3>
                <div className="grid grid-cols-3 gap-3">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white flex flex-col items-center justify-center h-16 rounded-2xl gap-1">
+                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white flex flex-col items-center justify-center h-16 rounded-lg gap-1">
                      <UserPlus className="w-5 h-5" />
                      <span className="text-[9px] font-black uppercase">Hire</span>
                   </Button>
-                  <Button variant="outline" className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10 flex flex-col items-center justify-center h-16 rounded-2xl gap-1">
+                  <Button variant="outline" className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10 flex flex-col items-center justify-center h-16 rounded-lg gap-1">
                      <PauseCircle className="w-5 h-5" />
                      <span className="text-[9px] font-black uppercase">Hold</span>
                   </Button>
-                  <Button variant="outline" className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 flex flex-col items-center justify-center h-16 rounded-2xl gap-1">
+                  <Button variant="outline" className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 flex flex-col items-center justify-center h-16 rounded-lg gap-1">
                      <XCircle className="w-5 h-5" />
                      <span className="text-[9px] font-black uppercase">Reject</span>
                   </Button>

@@ -22,7 +22,7 @@ export default function TopCandidates({ data = [] }: any) {
             className="flex items-center justify-between p-8 hover:bg-white/5 transition-all group cursor-default"
           >
             <div className="flex items-center gap-6 flex-1 min-w-0">
-               <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+               <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "⭐"}
                </div>
               <div className="flex-1 min-w-0">

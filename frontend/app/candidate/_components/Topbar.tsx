@@ -31,22 +31,22 @@ export default function CandidateTopbar({ title }: { title?: string }) {
     router.push("/login");
   };
 
-  if (!mounted) return <header className="h-20 bg-white border-b" />;
+  if (!mounted) return <header className="h-14 bg-white border-b" />;
 
   return (
-    <header className="h-24 px-8 flex items-center justify-between bg-white border-b border-slate-100">
+    <header className="h-14 px-6 flex items-center justify-between bg-white border-b border-slate-100">
       <div className="flex flex-col">
-        <h1 className="text-lg font-bold text-slate-900">{title || "Candidate Panel"}</h1>
+        <h1 className="text-sm font-bold text-slate-900">{title || "Candidate Panel"}</h1>
         {title === "My Profile" && <p className="text-[10px] text-slate-400 font-medium">Manage your personal, academic and professional details.</p>}
       </div>
 
       <div className="flex-1 max-w-md mx-12">
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Search anything..." 
-            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search anything..."
+            className="w-full bg-slate-50 border border-slate-100 rounded-lg py-1.5 pl-9 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function CandidateTopbar({ title }: { title?: string }) {
         <NotificationsDropdown />
 
         <div className="relative" ref={userRef}>
-          <button 
+          <button
             onClick={() => setUserOpen(!userOpen)}
             className={cn(
               "flex items-center gap-3 pl-6 border-l border-slate-100 transition-all py-2 group",
@@ -63,56 +63,56 @@ export default function CandidateTopbar({ title }: { title?: string }) {
             )}
           >
             <div className="flex flex-col items-end">
-              <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{user?.name}</span>
-              <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Candidate</span>
+              <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{user?.name}</span>
+              <span className="text-[9px] text-blue-600 font-bold uppercase tracking-wider">Candidate</span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-blue-100 group-hover:scale-105 transition-transform">
               {getInitials(user?.name || "C")}
             </div>
-            <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", userOpen && "rotate-180")} />
+            <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform duration-300", userOpen && "rotate-180")} />
           </button>
 
           {userOpen && (
-            <div className="absolute right-0 mt-4 w-72 bg-white rounded-[32px] shadow-2xl border border-slate-100 py-3 z-50 animate-in fade-in zoom-in-95 duration-300 origin-top-right">
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-sm border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               {/* User Identity */}
-              <div className="px-6 py-5 border-b border-slate-50 mb-2">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Authenticated Account</p>
-                <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-blue-600" />
+              <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Authenticated Account</p>
+                <div className="flex items-center gap-2">
+                   <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <Mail className="w-3.5 h-3.5 text-blue-600" />
                    </div>
                    <div className="flex flex-col overflow-hidden">
                       <p className="text-xs font-bold text-slate-900 truncate">{user?.email}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">Candidate Identity</p>
+                      <p className="text-[9px] text-slate-400 font-medium">Candidate Identity</p>
                    </div>
                 </div>
               </div>
 
               {/* Menu Links */}
-              <div className="px-2 space-y-1">
-                <Link 
+              <div className="px-1.5 space-y-0.5">
+                <Link
                   href="/candidate/profile"
                   onClick={() => setUserOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all text-xs font-bold uppercase tracking-wider"
+                  className="flex items-center gap-2.5 px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-[11px] font-bold uppercase tracking-wider"
                 >
-                  <User className="w-4 h-4" /> My Profile
+                  <User className="w-3.5 h-3.5" /> My Profile
                 </Link>
-                <Link 
+                <Link
                   href="/candidate/settings"
                   onClick={() => setUserOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all text-xs font-bold uppercase tracking-wider"
+                  className="flex items-center gap-2.5 px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-[11px] font-bold uppercase tracking-wider"
                 >
-                  <Settings2 className="w-4 h-4" /> Account Settings
+                  <Settings2 className="w-3.5 h-3.5" /> Account Settings
                 </Link>
               </div>
 
               {/* Logout Action */}
-              <div className="mt-3 pt-3 border-t border-slate-50 px-2">
-                <button 
+              <div className="mt-2 pt-2 border-t border-slate-50 px-1.5">
+                <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-red-500 hover:bg-red-50 rounded-xl transition-all text-[10px] font-black uppercase tracking-[0.2em]"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wider"
                 >
-                  <LogOut className="w-4 h-4" /> Terminate Session
+                  <LogOut className="w-3.5 h-3.5" /> Terminate Session
                 </button>
               </div>
             </div>

@@ -121,7 +121,7 @@ export default function CandidateChatbot() {
            {/* Header */}
            <div className="p-7 bg-blue-600 text-white flex items-center justify-between shadow-lg relative z-10">
               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner">
+                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-md shadow-inner">
                     <BrainCircuit className="w-6 h-6 text-white" />
                  </div>
                  <div>
@@ -209,7 +209,7 @@ export default function CandidateChatbot() {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-16 h-16 rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgba(37,99,235,0.3)] transition-all duration-500 hover:scale-110 hover:shadow-[0_20px_40px_rgba(37,99,235,0.4)]",
+          "w-10 h-10 rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgba(37,99,235,0.3)] transition-all duration-500 hover:scale-110 hover:shadow-[0_20px_40px_rgba(37,99,235,0.4)]",
           isOpen ? "bg-white text-blue-600 rotate-90" : "bg-blue-600 text-white"
         )}
       >

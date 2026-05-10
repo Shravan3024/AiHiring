@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      <table ref={ref} className={cn("w-full caption-bottom text-xs", className)} {...props} />
     </div>
   )
 );
@@ -12,7 +12,7 @@ Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("bg-gray-50 border-b border-gray-200", className)} {...props} />
+    <thead ref={ref} className={cn("bg-gray-50 border-b border-gray-200 sticky top-0 z-10", className)} {...props} />
   )
 );
 TableHeader.displayName = "TableHeader";
@@ -33,14 +33,14 @@ TableRow.displayName = "TableRow";
 
 const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(
   ({ className, ...props }, ref) => (
-    <th ref={ref} className={cn("h-10 px-4 text-left align-middle font-medium text-gray-500 text-xs uppercase tracking-wider", className)} {...props} />
+    <th ref={ref} className={cn("h-8 px-3 text-left align-middle font-medium text-gray-500 text-[10px] uppercase tracking-wider", className)} {...props} />
   )
 );
 TableHead.displayName = "TableHead";
 
 const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(
   ({ className, ...props }, ref) => (
-    <td ref={ref} className={cn("px-4 py-3 align-middle text-gray-700", className)} {...props} />
+    <td ref={ref} className={cn("px-3 py-2 align-middle text-gray-700", className)} {...props} />
   )
 );
 TableCell.displayName = "TableCell";

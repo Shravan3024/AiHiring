@@ -90,7 +90,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Rationale */}
-            <div className={cn("p-5 rounded-2xl border", styles.bg, styles.border)}>
+            <div className={cn("p-5 rounded-lg border", styles.bg, styles.border)}>
               <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500 fill-amber-500" /> Executive AI Rationale
               </h4>
@@ -110,7 +110,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
 
             {/* KPIs */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <Target className="w-4 h-4 text-blue-600" />
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Success Prediction</p>
@@ -118,7 +118,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
                 <p className="text-2xl font-black text-slate-900">{successProb}%</p>
                 <Progress value={successProb} className="h-1.5 mt-1 [&>div]:bg-blue-600" />
               </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <ClipboardCheck className="w-4 h-4 text-emerald-600" />
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Integrity Index</p>
@@ -126,7 +126,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
                 <p className="text-2xl font-black text-slate-900">{app?.integrity_score || 0}/100</p>
                 <Progress value={app?.integrity_score || 0} className="h-1.5 mt-1 [&>div]:bg-emerald-600" />
               </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-purple-600" />
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Avg Fit Score</p>
@@ -137,7 +137,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
             </div>
 
             {/* Formula */}
-            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
               <p className="text-[10px] font-bold text-blue-800 uppercase mb-2 flex items-center gap-2">
                 <Scale className="w-3 h-3" /> Weighted Decision Formula
               </p>
@@ -150,7 +150,7 @@ export const AIDecisionPanel: React.FC<AIDecisionPanelProps> = ({ applicationId 
 
             {/* Role Suggestion */}
             {app?.role_recommendation && (
-              <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+              <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
                 <p className="text-[10px] font-bold text-indigo-700 uppercase mb-1 flex items-center gap-2">
                   <TrendingUp className="w-3 h-3" /> Role Recommendation
                 </p>

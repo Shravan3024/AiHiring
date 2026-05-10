@@ -49,15 +49,15 @@ class HRDecisionController {
       const prevStatus = application.status;
 
       const STATUS_MAP = {
-        SEND_TO_ASSESSMENT:   'ASSESSMENT_UNLOCKED',
+        SEND_TO_ASSESSMENT: 'ASSESSMENT_UNLOCKED',
         APPROVE_FOR_INTERVIEW: 'INTERVIEW_UNLOCKED',
         REQUEST_RE_INTERVIEW: 'INTERVIEW_UNLOCKED',
-        APPROVED:             'SELECTED',
-        FINAL_SELECTION:      'SELECTED',
-        REJECTED:             'REJECTED',
-        ON_HOLD:              'HR_REVIEW',
+        APPROVED: 'SELECTED',
+        FINAL_SELECTION: 'SELECTED',
+        REJECTED: 'REJECTED',
+        ON_HOLD: 'HR_REVIEW',
         REQUEST_RE_ASSESSMENT: 'ASSESSMENT_UNLOCKED',
-        SEND_OFFER:           'OFFER_SENT',
+        SEND_OFFER: 'OFFER_SENT',
       };
 
       const newStatus = STATUS_MAP[decision];
@@ -65,9 +65,9 @@ class HRDecisionController {
         return res.status(400).json({ success: false, message: 'Unsupported decision type' });
       }
 
-      application.status      = newStatus;
+      application.status = newStatus;
       application.hr_decision = decision;
-      application.hr_notes    = `${reason}${comments ? ` | ${comments}` : ''}`;
+      application.hr_notes = `${reason}${comments ? ` | ${comments}` : ''}`;
 
       if (decision === 'REQUEST_RE_INTERVIEW') {
         application.interview_score = null;
@@ -105,17 +105,17 @@ class HRDecisionController {
         );
         console.log(`[Re-Assessment] Reset AssessmentAttempt for application ${applicationId}`);
       }
-      
+
       // Handle Offer record creation for SEND_OFFER
       if (decision === 'SEND_OFFER') {
         const { OfferTemplate } = require('../models');
         const latestTemplate = await OfferTemplate.findOne({ order: [['createdAt', 'DESC']] });
-        
+
         let templateContent = latestTemplate?.templateContent || `
           <div style="font-family: 'Times New Roman', serif; line-height: 1.5; color: #000;">
             <h2 style="text-align: center;">OFFER OF EMPLOYMENT</h2>
             <p>Dear {{candidateName}},</p>
-            <p>We are pleased to offer you the position of <strong>{{jobTitle}}</strong> at Mask Polymers.</p>
+            <p>We are pleased to offer you the position of <strong>{{jobTitle}}</strong> at AI Hiring System.</p>
             <p><strong>Salary:</strong> {{salary}}</p>
             <p><strong>Joining Date:</strong> {{joiningDate}}</p>
             <p>We look forward to having you join our team.</p>
@@ -137,7 +137,7 @@ class HRDecisionController {
 
         // Delete existing offers for this application to avoid duplicates
         await Offer.destroy({ where: { application_id: applicationId } });
-        
+
         await Offer.create({
           application_id: applicationId,
           salary: req.body.salary || 1000000,
@@ -150,12 +150,12 @@ class HRDecisionController {
 
       // Aggregate Score if moving to final
       if (decision === 'APPROVED' || decision === 'REJECTED') {
-          application.overall_score = computeApplicationScore({
-            resumeScore: application.resume_score,
-            technicalScore: application.technical_score,
-            interviewScore: application.interview_score,
-            malpracticeWarnings: application.malpractice_warnings || 0
-          });
+        application.overall_score = computeApplicationScore({
+          resumeScore: application.resume_score,
+          technicalScore: application.technical_score,
+          interviewScore: application.interview_score,
+          malpracticeWarnings: application.malpractice_warnings || 0
+        });
       }
 
       await application.save();
@@ -178,19 +178,19 @@ class HRDecisionController {
           changed_by: userId,
           reason: `HR: ${decision} — ${reason}`,
         });
-      } catch (_) {}
+      } catch (_) { }
 
       // Notify — non-fatal
       const candidateId = application.Candidate?.id;
       if (candidateId) {
         const msgs = {
-          APPROVED:             { type: 'OFFER_LETTER_READY', title: 'Great News!', msg: 'Congratulations! You have been selected. Your offer letter will be ready soon.' },
-          FINAL_SELECTION:      { type: 'OFFER_LETTER_READY', title: 'Selected!', msg: 'You have been officially selected for the position. Congratulations!' },
-          SEND_OFFER:           { type: 'OFFER_LETTER_READY', title: 'Offer Letter Sent', msg: 'Your official offer letter has been sent to your email. Please review and respond.' },
-          REJECTED:             { type: 'REJECTION', title: 'Application Update', msg: 'Thank you for your time. While we were impressed, we have decided to move forward with other candidates.' },
-          ON_HOLD:              { type: 'OTHER', title: 'Application Update', msg: 'Your application is currently on hold/under review.' },
+          APPROVED: { type: 'OFFER_LETTER_READY', title: 'Great News!', msg: 'Congratulations! You have been selected. Your offer letter will be ready soon.' },
+          FINAL_SELECTION: { type: 'OFFER_LETTER_READY', title: 'Selected!', msg: 'You have been officially selected for the position. Congratulations!' },
+          SEND_OFFER: { type: 'OFFER_LETTER_READY', title: 'Offer Letter Sent', msg: 'Your official offer letter has been sent to your email. Please review and respond.' },
+          REJECTED: { type: 'REJECTION', title: 'Application Update', msg: 'Thank you for your time. While we were impressed, we have decided to move forward with other candidates.' },
+          ON_HOLD: { type: 'OTHER', title: 'Application Update', msg: 'Your application is currently on hold/under review.' },
           REQUEST_RE_INTERVIEW: { type: 'INTERVIEW_SCHEDULED', title: 'Interview Follow-up', msg: 'A re-interview has been requested. Please check your schedule.' },
-          SEND_TO_ASSESSMENT:   { type: 'ASSESSMENT_AVAILABLE', title: 'Assessment Ready', msg: 'Your application has been approved for the technical assessment round.' },
+          SEND_TO_ASSESSMENT: { type: 'ASSESSMENT_AVAILABLE', title: 'Assessment Ready', msg: 'Your application has been approved for the technical assessment round.' },
           APPROVE_FOR_INTERVIEW: { type: 'INTERVIEW_AVAILABLE', title: 'Interview Ready', msg: 'Your application has been approved for the AI Interview round.' },
           REQUEST_RE_ASSESSMENT: { type: 'ASSESSMENT_AVAILABLE', title: 'Re-Assessment Requested', msg: 'HR has requested a technical re-assessment. Please check the portal.' },
         };
@@ -262,17 +262,17 @@ class HRDecisionController {
         success: true,
         data: {
           applicationId,
-          candidateName:  application.Candidate?.User?.name || 'N/A',
-          currentStatus:  application.status,
-          totalNeeded:    1,
-          received:       application.hr_decision ? 1 : 0,
-          isLocked:       FINAL_STATES.includes(application.status),
-          allApprovals:   application.hr_decision ? [{
-            reviewer:  'HR',
-            decision:  application.hr_decision,
-            reason:    application.hr_notes,
+          candidateName: application.Candidate?.User?.name || 'N/A',
+          currentStatus: application.status,
+          totalNeeded: 1,
+          received: application.hr_decision ? 1 : 0,
+          isLocked: FINAL_STATES.includes(application.status),
+          allApprovals: application.hr_decision ? [{
+            reviewer: 'HR',
+            decision: application.hr_decision,
+            reason: application.hr_notes,
             timestamp: application.updated_at,
-            order:     1,
+            order: 1,
           }] : [],
         }
       });
@@ -299,7 +299,7 @@ class HRDecisionController {
       const application = await Application.findByPk(applicationId);
       if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
 
-      const prevStatus    = application.status;
+      const prevStatus = application.status;
       application.hr_notes = `ESCALATED by User#${userId}: ${reason}`;
       await application.save();
 
@@ -316,7 +316,7 @@ class HRDecisionController {
           application_id: applicationId, previous_status: prevStatus,
           new_status: application.status, changed_by: userId, reason: `Escalation: ${reason}`,
         });
-      } catch (_) {}
+      } catch (_) { }
 
       return res.status(200).json({ success: true, message: 'Escalated to senior HR', data: { applicationId } });
 
@@ -344,10 +344,10 @@ class HRDecisionController {
       });
       if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
 
-      const prevStatus        = application.status;
-      application.status      = 'INTERVIEW_UNLOCKED'; 
+      const prevStatus = application.status;
+      application.status = 'INTERVIEW_UNLOCKED';
       application.hr_decision = 'REQUEST_RE_INTERVIEW';
-      application.hr_notes    = reason;
+      application.hr_notes = reason;
       application.interview_score = null;
       await application.save();
 
@@ -374,7 +374,7 @@ class HRDecisionController {
           application_id: applicationId, previous_status: prevStatus,
           new_status: application.status, changed_by: userId, reason: `Re-interview: ${reason}`,
         });
-      } catch (_) {}
+      } catch (_) { }
 
       const candidateId = application.Candidate?.id;
       if (candidateId) {
@@ -387,7 +387,7 @@ class HRDecisionController {
             message: 'A re-interview has been requested for your application. Please check the portal for details.',
             status: 'PENDING'
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
       return res.status(200).json({ success: true, message: 'Re-interview requested', data: { applicationId, newStatus: application.status } });
@@ -439,12 +439,12 @@ class HRDecisionController {
           changed_by: userId,
           reason: `Re-assessment requested: ${reason || 'N/A'}`
         });
-      } catch (_) {}
+      } catch (_) { }
 
       return res.status(200).json({ success: true, message: 'Assessment reset for re-evaluation' });
     } catch (error) {
-       console.error('Error in reEvaluateAssessment:', error);
-       return res.status(500).json({ success: false, message: 'Error resetting assessment' });
+      console.error('Error in reEvaluateAssessment:', error);
+      return res.status(500).json({ success: false, message: 'Error resetting assessment' });
     }
   }
 
@@ -496,8 +496,8 @@ class HRDecisionController {
         candidateName: application.Candidate?.User?.name || "Candidate"
       });
 
-      const successProb = typeof aiResponse.success_prediction_percentage === 'number' 
-        ? aiResponse.success_prediction_percentage / 100 
+      const successProb = typeof aiResponse.success_prediction_percentage === 'number'
+        ? aiResponse.success_prediction_percentage / 100
         : 0.5;
 
       await application.update({
@@ -527,7 +527,7 @@ class HRDecisionController {
       const { applicationId } = req.params;
       const application = await Application.findByPk(applicationId);
       const peers = await Application.findAll({ where: { job_id: application.job_id, status: 'SELECTED' }, limit: 5 });
-      
+
       const peerAvg = peers.length > 0 ? peers.reduce((s, a) => s + a.overall_score, 0) / peers.length : 70;
 
       res.json({

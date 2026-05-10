@@ -34,7 +34,7 @@ function CandidateStatCard({ label, value, isActive, onClick }: { label: string,
     <Card 
       onClick={onClick}
       className={cn(
-        "border-border/40 glass shadow-md transition-all cursor-pointer group",
+        "border-border/40 shadow-md transition-all cursor-pointer group",
         isActive && "border-primary/50 shadow-lg shadow-primary/10 bg-primary/5"
       )}
     >
@@ -200,7 +200,7 @@ export default function CandidatesPage() {
         </div>
 
         {/* FILTERS & TABLE */}
-        <Card className="border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden border-t-2 border-t-primary/20">
+        <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden border-t-2 border-t-primary/20">
            <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-wrap items-center gap-4">
               <div className="flex-1 min-w-[200px]">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function CandidatesPage() {
                           <tr key={app.id || i} className="hover:bg-primary/5 transition-all duration-300 group">
                              <td className="px-8 py-5">
                                 <div className="flex items-center gap-4">
-                                   <div className="w-10 h-10 rounded-2xl bg-muted border border-border/50 overflow-hidden shadow-sm group-hover:border-primary/40 transition-colors">
+                                   <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 overflow-hidden shadow-sm group-hover:border-primary/40 transition-colors">
                                       <img 
                                          src={app.candidateId?.profileImage || "/images/default-avatar.png"} 
                                          alt="Avatar" 
@@ -356,7 +356,7 @@ export default function CandidatesPage() {
 
         {/* QUICK DECISION DIALOG */}
         <Dialog open={isDecisionOpen} onOpenChange={setIsDecisionOpen}>
-          <DialogContent className="sm:max-w-[425px] rounded-3xl border-border/40 glass shadow-2xl">
+          <DialogContent className="sm:max-w-[425px] rounded-lg border-border/40 shadow-sm">
             <DialogHeader>
               <DialogTitle className="text-xl font-black uppercase tracking-tight text-foreground">Pipeline Decision</DialogTitle>
               <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

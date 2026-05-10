@@ -48,7 +48,7 @@ export default function ContactPage() {
                {/* Dept List */}
                <div className="lg:col-span-1 space-y-6">
                   {departments.map((dept, i) => (
-                     <div key={i} className="bg-white/60 backdrop-blur-md border border-slate-200/60 p-8 rounded-[2rem] hover:bg-white transition-all shadow-sm">
+                     <div key={i} className="bg-white/60 backdrop-blur-md border border-slate-200/60 p-8 rounded-lg hover:bg-white transition-all shadow-sm">
                         <h3 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-4">{dept.name}</h3>
                         <div className="space-y-3">
                            <div className="flex items-center gap-3">
@@ -63,14 +63,14 @@ export default function ContactPage() {
                      </div>
                   ))}
 
-                  <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+                  <div className="bg-slate-900 rounded-lg p-8 text-white relative overflow-hidden group">
                      <div className="relative z-10 space-y-4">
                         <div className="flex items-center gap-3 mb-2">
                            <MapPin className="w-5 h-5 text-blue-500" />
                            <span className="text-[10px] font-black tracking-[0.2em] uppercase">Headquarters</span>0
                         </div>
                         <p className="text-sm font-medium leading-relaxed text-slate-300">
-                           Mask Polymers Industrial Hub,<br />
+                           AI Hiring System Industrial Hub,<br />
                            Engineering Zone IV, Pune,<br />
                            Maharashtra - 411044, India
                         </p>
@@ -80,7 +80,7 @@ export default function ContactPage() {
                </div>
 
                {/* Contact Form */}
-               <div className="lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/40 rounded-[3rem] p-10 md:p-16 shadow-2xl relative overflow-hidden">
+               <div className="lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/40 rounded-[3rem] p-10 md:p-16 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[80px]" />
                   <div className="relative z-10 space-y-12">
                      <div className="space-y-4">
@@ -92,20 +92,20 @@ export default function ContactPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="space-y-2">
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Identity</label>
-                              <input required className="w-full bg-white/50 border border-slate-200/60 h-14 rounded-2xl px-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none" placeholder="Organization or Name" />
+                              <input required className="w-full bg-white/50 border border-slate-200/60 h-14 rounded-lg px-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none" placeholder="Organization or Name" />
                            </div>
                            <div className="space-y-2">
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Protocol</label>
-                              <input required type="email" className="w-full bg-white/50 border border-slate-200/60 h-14 rounded-2xl px-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none" placeholder="Email Address" />
+                              <input required type="email" className="w-full bg-white/50 border border-slate-200/60 h-14 rounded-lg px-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none" placeholder="Email Address" />
                            </div>
                         </div>
 
                         <div className="space-y-4">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inquiry Parameters</label>
-                           <textarea required rows={5} className="w-full bg-white/50 border border-slate-200/60 rounded-3xl p-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none resize-none" placeholder="Describe your requirement or message..." />
+                           <textarea required rows={5} className="w-full bg-white/50 border border-slate-200/60 rounded-lg p-6 font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-0 transition-all outline-none resize-none" placeholder="Describe your requirement or message..." />
                         </div>
 
-                        <button disabled={loading} type="submit" className="w-full md:w-auto bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-xs tracking-[0.2em] uppercase hover:bg-blue-600 transition-all shadow-2xl shadow-slate-200 hover:shadow-blue-200 active:scale-95 group">
+                        <button disabled={loading} type="submit" className="w-full md:w-auto bg-slate-900 text-white px-12 py-5 rounded-lg font-black text-xs tracking-[0.2em] uppercase hover:bg-blue-600 transition-all shadow-sm shadow-slate-200 hover:shadow-blue-200 active:scale-95 group">
                            {loading ? "Transmitting..." : (
                               <span className="flex items-center gap-3">
                                  Transmit Information <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />

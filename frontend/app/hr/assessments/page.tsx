@@ -28,7 +28,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 function AssessmentKPICard({ title, value, trend, trendValue, icon: Icon, color, sparkData, stroke }: any) {
   return (
-    <Card className="border-border/40 glass shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group">
+    <Card className="border-border/40 shadow-xl hover:shadow-sm transition-all duration-500 overflow-hidden group">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", color)}>
@@ -48,7 +48,7 @@ function AssessmentKPICard({ title, value, trend, trendValue, icon: Icon, color,
             </div>
           </div>
           <div className="h-10 w-24">
-             <ResponsiveContainer width="100%" height="100%">
+             <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                 <AreaChart data={sparkData}>
                    <Area type="monotone" dataKey="v" stroke={stroke} fill={`${stroke}10`} strokeWidth={2} />
                 </AreaChart>
@@ -70,7 +70,7 @@ function QuestionAuditModal({ jobId, jobTitle }: { jobId: number, jobTitle: stri
   const questions = detailsRes?.data?.questions || [];
 
   return (
-    <DialogContent className="max-w-4xl max-h-[85vh] glass-dark border-border/40 text-foreground overflow-hidden flex flex-col p-0">
+    <DialogContent className="max-w-4xl max-h-[85vh] border-border/40 text-foreground overflow-hidden flex flex-col p-0">
       <DialogHeader className="p-6 border-b border-white/5">
         <div className="flex items-center justify-between">
            <div>
@@ -91,7 +91,7 @@ function QuestionAuditModal({ jobId, jobTitle }: { jobId: number, jobTitle: stri
         ) : questions.length > 0 ? (
           <div className="space-y-8">
             {questions.map((q: any, i: number) => (
-              <div key={q.id} className="p-6 rounded-2xl bg-muted/20 border border-border/40 space-y-4">
+              <div key={q.id} className="p-6 rounded-lg bg-muted/20 border border-border/40 space-y-4">
                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                        <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary shrink-0">
@@ -251,7 +251,7 @@ export default function HighFidelityAssessmentsV3() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            
            {/* Assessment Performance Overview */}
-           <Card className="lg:col-span-8 border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+           <Card className="lg:col-span-8 border-border/40 shadow-sm rounded-lg overflow-hidden">
               <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Assessment Performance Overview</CardTitle>
                  <select className="bg-transparent border border-border/40 rounded-lg text-[10px] font-black uppercase px-2 h-7 focus:ring-0">
@@ -259,7 +259,7 @@ export default function HighFidelityAssessmentsV3() {
                  </select>
               </CardHeader>
               <CardContent className="p-6 h-[400px]">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <ComposedChart data={performanceData}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                        <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
@@ -276,10 +276,10 @@ export default function HighFidelityAssessmentsV3() {
            </Card>
 
            {/* Score Distribution */}
-           <Card className="lg:col-span-4 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden p-8">
+           <Card className="lg:col-span-4 border-border/40 shadow-sm rounded-lg overflow-hidden p-8">
               <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Score Distribution</CardTitle>
               <div className="relative h-48 w-full mb-8">
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                     <PieChart>
                        <Pie data={distributionData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                           {distributionData.map((entry, index) => (
@@ -337,7 +337,7 @@ export default function HighFidelityAssessmentsV3() {
                              <Filter className="w-3 h-3" /> Filters
                           </Button>
                        </PopoverTrigger>
-                       <PopoverContent className="w-56 glass-dark border-border/40 p-4">
+                       <PopoverContent className="w-56 border-border/40 p-4">
                           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Filter by Department</p>
                           <div className="space-y-1">
                              {departments.map((dept: string) => (
@@ -365,7 +365,7 @@ export default function HighFidelityAssessmentsV3() {
                  </div>
               </div>
 
-              <Card className="border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardContent className="p-0">
                     <div className="overflow-x-auto">
                        <table className="w-full text-left">
@@ -433,7 +433,7 @@ export default function HighFidelityAssessmentsV3() {
                                             <DropdownMenuTrigger asChild>
                                                <Button variant="ghost" size="icon" className="w-7 h-7 rounded-lg"><MoreVertical className="w-3.5 h-3.5" /></Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-48 glass-dark border-border/40" align="end">
+                                            <DropdownMenuContent className="w-48 border-border/40" align="end">
                                                <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground">Actions for {a.role}</DropdownMenuLabel>
                                                <DropdownMenuSeparator className="bg-white/5" />
                                                <DropdownMenuItem className="text-[11px] font-bold gap-2 cursor-pointer" onClick={() => toast.success("Assessment duplicated successfully.")}>
@@ -472,7 +472,7 @@ export default function HighFidelityAssessmentsV3() {
            <div className="lg:col-span-3 space-y-6 pb-12">
               
               {/* Top Assessments */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Top Assessments</CardTitle>
                     <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit" onClick={() => toast.info("Syncing full leaderboard...")}>View All</Button>
@@ -502,7 +502,7 @@ export default function HighFidelityAssessmentsV3() {
               </Card>
 
               {/* Recent Activity */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
+              <Card className="border-border/40 shadow-sm rounded-lg overflow-hidden">
                  <CardHeader className="border-b border-white/5 px-6 py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Recent Activity</CardTitle>
                     <Button variant="link" className="text-[9px] font-black uppercase p-0 h-fit" onClick={() => toast.info("Loading activity history...")}>View All</Button>

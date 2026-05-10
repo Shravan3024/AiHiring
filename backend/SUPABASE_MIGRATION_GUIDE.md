@@ -1,6 +1,6 @@
-# 🚀 Supabase Production Migration Guide - Mask Polymers
+# 🚀 Supabase Production Migration Guide - AI Hiring System
 
-This document outlines the architecture and technical setup for the Mask Polymers backend migration to **Supabase PostgreSQL**.
+This document outlines the architecture and technical setup for the AI Hiring System backend migration to **Supabase PostgreSQL**.
 
 ---
 

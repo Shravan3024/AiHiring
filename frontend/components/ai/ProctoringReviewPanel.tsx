@@ -220,7 +220,7 @@ export const ProctoringReviewPanel: React.FC<ProctoringReviewPanelProps> = ({
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-5xl w-full">
-            <img src={selectedImage} alt="Full Snapshot" className="w-full h-auto rounded-xl shadow-2xl border-4 border-white/10" />
+            <img src={selectedImage} alt="Full Snapshot" className="w-full h-auto rounded-xl shadow-sm border-4 border-white/10" />
             <Button 
               className="absolute -top-12 right-0 text-white bg-white/20 hover:bg-white/40 border-0"
               onClick={() => setSelectedImage(null)}

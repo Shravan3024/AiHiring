@@ -41,14 +41,14 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-700">
       {/* Skill Radar Chart */}
-      <Card className="border-border/40 glass-dark shadow-xl rounded-2xl overflow-hidden">
+      <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
         <CardHeader className="border-b border-border/10 pb-4">
           <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
             <Brain className="w-4 h-4 text-primary" /> Skill Architecture
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
             <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
               <PolarGrid stroke="rgba(255,255,255,0.1)" />
               <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 'bold' }} />
@@ -70,7 +70,7 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
       </Card>
 
       {/* Sentiment Analysis */}
-      <Card className="border-border/40 glass-dark shadow-xl rounded-2xl overflow-hidden">
+      <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden">
         <CardHeader className="border-b border-border/10 pb-4">
           <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500" /> Behavioral Sentiment
@@ -78,7 +78,7 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
         </CardHeader>
         <CardContent className="p-6 h-[300px] flex flex-col items-center justify-center">
           <div className="w-full h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={sentimentData}
@@ -109,14 +109,14 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
       </Card>
 
       {/* Pipeline Progression */}
-      <Card className="border-border/40 glass-dark shadow-xl rounded-2xl overflow-hidden md:col-span-2">
+      <Card className="border-border/40 shadow-xl rounded-lg overflow-hidden md:col-span-2">
         <CardHeader className="border-b border-border/10 pb-4">
           <CardTitle className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-500" /> Pipeline Conversion Velocity
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
             <BarChart data={pipelineData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <XAxis 
@@ -146,17 +146,17 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
       
       {/* Integrity & Risk Indicators */}
       <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-         <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center text-center">
+         <div className="p-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center text-center">
             <ShieldCheck className="w-8 h-8 text-emerald-500 mb-2" />
             <h4 className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Authentication</h4>
             <p className="text-xl font-black text-foreground mt-1">VERIFIED</p>
          </div>
-         <div className="p-5 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col items-center text-center">
+         <div className="p-5 rounded-lg bg-primary/10 border border-primary/20 flex flex-col items-center text-center">
             <Brain className="w-8 h-8 text-primary mb-2" />
             <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">AI Confidence</h4>
             <p className="text-xl font-black text-foreground mt-1">{profileData?.aiScore || 85}%</p>
          </div>
-         <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center text-center">
+         <div className="p-5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex flex-col items-center text-center">
             <Award className="w-8 h-8 text-amber-500 mb-2" />
             <h4 className="text-[10px] font-black uppercase text-amber-500 tracking-widest">Fit Benchmark</h4>
             <p className="text-xl font-black text-foreground mt-1">TOP 5%</p>

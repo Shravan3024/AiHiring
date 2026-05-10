@@ -37,13 +37,13 @@ export default function SummaryCards({ data }: any) {
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         return (
-          <div key={i} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+          <div key={i} className="bg-white rounded-lg border border-slate-100 p-8 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
                <Icon className="w-24 h-24 text-slate-900" />
             </div>
             <div className="flex flex-col h-full relative z-10">
               <div className="flex items-center justify-between mb-6">
-                 <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center shadow-lg`}>
+                 <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center shadow-lg`}>
                     <Icon className="w-6 h-6 text-white" />
                  </div>
                  <div className="h-1 w-12 bg-slate-50 rounded-full overflow-hidden">

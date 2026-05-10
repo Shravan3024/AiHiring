@@ -79,12 +79,12 @@ export default function AdminApprovalsPage() {
             { label: "Approved Records", val: approved, icon: CheckCircle, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" },
             { label: "Reject Cycles", val: rejected, icon: XCircle, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20" },
           ].map((stat, i) => (
-            <div key={i} className={cn("p-6 rounded-[2rem] bg-white shadow-sm border backdrop-blur-md flex items-center justify-between group hover:bg-slate-100 transition-all", stat.border)}>
+            <div key={i} className={cn("p-6 rounded-lg bg-white shadow-sm border backdrop-blur-md flex items-center justify-between group hover:bg-slate-100 transition-all", stat.border)}>
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{stat.label}</p>
                 <p className="text-4xl font-bold text-slate-900 tabular-nums tracking-tighter">{stat.val}</p>
               </div>
-              <div className={cn("p-4 rounded-2xl group-hover:scale-110 transition-transform", stat.bg)}>
+              <div className={cn("p-4 rounded-lg group-hover:scale-110 transition-transform", stat.bg)}>
                 <stat.icon className={cn("w-6 h-6", stat.color)} />
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function AdminApprovalsPage() {
 
         {/* Bottleneck Alert */}
         {bottleneckInfo?.pending_approvals > 0 && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 flex items-center gap-4 animate-in fade-in duration-1000">
+          <div className="p-4 rounded-lg bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 flex items-center gap-4 animate-in fade-in duration-1000">
              <div className="p-3 bg-orange-500/20 rounded-xl">
                 <TrendingUp className="w-5 h-5 text-orange-400" />
              </div>
@@ -109,7 +109,7 @@ export default function AdminApprovalsPage() {
         {/* Main Approval Table Area */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
            <div className="lg:col-span-3">
-              <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+              <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden backdrop-blur-xl">
                  <div className="px-8 py-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                     <div className="flex items-center gap-3">
                        <ClipboardList className="w-5 h-5 text-blue-400" />
@@ -152,7 +152,7 @@ export default function AdminApprovalsPage() {
                         {filteredApprovals.map((app: any, idx) => (
                           <div 
                             key={app.applicationId || idx} 
-                            className="group grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_auto] items-center gap-6 p-5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-200 rounded-2xl transition-all duration-300 relative overflow-hidden"
+                            className="group grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_auto] items-center gap-6 p-5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-200 rounded-lg transition-all duration-300 relative overflow-hidden"
                           >
                             {/* Decorative line */}
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/40 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -207,7 +207,7 @@ export default function AdminApprovalsPage() {
 
            {/* Distribution Sidebar Card */}
            <div className="space-y-6">
-              <div className="bg-white shadow-sm border border-slate-200 rounded-[2.5rem] p-8 space-y-6 backdrop-blur-xl">
+              <div className="bg-white shadow-sm border border-slate-200 rounded-lg p-8 space-y-6 backdrop-blur-xl">
                  <div className="space-y-2">
                     <TrendingUp className="w-6 h-6 text-blue-400" />
                     <h4 className="text-slate-900 font-bold tracking-tight">Active Funnel</h4>
@@ -234,7 +234,7 @@ export default function AdminApprovalsPage() {
                  </div>
               </div>
               
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 text-slate-900 relative overflow-hidden group">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-8 text-slate-900 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-150 transition-transform duration-1000">
                     <Fingerprint className="w-24 h-24 text-white" />
                  </div>

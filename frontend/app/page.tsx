@@ -48,7 +48,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <Link href={token ? "/dashboard" : "/register"}>
-              <button className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-blue-600 transition-all shadow-2xl hover:-translate-y-1">
+              <button className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-lg font-black uppercase tracking-widest text-[11px] hover:bg-blue-600 transition-all shadow-sm hover:-translate-y-1">
                 {token ? "Go to Dashboard" : "Initiate Application"}
               </button>
             </Link>
@@ -78,13 +78,13 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-24 text-center border-t border-slate-200/50 bg-white/60 backdrop-blur-sm relative z-10">
-        <img src="/logo.png" alt="Mask Polymers" className="h-10 w-auto mx-auto mb-10 contrast-125 hover:scale-110 transition-transform cursor-pointer" />
+        <img src="/logo.png" alt="AI Hiring System" className="h-10 w-auto mx-auto mb-10 contrast-125 hover:scale-110 transition-transform cursor-pointer" />
         <div className="flex justify-center gap-12 mb-12">
           {['Infrastructure', 'Sustainability', 'Research', 'Careers'].map(l => (
             <Link key={l} href="#" className="text-[10px] font-black text-slate-500 hover:text-blue-600 uppercase tracking-[0.3em] transition-colors">{l}</Link>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">© 2026 Mask Polymers Pvt. Ltd. • All Rights Reserved</p>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">© 2026 AI Hiring System Pvt. Ltd. • All Rights Reserved</p>
       </footer>
     </main>
   );

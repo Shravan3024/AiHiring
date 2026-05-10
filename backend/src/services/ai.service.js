@@ -34,9 +34,9 @@ const sanitizeAIOutput = (obj) => {
   if (typeof obj === 'object' && obj !== null) {
     const newObj = {};
     for (let key in obj) {
-       if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          newObj[key] = sanitizeAIOutput(obj[key]);
-       }
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        newObj[key] = sanitizeAIOutput(obj[key]);
+      }
     }
     return newObj;
   }
@@ -50,14 +50,14 @@ const parseResumeWithAI = async (filePath, jobContext = {}) => {
   try {
     // 1. Try Remote AI Service first (Flask)
     logger.info(`[AI Service] Attempting remote parse via ${AI_SERVICE_URL}`);
-    
+
     const formData = new FormData();
     const fs = require('fs');
     if (!fs.existsSync(filePath)) throw new Error("File not found for parsing");
-    
+
     const fileStream = fs.createReadStream(filePath);
     formData.append('file', fileStream);
-    
+
     // Pass job context for role-specific scoring
     if (jobContext.title) formData.append('job_title', jobContext.title);
     if (jobContext.description) formData.append('job_description', jobContext.description.substring(0, 1000));
@@ -70,25 +70,25 @@ const parseResumeWithAI = async (filePath, jobContext = {}) => {
     });
 
     if (response.data && response.data.success) {
-        logger.info("[AI Service] Remote parse successful");
-        return response.data.data;
+      logger.info("[AI Service] Remote parse successful");
+      return response.data.data;
     }
     throw new Error("Remote service returned unsuccessful response");
 
   } catch (error) {
     logger.warn(`[AI Service] Remote parse failed: ${error.message}. Attempting Direct Gemini Parse...`);
-    
+
     // 2. Try Direct Gemini Parse from Node (Secondary Pipeline)
     try {
-        return await parseResumeWithGeminiDirect(filePath, jobContext);
+      return await parseResumeWithGeminiDirect(filePath, jobContext);
     } catch (geminiError) {
-        logger.error(`[AI Service] Direct Gemini parse also failed: ${geminiError.message}. Falling back to local ML parser.`);
-        // 3. Last Resort: Local ML Parser
-        const localData = await localResumeParser(filePath);
-        return {
-            ...localData,
-            total_years_experience: localData.experience_years || 0
-        };
+      logger.error(`[AI Service] Direct Gemini parse also failed: ${geminiError.message}. Falling back to local ML parser.`);
+      // 3. Last Resort: Local ML Parser
+      const localData = await localResumeParser(filePath);
+      return {
+        ...localData,
+        total_years_experience: localData.experience_years || 0
+      };
     }
   }
 };
@@ -98,27 +98,27 @@ const parseResumeWithAI = async (filePath, jobContext = {}) => {
  * Direct Gemini Resume Parser (Node-based secondary pipeline)
  */
 const parseResumeWithGeminiDirect = async (filePath, jobContext = {}) => {
-    try {
-        const fs = require('fs');
-        const pdf = require('pdf-parse'); 
-        const dataBuffer = fs.readFileSync(filePath);
-        
-        let text = "";
-        if (filePath.toLowerCase().endsWith('.pdf')) {
-            const pdfData = await pdf(dataBuffer);
-            text = pdfData.text;
-        } else {
-            text = dataBuffer.toString('utf-8');
-        }
+  try {
+    const fs = require('fs');
+    const pdf = require('pdf-parse');
+    const dataBuffer = fs.readFileSync(filePath);
 
-        // Build job context for role-specific scoring
-        const jobContextText = jobContext.title ? `
+    let text = "";
+    if (filePath.toLowerCase().endsWith('.pdf')) {
+      const pdfData = await pdf(dataBuffer);
+      text = pdfData.text;
+    } else {
+      text = dataBuffer.toString('utf-8');
+    }
+
+    // Build job context for role-specific scoring
+    const jobContextText = jobContext.title ? `
 TARGET JOB ROLE: ${jobContext.title}
 REQUIRED SKILLS: ${(jobContext.skills || []).join(', ')}
 Evaluate ALL insights specifically for this role.
 ` : '';
 
-        const prompt = `
+    const prompt = `
             Task: Parse the following resume and return a structured JSON object.${jobContextText}
             
             Resume Text:
@@ -145,18 +145,18 @@ Evaluate ALL insights specifically for this role.
             - All strengths/weaknesses must be relevant to the target job role if specified
         `;
 
-        const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
-        const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
-        const sanitized = sanitizeAIOutput(parsed);
-        return {
-            ...sanitized,
-            experience_years: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0),
-            total_years_experience: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0)
-        };
-    } catch (e) {
-        logger.error(`[Gemini Direct] Failed: ${e.message}`);
-        throw e;
-    }
+    const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
+    const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+    const sanitized = sanitizeAIOutput(parsed);
+    return {
+      ...sanitized,
+      experience_years: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0),
+      total_years_experience: sanitized.candidate_type === 'FRESHER' ? 0 : (sanitized.experience_years || 0)
+    };
+  } catch (e) {
+    logger.error(`[Gemini Direct] Failed: ${e.message}`);
+    throw e;
+  }
 };
 
 
@@ -164,51 +164,51 @@ Evaluate ALL insights specifically for this role.
  * Local ML-based Resume Parser (Iterative Fallback)
  */
 const localResumeParser = async (filePath) => {
+  try {
+    const fs = require('fs');
+    const pdf = require('pdf-parse');
+    let text = "";
+
     try {
-        const fs = require('fs');
-        const pdf = require('pdf-parse');
-        let text = "";
-        
-        try {
-            const dataBuffer = fs.readFileSync(filePath);
-            if (filePath.toLowerCase().endsWith('.pdf')) {
-                const pdfData = await pdf(dataBuffer);
-                text = pdfData.text;
-            } else {
-                text = dataBuffer.toString('utf-8');
-            }
-        } catch (readErr) {
-            logger.warn(`Local parser text extraction failed: ${readErr.message}`);
-            text = "Text extraction failed";
-        }
-
-        const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0];
-        const phone = text.match(/(\+?\d{1,3}[- ]?)?\d{10}/)?.[0];
-        
-        const commonSkills = ["React", "Node.js", "Java", "Python", "SQL", "Docker", "AWS", "SAP", "Quality Control", "Production", "Marketing", "Supply Chain"];
-        const foundSkills = commonSkills.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(text));
-
-        const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
-        // CRITICAL FIX: Do NOT default experience to 2 - freshers have 0 years
-        const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 0;
-
-        return {
-            contact_info: { email, phone },
-            skills: foundSkills,
-            experience_years: parseInt(experience),
-            total_years_experience: parseInt(experience),
-            overall_score: 65,
-            summary: "Extracted via Local Semantic Pipeline (AI Fallback Active)",
-            highest_qualification: null, // Cannot reliably detect without AI
-            education: [{ degree: cgpaMatch ? "Detected Degree" : null, cgpa: cgpaMatch?.[1] }],
-            strengths: ["Clear professional background", "Documented technical skills", "Structured profile layout"],
-            weaknesses: ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
-            role_fit: { fit_level: "Moderate", explanation: "Matched against core industrial keywords." }
-        };
-    } catch (e) {
-        logger.error(`[Local Parser] Critical Failure: ${e.message}`);
-        return { skills: [], summary: "Parsing Failed", overall_score: 0, strengths: [], weaknesses: [] };
+      const dataBuffer = fs.readFileSync(filePath);
+      if (filePath.toLowerCase().endsWith('.pdf')) {
+        const pdfData = await pdf(dataBuffer);
+        text = pdfData.text;
+      } else {
+        text = dataBuffer.toString('utf-8');
+      }
+    } catch (readErr) {
+      logger.warn(`Local parser text extraction failed: ${readErr.message}`);
+      text = "Text extraction failed";
     }
+
+    const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0];
+    const phone = text.match(/(\+?\d{1,3}[- ]?)?\d{10}/)?.[0];
+
+    const commonSkills = ["React", "Node.js", "Java", "Python", "SQL", "Docker", "AWS", "SAP", "Quality Control", "Production", "Marketing", "Supply Chain"];
+    const foundSkills = commonSkills.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(text));
+
+    const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
+    // CRITICAL FIX: Do NOT default experience to 2 - freshers have 0 years
+    const experience = text.match(/(\d+)\+?\s*(years?|yrs?)/i)?.[1] || 0;
+
+    return {
+      contact_info: { email, phone },
+      skills: foundSkills,
+      experience_years: parseInt(experience),
+      total_years_experience: parseInt(experience),
+      overall_score: 65,
+      summary: "Extracted via Local Semantic Pipeline (AI Fallback Active)",
+      highest_qualification: null, // Cannot reliably detect without AI
+      education: [{ degree: cgpaMatch ? "Detected Degree" : null, cgpa: cgpaMatch?.[1] }],
+      strengths: ["Clear professional background", "Documented technical skills", "Structured profile layout"],
+      weaknesses: ["Deep AI analysis unavailable for this file format", "Verify certifications manually"],
+      role_fit: { fit_level: "Moderate", explanation: "Matched against core industrial keywords." }
+    };
+  } catch (e) {
+    logger.error(`[Local Parser] Critical Failure: ${e.message}`);
+    return { skills: [], summary: "Parsing Failed", overall_score: 0, strengths: [], weaknesses: [] };
+  }
 };
 
 /**
@@ -224,18 +224,18 @@ const scoreResume = async (parsedResume, jobRequirements) => {
         const { Job } = require('../models');
         const job = await Job.findByPk(jobRequirements);
         reqObj = job ? { required_skills: job.required_skills || [], description: job.description || job.title || '' } : {};
-      } catch(e) {
+      } catch (e) {
         reqObj = {};
       }
     }
 
     const jdSkillsText = (reqObj.required_skills?.join(' ') || reqObj.description || '').toLowerCase();
     const candSkills = parsedResume.skills ? (Array.isArray(parsedResume.skills) ? parsedResume.skills : Object.values(parsedResume.skills).flat()) : [];
-    
+
     const skillMatch = scoringService.matchSkills(jdSkillsText, candSkills);
     const resumeText = JSON.stringify(parsedResume).toLowerCase();
     const cosineScore = scoringService.calculateCosineSimilarity(jdSkillsText, resumeText);
-    
+
     // Higher weight for skill match in JD scoring
     const finalFitScore = Math.round((skillMatch.matchPercentage * 0.7) + (cosineScore * 30));
 
@@ -257,47 +257,47 @@ const scoreResume = async (parsedResume, jobRequirements) => {
  * Analyze Assessment Response (Hybrid Gemini + Local Semantic)
  */
 const analyzeAssessmentResponse = async (assessmentData) => {
-    try {
-        const { question, answer, category, expectedAnswer, keywords } = assessmentData;
-        
-        // 1. Initial Local Semantic Score (Cosine Similarity)
-        // If we have an expected answer, compare against that. Otherwise compare against the question context.
-        const referenceText = expectedAnswer || question;
-        const localSemanticScore = scoringService.calculateCosineSimilarity(referenceText, answer);
-        const baselineScore = Math.round(localSemanticScore * 100);
+  try {
+    const { question, answer, category, expectedAnswer, keywords } = assessmentData;
 
-        // 2. Call Remote AI for Behavioral/Deep Technical Insights
-        if (!AI_SERVICE_URL.includes('localhost:5000')) {
-            const response = await aiServiceClient.post('/api/ai/assessment/analyze', {
-                question,
-                answer,
-                category,
-                expectedAnswer,
-                keywords
-            });
-            return {
-                score: response.data?.score || baselineScore,
-                insights: response.data?.insights || "Analysis completed via Neural Engine."
-            };
-        }
+    // 1. Initial Local Semantic Score (Cosine Similarity)
+    // If we have an expected answer, compare against that. Otherwise compare against the question context.
+    const referenceText = expectedAnswer || question;
+    const localSemanticScore = scoringService.calculateCosineSimilarity(referenceText, answer);
+    const baselineScore = Math.round(localSemanticScore * 100);
 
-        // Local Fallback Logic: Boost score if keywords are found
-        let finalScore = baselineScore;
-        if (keywords && Array.isArray(keywords)) {
-            const foundCount = keywords.filter(k => answer.toLowerCase().includes(k.toLowerCase())).length;
-            const keywordBoost = (foundCount / keywords.length) * 20;
-            finalScore = Math.min(100, finalScore + keywordBoost);
-        }
-
-        return {
-            score: finalScore,
-            insights: "Local semantic analysis performed. Keyword density weighted."
-        };
-
-    } catch (err) {
-        logger.warn(`Assessment AI Analysis failed: ${err.message}. Falling back to ML baseline.`);
-        return { score: 70, insights: "Baseline fallback active." };
+    // 2. Call Remote AI for Behavioral/Deep Technical Insights
+    if (!AI_SERVICE_URL.includes('localhost:5000')) {
+      const response = await aiServiceClient.post('/api/ai/assessment/analyze', {
+        question,
+        answer,
+        category,
+        expectedAnswer,
+        keywords
+      });
+      return {
+        score: response.data?.score || baselineScore,
+        insights: response.data?.insights || "Analysis completed via Neural Engine."
+      };
     }
+
+    // Local Fallback Logic: Boost score if keywords are found
+    let finalScore = baselineScore;
+    if (keywords && Array.isArray(keywords)) {
+      const foundCount = keywords.filter(k => answer.toLowerCase().includes(k.toLowerCase())).length;
+      const keywordBoost = (foundCount / keywords.length) * 20;
+      finalScore = Math.min(100, finalScore + keywordBoost);
+    }
+
+    return {
+      score: finalScore,
+      insights: "Local semantic analysis performed. Keyword density weighted."
+    };
+
+  } catch (err) {
+    logger.warn(`Assessment AI Analysis failed: ${err.message}. Falling back to ML baseline.`);
+    return { score: 70, insights: "Baseline fallback active." };
+  }
 };
 
 /**
@@ -308,7 +308,7 @@ const analyzeAssessmentResponse = async (assessmentData) => {
  */
 const analyzeInterview = async (transcript, interviewDetails = {}) => {
   const { type = 'technical', questions = [], jobTitle = 'the role', jobSkills = [] } = interviewDetails;
-  
+
   const jobContext = jobTitle !== 'the role' ? `
 Job Role Being Evaluated: ${jobTitle}
 Required Skills for This Role: ${jobSkills.slice(0, 10).join(', ')}
@@ -316,7 +316,7 @@ CRITICAL: All analysis, strengths, weaknesses, and recommendations must be SPECI
 ` : '';
 
   const prompt = `
-    Task: Deep AI Interview Analysis for Mask Polymers Recruitment.
+    Task: Deep AI Interview Analysis for AI Hiring System Recruitment.
     Interview Type: ${type}
     ${jobContext}
     Context Questions: ${JSON.stringify(questions)}
@@ -371,10 +371,10 @@ CRITICAL: All analysis, strengths, weaknesses, and recommendations must be SPECI
     // Deterministic fallback
     const semanticScore = scoringService.calculateCosineSimilarity("professionalism experience knowledge", transcript);
     const score = Math.round(semanticScore * 100);
-    
+
     return {
-      overall_assessment: { 
-        overall_score: score, 
+      overall_assessment: {
+        overall_score: score,
         summary: `Semantic fallback analysis for ${jobTitle}. AI service interrupted.`,
         key_takeaways: ["Candidate provided structured responses"]
       },
@@ -390,20 +390,20 @@ CRITICAL: All analysis, strengths, weaknesses, and recommendations must be SPECI
  * Generate Resume Summary (AI-enhanced)
  */
 const generateResumeSummary = async (parsedData, jobContext = {}) => {
-    try {
-        const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') : 
-                      (typeof parsedData.skills === 'object' ? Object.values(parsedData.skills).flat().join(', ') : 'Various technical domains');
-        const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
-        const qual = parsedData.highest_qualification || 'Not specified';
-        const candidateType = parsedData.candidate_type || (exp === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL');
-        
-        // Build role-specific prompt
-        const roleContext = jobContext.title ? `
+  try {
+    const skills = Array.isArray(parsedData.skills) ? parsedData.skills.join(', ') :
+      (typeof parsedData.skills === 'object' ? Object.values(parsedData.skills).flat().join(', ') : 'Various technical domains');
+    const exp = parsedData.total_years_experience || parsedData.experience_years || 0;
+    const qual = parsedData.highest_qualification || 'Not specified';
+    const candidateType = parsedData.candidate_type || (exp === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL');
+
+    // Build role-specific prompt
+    const roleContext = jobContext.title ? `
 TARGET JOB ROLE: ${jobContext.title}
 REQUIRED SKILLS: ${(jobContext.skills || []).slice(0, 10).join(', ')}
 All insights must be evaluated against this specific role.` : '';
-        
-        const prompt = `
+
+    const prompt = `
             Task: Generate a role-specific executive summary and analysis for a candidate.
             ${roleContext}
             
@@ -427,32 +427,32 @@ All insights must be evaluated against this specific role.` : '';
             }
         `;
 
-        try {
-            const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
-            const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
-            return sanitizeAIOutput(parsed);
-        } catch (llmErr) {
-            logger.warn(`LLM Summary generation failed: ${llmErr.message}. Using structured fallback.`);
-            return {
-                executive_summary: candidateType === 'FRESHER' 
-                    ? `Fresher candidate with strong academic background in ${qual}. Skills include ${skills.substring(0, 80)}. Interested in ${jobContext.title || 'the applied role'}.`
-                    : `Candidate with ${exp} years of experience. Core competencies: ${skills.substring(0, 100)}.`,
-                key_strengths: parsedData.strengths?.length > 0 ? parsedData.strengths : ["Academic background", "Technical skill awareness", "Growth potential"],
-                weaknesses: parsedData.weaknesses?.length > 0 ? parsedData.weaknesses : ["Limited professional experience", "Verify certifications manually"],
-                recommended_improvements: ["Add specific project impact metrics", "Highlight role-specific skills"],
-                jd_match_analysis: `Candidate's profile has been evaluated against ${jobContext.title || 'the role'}.`,
-                education_highlight: qual || 'Qualification not detected — please review resume manually'
-            };
-        }
-    } catch (e) {
-        logger.error(`[Summary Generator] Critical Error: ${e.message}`);
-        return {
-            executive_summary: "Error generating summary.",
-            key_strengths: [],
-            weaknesses: [],
-            recommended_improvements: []
-        };
+    try {
+      const responseText = await llmService.generateCompletion('RESUME_SCORING', prompt);
+      const parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+      return sanitizeAIOutput(parsed);
+    } catch (llmErr) {
+      logger.warn(`LLM Summary generation failed: ${llmErr.message}. Using structured fallback.`);
+      return {
+        executive_summary: candidateType === 'FRESHER'
+          ? `Fresher candidate with strong academic background in ${qual}. Skills include ${skills.substring(0, 80)}. Interested in ${jobContext.title || 'the applied role'}.`
+          : `Candidate with ${exp} years of experience. Core competencies: ${skills.substring(0, 100)}.`,
+        key_strengths: parsedData.strengths?.length > 0 ? parsedData.strengths : ["Academic background", "Technical skill awareness", "Growth potential"],
+        weaknesses: parsedData.weaknesses?.length > 0 ? parsedData.weaknesses : ["Limited professional experience", "Verify certifications manually"],
+        recommended_improvements: ["Add specific project impact metrics", "Highlight role-specific skills"],
+        jd_match_analysis: `Candidate's profile has been evaluated against ${jobContext.title || 'the role'}.`,
+        education_highlight: qual || 'Qualification not detected — please review resume manually'
+      };
     }
+  } catch (e) {
+    logger.error(`[Summary Generator] Critical Error: ${e.message}`);
+    return {
+      executive_summary: "Error generating summary.",
+      key_strengths: [],
+      weaknesses: [],
+      recommended_improvements: []
+    };
+  }
 };
 
 
@@ -460,7 +460,7 @@ All insights must be evaluated against this specific role.` : '';
  * Generate Interview Summary
  */
 const generateInterviewSummary = async (transcript, score) => {
-    return `The candidate demonstrated a ${score > 70 ? 'strong' : 'moderate'} grasp of professional concepts. Transcript analysis indicates active engagement with a focus score of ${score}%.`;
+  return `The candidate demonstrated a ${score > 70 ? 'strong' : 'moderate'} grasp of professional concepts. Transcript analysis indicates active engagement with a focus score of ${score}%.`;
 };
 
 module.exports = {
@@ -471,7 +471,7 @@ module.exports = {
   generateResumeSummary,
   generateInterviewSummary,
   healthCheck: async () => ({ status: "UP", mode: AI_SERVICE_URL.includes('localhost') ? "LOCAL_ML" : "REMOTE_AI" }),
-  
+
   /**
    * Module 1: Advanced Answer Analysis
    */
@@ -490,7 +490,7 @@ module.exports = {
     }
 
     const prompt = `
-      Task: Evaluate technical response for Mask Polymers recruitment assessment.
+      Task: Evaluate technical response for AI Hiring System recruitment assessment.
       Question: ${question}
       Candidate Answer: ${trimmedAnswer}
       Expected Answer Reference: ${expectedAnswer || 'N/A'}
@@ -518,9 +518,9 @@ module.exports = {
       const kws = Array.isArray(keywords) ? keywords : [];
       const matchedKws = kws.filter(kw => trimmedAnswer.toLowerCase().includes(kw.toLowerCase()));
       const kwScore = kws.length > 0 ? Math.round((matchedKws.length / kws.length) * 70) : 30;
-      return { 
-        score: kwScore, 
-        structure_score: trimmedAnswer.length > 100 ? 40 : 20, 
+      return {
+        score: kwScore,
+        structure_score: trimmedAnswer.length > 100 ? 40 : 20,
         concept_coverage: kwScore,
         explanation: `Keyword-based evaluation (AI unavailable). Matched ${matchedKws.length}/${kws.length} keywords.`,
         strengths: matchedKws.length > 0 ? [`Keywords matched: ${matchedKws.join(', ')}`] : ["Answer provided"],
@@ -558,8 +558,8 @@ module.exports = {
       return sanitizeAIOutput(parsed);
     } catch (err) {
       logger.warn(`AI Full Interview Analysis Error: ${err.message}`);
-      return { 
-        overall_interview_score: 50, 
+      return {
+        overall_interview_score: 50,
         highlights: { summary: `The AI interview analysis for ${jobTitle || 'this role'} was interrupted. Please review the transcript manually.` },
         dimension_scores: { technical: 50, communication: 50, confidence: 50 },
         strengths: ["Candidate completed the interview session"],
@@ -574,17 +574,17 @@ module.exports = {
    * Generates the executive hiring decision and role fit analysis
    */
   getFinalCandidateDecision: async (metrics) => {
-    const { 
-        jobId,
-        assessmentScore, 
-        interviewScore, 
-        integrityScore, 
-        behavioralScore,
-        resumeScore,
-        jobTitle = "the specified role",
-        candidateName = "this candidate"
+    const {
+      jobId,
+      assessmentScore,
+      interviewScore,
+      integrityScore,
+      behavioralScore,
+      resumeScore,
+      jobTitle = "the specified role",
+      candidateName = "this candidate"
     } = metrics;
-    
+
     // Default weights
     let weights = { assessment: 0.35, interview: 0.35, integrity: 0.1, behavioral: 0.1, resume: 0.1 };
 
@@ -604,11 +604,11 @@ module.exports = {
         logger.warn(`Failed to fetch AI weights for job ${jobId}, using defaults.`);
       }
     }
-    
+
     const finalScore = Math.round(
-      (assessmentScore * weights.assessment) + 
-      (interviewScore * weights.interview) + 
-      (integrityScore * weights.integrity) + 
+      (assessmentScore * weights.assessment) +
+      (interviewScore * weights.interview) +
+      (integrityScore * weights.integrity) +
       (behavioralScore * weights.behavioral) +
       ((resumeScore || 0) * weights.resume)
     );
@@ -619,9 +619,9 @@ module.exports = {
     const leadershipFit = Math.round((behavioralScore * 0.5) + (interviewScore * 0.3) + (assessmentScore * 0.2));
     const domainFit = Math.round((assessmentScore * 0.6) + ((resumeScore || 0) * 0.4));
     const culturalFit = Math.round((behavioralScore * 0.6) + (integrityScore * 0.4));
-    
+
     const prompt = `
-      Task: Generate Final Hiring Decision for Mask Polymers Recruitment System.
+      Task: Generate Final Hiring Decision for AI Hiring System Recruitment System.
       Role: ${jobTitle}
       Candidate: ${candidateName}
       
@@ -677,12 +677,12 @@ module.exports = {
       logger.error(`[AI Decision Core] Execution Error: ${err.message}`);
       // Deterministic fallback — use actual computed scores, not hardcoded 50
       const autoDecision = finalScore >= 70 ? 'Strong Hire' : finalScore >= 55 ? 'Hire' : finalScore >= 40 ? 'Borderline' : 'Reject';
-      return { 
+      return {
         decision: autoDecision,
         role_recommendation: `Based on computed metrics (Score: ${finalScore}/100), candidate shows ${autoDecision === 'Strong Hire' || autoDecision === 'Hire' ? 'sufficient' : 'insufficient'} alignment for the ${jobTitle} role. Manual HR review recommended for final confirmation.`,
-        fit_breakdown: { 
-          technical: technicalFit, 
-          communication: commFit, 
+        fit_breakdown: {
+          technical: technicalFit,
+          communication: commFit,
           leadership: leadershipFit,
           domain_expertise: domainFit,
           cultural_fit: culturalFit
@@ -701,7 +701,7 @@ module.exports = {
    */
   generateSystemReport: async (stats) => {
     const prompt = `
-      Task: Generate Strategic AI Recruitment Report for Mask Polymers.
+      Task: Generate Strategic AI Recruitment Report for AI Hiring System.
       Stats Data: ${JSON.stringify(stats)}
       
       Generate a professional executive summary, trend analysis, and strategic recommendations.
@@ -745,8 +745,8 @@ module.exports = {
       return sanitizeAIOutput(parsed);
     } catch (err) {
       logger.error(`[AI Insight Generator] Error: ${err.message}`);
-      return { 
-        title: `${section} Insight`, 
+      return {
+        title: `${section} Insight`,
         content: "The AI is currently analyzing recent data trends. Please check back shortly.",
         impact: "Moderate"
       };
@@ -758,7 +758,7 @@ module.exports = {
    */
   chatWithAI: async (message, history = []) => {
     const prompt = `
-      Task: AI Recruitment Assistant for Mask Polymers.
+      Task: AI Recruitment Assistant for AI Hiring System.
       Role: Help the candidate with their application, interview, or assessment queries.
       Context: You are professional, helpful, and concise.
       

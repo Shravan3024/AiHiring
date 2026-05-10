@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  FileText, CheckCircle2, XCircle, Clock, 
+import {
+  FileText, CheckCircle2, XCircle, Clock,
   ChevronRight, Download, Eye, Briefcase,
   TrendingUp, Calendar, MapPin, DollarSign
 } from "lucide-react";
@@ -51,7 +51,7 @@ export default function JobOffersPage() {
 
   if (loading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-5 space-y-6">
         <Skeleton className="h-[200px] w-full rounded-[40px]" />
         <Skeleton className="h-[200px] w-full rounded-[40px]" />
       </div>
@@ -59,16 +59,16 @@ export default function JobOffersPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-5 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header Section */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your Career Opportunities</h1>
-        <p className="text-slate-500">Review and manage your formal job offers from Mask Polymers.</p>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Your Career Opportunities</h1>
+        <p className="text-slate-500">Review and manage your formal job offers from AI Hiring System.</p>
       </div>
 
       {offers.length === 0 ? (
         <Card className="rounded-[40px] border-dashed border-2 border-slate-200 bg-slate-50/50 p-12 text-center">
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6">
+          <div className="w-20 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm mx-auto mb-6">
             <FileText className="w-10 h-10 text-slate-300" />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">No Offers Yet</h3>
@@ -76,7 +76,7 @@ export default function JobOffersPage() {
             Once you successfully complete the interview process, your official offer letters will appear here.
           </p>
           <Link href="/candidate/application">
-            <Button className="rounded-full bg-blue-600 hover:bg-blue-700 px-8">
+            <Button className="rounded-full bg-blue-600 hover:bg-blue-700 px-5">
               Check Application Status
             </Button>
           </Link>
@@ -88,7 +88,7 @@ export default function JobOffersPage() {
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                   {/* Left: Info */}
-                  <div className="flex-1 p-8 space-y-6">
+                  <div className="flex-1 p-5 space-y-6">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <div className={cn(
@@ -97,17 +97,17 @@ export default function JobOffersPage() {
                         )}>
                           {app.offer.status}
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 pt-2">{app.job_title}</h2>
+                        <h2 className="text-lg font-bold text-slate-900 pt-2">{app.job_title}</h2>
                         <p className="text-slate-500 font-medium">{app.jobId?.department || "Operations"}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Annual CTC</p>
-                        <p className="text-2xl font-bold text-blue-600">₹{(app.offer.salary / 100000).toFixed(1)} LPA</p>
+                        <p className="text-lg font-bold text-blue-600">₹{(app.offer.salary / 100000).toFixed(1)} LPA</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-2xl">
+                      <div className="bg-slate-50 p-3 rounded-lg">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Joining Date</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <Calendar className="w-3.5 h-3.5 text-blue-500" />
@@ -116,21 +116,21 @@ export default function JobOffersPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl">
+                      <div className="bg-slate-50 p-3 rounded-lg">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Location</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <MapPin className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-xs font-bold">{app.jobId?.location || "Remote"}</span>
                         </div>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl">
+                      <div className="bg-slate-50 p-3 rounded-lg">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Role Type</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <Briefcase className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-xs font-bold">{app.jobId?.type || "Full Time"}</span>
                         </div>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl">
+                      <div className="bg-slate-50 p-3 rounded-lg">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Bonus</p>
                         <div className="flex items-center gap-2 text-slate-700">
                           <DollarSign className="w-3.5 h-3.5 text-blue-500" />
@@ -141,16 +141,16 @@ export default function JobOffersPage() {
                   </div>
 
                   {/* Right: Actions */}
-                  <div className="w-full md:w-72 bg-slate-50 p-8 flex flex-col justify-center gap-3 border-l border-slate-100">
+                  <div className="w-full md:w-72 bg-slate-50 p-5 flex flex-col justify-center gap-3 border-l border-slate-100">
                     <Link href={`/candidate/offer/${app.id}`} className="w-full">
-                      <Button className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 h-12 shadow-lg shadow-blue-100 font-bold">
+                      <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 h-12 shadow-lg shadow-blue-100 font-bold">
                         View & Respond
                       </Button>
                     </Link>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => router.push(`/print-offer/${app.id}`)}
-                      className="w-full rounded-2xl border-slate-200 bg-white h-12 text-slate-600 hover:bg-slate-50 font-bold flex items-center justify-center gap-2"
+                      className="w-full rounded-lg border-slate-200 bg-white h-12 text-slate-600 hover:bg-slate-50 font-bold flex items-center justify-center gap-2"
                     >
                       <Download className="w-4 h-4" />
                       Download PDF
@@ -167,12 +167,12 @@ export default function JobOffersPage() {
       )}
 
       {/* Info Card */}
-      <Card className="rounded-[40px] bg-slate-900 p-8 text-white relative overflow-hidden">
+      <Card className="rounded-[40px] bg-slate-900 p-5 text-white relative overflow-hidden">
         <div className="relative z-10">
           <h3 className="text-xl font-bold mb-2">Important Information</h3>
           <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
-            All offer letters generated by Mask Polymers AI are legally binding once accepted. 
-            Please ensure you review the benefits, joining instructions, and non-disclosure 
+            All offer letters generated by AI Hiring System AI are legally binding once accepted.
+            Please ensure you review the benefits, joining instructions, and non-disclosure
             agreements carefully before proceeding. If you have questions, use the AI assistant.
           </p>
         </div>

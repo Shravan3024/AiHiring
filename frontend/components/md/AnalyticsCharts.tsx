@@ -44,7 +44,7 @@ export default function AnalyticsCharts({ data }: any) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
       <BarChart
         data={chartData}
         margin={{ top: 20, right: 30, left: 0, bottom: 20 }}

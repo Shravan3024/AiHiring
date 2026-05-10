@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import {
   Clock, ShieldCheck, Zap, AlertTriangle, CheckCircle2,
   AlertOctagon, ChevronLeft, ChevronRight, Lock, Activity,
-  Sparkles, BookOpen, FileText, ArrowRight
+  Sparkles, BookOpen, FileText, ArrowRight, Mic, MicOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,8 +39,10 @@ export default function AssessmentPage() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [warnings, setWarnings] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const { data: assessment, isLoading } = useQuery<AssessmentData>({
     queryKey: ["assessment", applicationId],
@@ -50,6 +52,90 @@ export default function AssessmentPage() {
     staleTime: Infinity
   });
 
+  // ── SPEECH-TO-TEXT (Web Speech API) for Section 2 ──
+  const startListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-IN";
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = "";
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      if (finalTranscript) {
+        // Append final transcribed text to the current answer
+        const q = (phase === "s1" ? assessment?.section1 : assessment?.section2)?.[currentIdx];
+        if (q) {
+          setAnswers(prev => ({
+            ...prev,
+            [q.id]: (prev[q.id] || "") + finalTranscript
+          }));
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.warn("Speech recognition error:", event.error);
+      const errorMessages: Record<string, string> = {
+        "not-allowed": "Microphone access denied. Please allow microphone permissions in your browser settings.",
+        "network": "Voice input requires an internet connection. Please check your network and try again.",
+        "no-speech": "No speech detected. Please speak clearly into your microphone.",
+        "audio-capture": "No microphone found. Please connect a microphone and try again.",
+        "aborted": "Voice input was stopped.",
+      };
+      const msg = errorMessages[event.error] || `Voice input error: ${event.error}. Please type your answer instead.`;
+      if (event.error !== "aborted") toast.error(msg);
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if still in listening mode (handles browser auto-stop)
+      if (recognitionRef.current && isListening) {
+        try { recognitionRef.current.start(); } catch (_) {}
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+    toast.success("🎤 Voice input active — start speaking!");
+  }, [phase, assessment, currentIdx, isListening]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null; // Prevent auto-restart
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  }, []);
+
+  // Stop listening when navigating away from Section 2 or changing questions
+  useEffect(() => {
+    if (phase !== "s2") stopListening();
+  }, [phase]);
+
+  useEffect(() => {
+    // Stop and allow re-start on question change
+    if (isListening) {
+      stopListening();
+    }
+  }, [currentIdx]);
+
   // Set timer when phase changes
   useEffect(() => {
     if (phase === "s1" && assessment) setTimeLeft(assessment.config.section1_duration * 60);
@@ -57,7 +143,7 @@ export default function AssessmentPage() {
   }, [phase, assessment]);
 
   // Timer countdown — uses ref to avoid TDZ with handleSectionTimeout defined below
-  const sectionTimeoutRef = useRef<() => void>(() => {});
+  const sectionTimeoutRef = useRef<() => void>(() => { });
   useEffect(() => {
     if ((phase !== "s1" && phase !== "s2") || timeLeft <= 0) return;
     const t = setInterval(() => {
@@ -114,7 +200,7 @@ export default function AssessmentPage() {
         if (Object.keys(s1Payload).length > 0 && assessment?.attempt_id) {
           await candidateApi.saveAllAnswers(String(assessment.attempt_id), s1Payload);
         }
-      } catch (_) {}
+      } catch (_) { }
       setPhase("transition"); setCurrentIdx(0);
     } else if (phase === "s2") {
       handleFinalSubmit();
@@ -131,7 +217,7 @@ export default function AssessmentPage() {
       if (Object.keys(s2Payload).length > 0) {
         await candidateApi.saveAllAnswers(String(assessment!.attempt_id), s2Payload);
       }
-    } catch (_) {}
+    } catch (_) { }
     submitMut.mutate();
   }, [isSubmitting, answers, assessment]);
 
@@ -142,7 +228,7 @@ export default function AssessmentPage() {
       if (Object.keys(s1Payload).length > 0) {
         await candidateApi.saveAllAnswers(String(assessment!.attempt_id), s1Payload);
       }
-    } catch (_) {}
+    } catch (_) { }
     setPhase("transition");
     setCurrentIdx(0);
   }, [answers, assessment]);
@@ -179,7 +265,7 @@ export default function AssessmentPage() {
   };
 
   const enterFullscreen = () => {
-    containerRef.current?.requestFullscreen().then(() => setIsFullScreen(true)).catch(() => {});
+    containerRef.current?.requestFullscreen().then(() => setIsFullScreen(true)).catch(() => { });
   };
 
   useEffect(() => {
@@ -233,41 +319,45 @@ export default function AssessmentPage() {
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center py-12 px-6">
         <div className="w-full max-w-4xl space-y-8">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
               <ShieldCheck className="text-white w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Assessment Portal</h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Mask Polymers AI Systems</p>
+              <h1 className="text-lg font-bold text-slate-900">Assessment Portal</h1>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">AI Hiring System AI Systems</p>
             </div>
           </div>
 
-          <Card className="border-none shadow-sm rounded-[32px] bg-white p-10">
-            <h2 className="text-2xl font-black text-slate-900 mb-6">Assessment Structure</h2>
+          <Card className="border-none shadow-sm rounded-xl bg-white p-6">
+            <h2 className="text-lg font-black text-slate-900 mb-6">Assessment Structure</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="p-6 rounded-2xl bg-blue-50 border border-blue-100">
+              <div className="p-6 rounded-lg bg-blue-50 border border-blue-100">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                   </div>
                   <span className="font-black text-blue-800 uppercase tracking-wide text-sm">Section 1 — MCQ Test</span>
                 </div>
-                <p className="text-3xl font-black text-slate-900">20 Questions</p>
+                <p className="text-xl font-black text-slate-900">20 Questions</p>
                 <p className="text-sm text-slate-500 mt-1">Multiple choice — Technical knowledge</p>
                 <div className="flex items-center gap-2 mt-4">
                   <Clock className="w-4 h-4 text-blue-500" />
                   <span className="font-bold text-blue-600">20 Minutes</span>
                 </div>
               </div>
-              <div className="p-6 rounded-2xl bg-purple-50 border border-purple-100">
+              <div className="p-6 rounded-lg bg-purple-50 border border-purple-100">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
                     <FileText className="w-5 h-5 text-white" />
                   </div>
                   <span className="font-black text-purple-800 uppercase tracking-wide text-sm">Section 2 — Theory</span>
                 </div>
-                <p className="text-3xl font-black text-slate-900">5 Questions</p>
+                <p className="text-xl font-black text-slate-900">5 Questions</p>
                 <p className="text-sm text-slate-500 mt-1">Scenario / Behavioral / Analytical</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Mic className="w-4 h-4 text-purple-500" />
+                  <span className="font-bold text-purple-600 text-sm">Voice Input Available</span>
+                </div>
                 <div className="flex items-center gap-2 mt-4">
                   <Clock className="w-4 h-4 text-purple-500" />
                   <span className="font-bold text-purple-600">25 Minutes</span>
@@ -282,7 +372,7 @@ export default function AssessmentPage() {
                 { label: "Proctoring", value: "Active" },
                 { label: "Passing Score", value: "40%" },
               ].map((item, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                <div key={i} className="p-4 rounded-lg bg-slate-50 border border-slate-100 text-center">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
                   <p className="text-xl font-black text-slate-900 mt-1">{item.value}</p>
                 </div>
@@ -298,7 +388,7 @@ export default function AssessmentPage() {
               ))}
             </div>
 
-            <div className="bg-slate-900 rounded-2xl p-6 flex items-center justify-between gap-6">
+            <div className="bg-slate-900 rounded-lg p-6 flex items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div
                   onClick={() => setHasAgreed(!hasAgreed)}
@@ -312,7 +402,7 @@ export default function AssessmentPage() {
               <Button
                 disabled={!hasAgreed}
                 onClick={() => setPhase("s1")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-10 h-12 rounded-xl font-black uppercase tracking-widest shrink-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-12 rounded-xl font-black uppercase tracking-widest shrink-0"
               >
                 Start Section 1 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -326,14 +416,14 @@ export default function AssessmentPage() {
   // ── SECTION TRANSITION ──
   if (phase === "transition") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-5">
         <Card className="max-w-lg w-full bg-slate-900 border-slate-800 rounded-[40px] p-12 text-center">
-          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className="text-3xl font-black text-white mb-2">Section 1 Complete!</h2>
+          <h2 className="text-xl font-black text-white mb-2">Section 1 Complete!</h2>
           <p className="text-slate-400 mb-2">MCQ section submitted successfully.</p>
-          <div className="bg-slate-800 rounded-2xl p-6 my-8 text-left">
+          <div className="bg-slate-800 rounded-lg p-6 my-8 text-left">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
@@ -344,10 +434,14 @@ export default function AssessmentPage() {
               </div>
             </div>
             <p className="text-slate-300 text-sm">These questions are scenario-based, behavioral, or analytical. Write detailed, thoughtful answers.</p>
+            <div className="flex items-center gap-2 mt-3 p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+              <Mic className="w-4 h-4 text-purple-400" />
+              <span className="text-sm font-bold text-purple-300">🎤 Voice dictation is available — click the mic icon to speak your answers</span>
+            </div>
           </div>
           <Button
             onClick={() => { setPhase("s2"); setCurrentIdx(0); }}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white h-14 rounded-2xl font-black text-lg"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white h-14 rounded-lg font-black text-lg"
           >
             Begin Section 2 <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
@@ -377,12 +471,12 @@ export default function AssessmentPage() {
       <div ref={containerRef} className="min-h-screen bg-[#050505] text-slate-300">
         {/* Fullscreen gate */}
         {!isFullScreen && !isSubmitting && (
-          <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center text-center p-8">
+          <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center text-center p-5">
             <div>
-              <AlertOctagon className="w-16 h-16 text-red-500 animate-pulse mx-auto mb-6" />
-              <h2 className="text-3xl font-black text-white mb-3">Fullscreen Required</h2>
+              <AlertOctagon className="w-10 h-10 text-red-500 animate-pulse mx-auto mb-6" />
+              <h2 className="text-xl font-black text-white mb-3">Fullscreen Required</h2>
               <p className="text-slate-400 mb-8">Re-enable fullscreen to continue your assessment.</p>
-              <Button onClick={enterFullscreen} className="bg-blue-600 text-white px-12 h-14 rounded-2xl font-bold">
+              <Button onClick={enterFullscreen} className="bg-blue-600 text-white px-12 h-14 rounded-lg font-bold">
                 Return to Test
               </Button>
             </div>
@@ -391,7 +485,7 @@ export default function AssessmentPage() {
 
         <div className="flex flex-col h-screen overflow-hidden">
           {/* Header */}
-          <header className="h-16 bg-black border-b border-slate-900 flex items-center justify-between px-8 shrink-0">
+          <header className="h-16 bg-black border-b border-slate-900 flex items-center justify-between px-5 shrink-0">
             <div className="flex items-center gap-4">
               <div className={cn("px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest",
                 isS1 ? "bg-blue-600/20 text-blue-400" : "bg-purple-600/20 text-purple-400")}>
@@ -428,10 +522,10 @@ export default function AssessmentPage() {
           <main className="flex-1 flex overflow-hidden p-6 gap-6">
             {/* Question Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              <Card className={cn("flex-1 border-2 rounded-[32px] flex flex-col overflow-hidden",
+              <Card className={cn("flex-1 border-2 rounded-xl flex flex-col overflow-hidden",
                 isS1 ? "bg-slate-950/50 border-blue-900/30" : "bg-slate-950/50 border-purple-900/30")}>
                 {/* Question header */}
-                <div className="p-8 border-b border-slate-900 bg-black/20">
+                <div className="p-5 border-b border-slate-900 bg-black/20">
                   <div className="flex gap-3 mb-4">
                     <Badge className={cn("px-3 py-1 text-[10px] font-bold uppercase",
                       isS1 ? "bg-blue-600/10 text-blue-400 border-blue-600/20" : "bg-purple-600/10 text-purple-400 border-purple-600/20")}>
@@ -441,11 +535,11 @@ export default function AssessmentPage() {
                       {curQ?.topic}
                     </Badge>
                   </div>
-                  <h3 className="text-2xl font-bold text-white leading-relaxed">{curQ?.question}</h3>
+                  <h3 className="text-lg font-bold text-white leading-relaxed">{curQ?.question}</h3>
                 </div>
 
                 {/* Answer area */}
-                <div className="flex-1 p-8 overflow-y-auto">
+                <div className="flex-1 p-5 overflow-y-auto">
                   {isS1 && curQ?.options?.length > 0 ? (
                     <div className="space-y-3">
                       {curQ.options.map((opt, i) => (
@@ -453,7 +547,7 @@ export default function AssessmentPage() {
                           key={i}
                           onClick={() => handleAnswer(opt)}
                           className={cn(
-                            "w-full p-5 text-left rounded-2xl border-2 transition-all flex items-center gap-5",
+                            "w-full p-5 text-left rounded-lg border-2 transition-all flex items-center gap-5",
                             answers[curQ.id] === opt
                               ? "bg-blue-600 border-blue-600 text-white"
                               : "bg-black/30 border-slate-800 hover:border-slate-700 text-slate-300"
@@ -469,17 +563,57 @@ export default function AssessmentPage() {
                       ))}
                     </div>
                   ) : (
-                    <textarea
-                      placeholder="Write your detailed response here..."
-                      value={answers[curQ?.id || ""] || ""}
-                      onChange={e => handleAnswer(e.target.value)}
-                      className="w-full h-full min-h-[300px] bg-slate-900/30 border-2 border-slate-800/50 rounded-[24px] p-8 text-lg text-white focus:border-purple-500 focus:outline-none transition-all placeholder:text-slate-700 resize-none font-medium leading-relaxed"
-                    />
+                    <div className="flex flex-col h-full gap-3">
+                      <div className="relative flex-1">
+                        <textarea
+                          placeholder="Write your detailed response here or use the microphone to dictate..."
+                          value={answers[curQ?.id || ""] || ""}
+                          onChange={e => handleAnswer(e.target.value)}
+                          className={cn(
+                            "w-full h-full min-h-[260px] bg-slate-900/30 border-2 rounded-[24px] p-5 pr-16 text-lg text-white focus:outline-none transition-all placeholder:text-slate-700 resize-none font-medium leading-relaxed",
+                            isListening ? "border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.15)]" : "border-slate-800/50 focus:border-purple-500"
+                          )}
+                        />
+                        {/* Floating mic button inside textarea area */}
+                        <button
+                          type="button"
+                          onClick={() => isListening ? stopListening() : startListening()}
+                          className={cn(
+                            "absolute top-4 right-4 w-11 h-11 rounded-xl flex items-center justify-center transition-all",
+                            isListening
+                              ? "bg-red-500 hover:bg-red-600 text-white animate-pulse shadow-lg shadow-red-500/30"
+                              : "bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 border border-purple-600/30"
+                          )}
+                          title={isListening ? "Stop voice input" : "Start voice input"}
+                        >
+                          {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {/* Voice input status bar */}
+                      <div className={cn(
+                        "flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all",
+                        isListening
+                          ? "bg-purple-500/10 border-purple-500/30"
+                          : "bg-slate-900/30 border-slate-800/30"
+                      )}>
+                        <div className={cn("w-2 h-2 rounded-full shrink-0",
+                          isListening ? "bg-red-500 animate-pulse" : "bg-slate-700"
+                        )} />
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                          {isListening ? "🎤 Listening — speak your answer..." : "Voice Input Available — click mic to dictate"}
+                        </span>
+                        {isListening && (
+                          <span className="ml-auto text-[10px] font-bold text-purple-400 uppercase tracking-widest">
+                            Recording
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
 
                 {/* Navigation */}
-                <div className="p-6 px-10 bg-black/40 border-t border-slate-900 flex justify-between items-center">
+                <div className="p-6 px-6 bg-black/40 border-t border-slate-900 flex justify-between items-center">
                   <Button
                     variant="ghost"
                     disabled={currentIdx === 0}
@@ -494,7 +628,7 @@ export default function AssessmentPage() {
                   <Button
                     disabled={currentIdx === questions.length - 1}
                     onClick={() => setCurrentIdx(v => v + 1)}
-                    className={cn("text-white font-black px-8 h-12 rounded-2xl gap-2",
+                    className={cn("text-white font-black px-5 h-12 rounded-lg gap-2",
                       isS1 ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700")}
                   >
                     Next <ChevronRight className="w-5 h-5" />
@@ -539,9 +673,9 @@ export default function AssessmentPage() {
                         i === currentIdx
                           ? "bg-white text-black border-white"
                           : answers[q.id]
-                          ? isS1 ? "bg-blue-600/10 border-blue-600/40 text-blue-400"
-                                 : "bg-purple-600/10 border-purple-600/40 text-purple-400"
-                          : "bg-black/40 border-slate-800 text-slate-600 hover:border-slate-700"
+                            ? isS1 ? "bg-blue-600/10 border-blue-600/40 text-blue-400"
+                              : "bg-purple-600/10 border-purple-600/40 text-purple-400"
+                            : "bg-black/40 border-slate-800 text-slate-600 hover:border-slate-700"
                       )}
                     >
                       {i + 1}
@@ -555,7 +689,7 @@ export default function AssessmentPage() {
               </Card>
 
               {/* Integrity */}
-              <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 flex items-center gap-3">
+              <div className="p-4 bg-amber-500/5 rounded-lg border border-amber-500/10 flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                 <p className="text-sm font-bold text-amber-500">{warnings} / 3 Violations</p>
               </div>

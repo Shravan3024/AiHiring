@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-console.log("🚀 Initializing Mask Polymers Backend...");
+console.log("🚀 Initializing AI Hiring System Backend...");
 
 const app = require("./app");
 const { sequelize } = require("./config/db");

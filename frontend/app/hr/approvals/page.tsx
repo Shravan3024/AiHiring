@@ -70,7 +70,7 @@ export default function HRApprovalsPage() {
               ))}
             </div>
           ) : pendingApprovals.length === 0 ? (
-            <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+            <div className="text-center py-20 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
               <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-6 h-6 text-emerald-500" />
               </div>

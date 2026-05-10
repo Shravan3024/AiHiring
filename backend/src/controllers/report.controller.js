@@ -13,27 +13,27 @@ const {
 //  COLOUR PALETTE  (white-theme, no emojis)
 // ─────────────────────────────────────────────────────────────────
 const C = {
-  accent:  '#1e293b',   // Professional dark slate/navy
+  accent: '#1e293b',   // Professional dark slate/navy
   accentL: '#f1f5f9',   // Very light slate for backgrounds
-  green:   '#166534',   // Deep green for success/positive
-  greenL:  '#f0fdf4',   // Light green
-  red:     '#991b1b',   // Deep red for flags/warnings
-  redL:    '#fef2f2',   // Light red
-  amber:   '#9a3412',   // Amber/burnt orange
-  amberL:  '#fff7ed',   // Light amber
-  gray:    '#475569',   // Slate gray
-  muted:   '#64748b',   // Lighter slate
-  border:  '#cbd5e1',   // Borders
+  green: '#166534',   // Deep green for success/positive
+  greenL: '#f0fdf4',   // Light green
+  red: '#991b1b',   // Deep red for flags/warnings
+  redL: '#fef2f2',   // Light red
+  amber: '#9a3412',   // Amber/burnt orange
+  amberL: '#fff7ed',   // Light amber
+  gray: '#475569',   // Slate gray
+  muted: '#64748b',   // Lighter slate
+  border: '#cbd5e1',   // Borders
   borderL: '#e2e8f0',   // Light borders
-  text:    '#0f172a',   // Almost black
+  text: '#0f172a',   // Almost black
   subtext: '#334155',   // Dark gray
-  white:   '#ffffff',
-  light:   '#f8fafc',
+  white: '#ffffff',
+  light: '#f8fafc',
   divider: '#e2e8f0',
 };
 
-const PAGE_W  = 595.28;   // A4 width  (pts)
-const MARGIN  = 45;
+const PAGE_W = 595.28;   // A4 width  (pts)
+const MARGIN = 45;
 const CONTENT = PAGE_W - MARGIN * 2;   // 505.28
 
 // ─────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ function drawHeader(doc, reportType, candidateName, appId) {
 
   // Company name
   doc.fillColor(C.accent).font('Times-Bold').fontSize(8)
-    .text('MASK POLYMERS INDUSTRIAL', MARGIN + 8, 14, { characterSpacing: 1.5 });
+    .text('AI Hiring System INDUSTRIAL', MARGIN + 8, 14, { characterSpacing: 1.5 });
 
   // Report type
   doc.fillColor(C.text).font('Times-Bold').fontSize(17)
@@ -70,7 +70,7 @@ function drawFooter(doc) {
   doc.rect(0, y - 4, PAGE_W, 1).fill(C.border);
   doc.rect(0, y - 5, 5, 33).fill(C.accent);
   doc.fillColor(C.muted).font('Times-Roman').fontSize(7)
-    .text('MASK POLYMERS INDUSTRIAL  |  AI Recruitment Platform  |  Strictly Confidential',
+    .text('AI Hiring System INDUSTRIAL  |  AI Recruitment Platform  |  Strictly Confidential',
       MARGIN + 8, y + 2, { align: 'left', width: CONTENT - 80 });
   doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
     .text(`Page ${doc.bufferedPageRange ? doc.bufferedPageRange().start + doc.bufferedPageRange().count : ''}`,
@@ -96,8 +96,8 @@ function rule(doc) {
 
 /** Score card — clean white box */
 function scoreCard(doc, x, y, w, label, value, total = 100) {
-  const pct  = Math.min(100, Math.max(0, Number(value) || 0));
-  const col  = pct >= 70 ? C.green  : pct >= 50 ? C.amber  : C.red;
+  const pct = Math.min(100, Math.max(0, Number(value) || 0));
+  const col = pct >= 70 ? C.green : pct >= 50 ? C.amber : C.red;
   const colL = pct >= 70 ? C.greenL : pct >= 50 ? C.amberL : C.redL;
 
   // Card border
@@ -162,15 +162,15 @@ exports.generateCandidateReport = async (req, res) => {
     // 1. Fetch Questions from ALL potential banks
     let questions = [];
     const questionIds = attempt?.metadata?.question_ids || [];
-    
+
     if (questionIds.length > 0) {
       const { MCQQuestion, InterviewQuestionBank } = require('../models');
-      
+
       // Fetch from Technical Bank
-      const techQ = await TechnicalQuestionBank.findAll({ 
-        where: { questionId: questionIds } 
+      const techQ = await TechnicalQuestionBank.findAll({
+        where: { questionId: questionIds }
       });
-      
+
       // Fetch from MCQ Bank (numeric IDs)
       const mcqIds = questionIds.filter(id => !isNaN(parseInt(id, 10)));
       let mcqQ = [];
@@ -179,12 +179,12 @@ exports.generateCandidateReport = async (req, res) => {
           where: { id: { [Op.in]: mcqIds.map(id => parseInt(id, 10)) } }
         });
       }
-      
+
       // Fetch from Interview Bank
       const intQ = await InterviewQuestionBank.findAll({
         where: { questionId: { [Op.in]: questionIds } }
       });
-      
+
       // Merge and standardize
       const allFetched = [
         ...techQ.map(q => ({
@@ -212,9 +212,9 @@ exports.generateCandidateReport = async (req, res) => {
           keywords: q.keywords
         }))
       ];
-      
+
       // Sort to match metadata order
-      questions = allFetched.sort((a, b) => 
+      questions = allFetched.sort((a, b) =>
         questionIds.indexOf(String(a.questionId)) - questionIds.indexOf(String(b.questionId))
       );
     }
@@ -224,13 +224,13 @@ exports.generateCandidateReport = async (req, res) => {
     const getAnswer = (qid) =>
       rawAnswers[qid] || rawAnswers[String(qid)] || rawAnswers[qid?.toLowerCase?.()] || null;
 
-    const candidateName = application.Candidate?.User?.name  || 'N/A';
-    const candidateEmail= application.Candidate?.User?.email || 'N/A';
-    const jobTitle      = application.Job?.title             || 'N/A';
-    const techScore     = application.technical_score        || 0;
-    const resumeScore   = application.resume_score           || 0;
-    const overallScore  = application.overall_score          || 0;
-    const integrityPct  = Math.max(0, 100 - (malpractice.length * 10));
+    const candidateName = application.Candidate?.User?.name || 'N/A';
+    const candidateEmail = application.Candidate?.User?.email || 'N/A';
+    const jobTitle = application.Job?.title || 'N/A';
+    const techScore = application.technical_score || 0;
+    const resumeScore = application.resume_score || 0;
+    const overallScore = application.overall_score || 0;
+    const integrityPct = Math.max(0, 100 - (malpractice.length * 10));
 
     // ── Init PDF ──────────────────────────────────────────
     const doc = new PDFDocument({ margin: MARGIN, size: 'A4', bufferPages: true, autoFirstPage: true });
@@ -272,7 +272,7 @@ exports.generateCandidateReport = async (req, res) => {
     px = pill(doc, application.status.replace(/_/g, ' '), px, py, C.accentL, C.accent);
     px = pill(doc, `Technical  ${techScore}%`, px, py,
       techScore >= 60 ? C.greenL : C.redL, techScore >= 60 ? C.green : C.red);
-    px = pill(doc, `Resume  ${resumeScore}%`,  px, py,
+    px = pill(doc, `Resume  ${resumeScore}%`, px, py,
       resumeScore >= 60 ? C.greenL : C.amberL, resumeScore >= 60 ? C.green : C.amber);
     pill(doc, `Integrity  ${integrityPct}%`, px, py,
       integrityPct >= 80 ? C.greenL : C.redL, integrityPct >= 80 ? C.green : C.red);
@@ -283,11 +283,11 @@ exports.generateCandidateReport = async (req, res) => {
     // ── Score Matrix ─────────────────────────────────
     section(doc, 'Performance Score Matrix');
     const matY = doc.y;
-    const cw   = (CONTENT - 18) / 4;
-    scoreCard(doc, MARGIN,              matY, cw, 'Resume Score',    resumeScore);
-    scoreCard(doc, MARGIN + cw + 6,     matY, cw, 'Technical Score', techScore);
-    scoreCard(doc, MARGIN + (cw+6)*2,   matY, cw, 'Overall Rating',  overallScore);
-    scoreCard(doc, MARGIN + (cw+6)*3,   matY, cw, 'Integrity Score', integrityPct);
+    const cw = (CONTENT - 18) / 4;
+    scoreCard(doc, MARGIN, matY, cw, 'Resume Score', resumeScore);
+    scoreCard(doc, MARGIN + cw + 6, matY, cw, 'Technical Score', techScore);
+    scoreCard(doc, MARGIN + (cw + 6) * 2, matY, cw, 'Overall Rating', overallScore);
+    scoreCard(doc, MARGIN + (cw + 6) * 3, matY, cw, 'Integrity Score', integrityPct);
     doc.moveDown(5.5);
 
     // ── Assessment Meta ──────────────────────────────
@@ -321,7 +321,7 @@ exports.generateCandidateReport = async (req, res) => {
     // ── AI Analysis (Strengths / Weaknesses) ─────────
     if (assmAnalysis) {
       section(doc, 'AI Assessment Analysis');
-      const strengths  = Array.isArray(assmAnalysis.strengths)  ? assmAnalysis.strengths  : [];
+      const strengths = Array.isArray(assmAnalysis.strengths) ? assmAnalysis.strengths : [];
       const weaknesses = Array.isArray(assmAnalysis.weaknesses) ? assmAnalysis.weaknesses : [];
       const maxI = Math.max(strengths.length, weaknesses.length, 0);
 
@@ -340,7 +340,7 @@ exports.generateCandidateReport = async (req, res) => {
         let rowY = swY + 26;
         for (let i = 0; i < maxI; i++) {
           if (rowY > 680) { doc.addPage(); drawHeader(doc, 'TECHNICAL ASSESSMENT REPORT', candidateName, applicationId); rowY = doc.y; }
-          const s = strengths[i]  ? `+ ${strengths[i]}`  : '';
+          const s = strengths[i] ? `+ ${strengths[i]}` : '';
           const w = weaknesses[i] ? `- ${weaknesses[i]}` : '';
           const sH = s ? doc.heightOfString(s, { fontSize: 8, width: colW - 20 }) + 8 : 0;
           const wH = w ? doc.heightOfString(w, { fontSize: 8, width: colW - 20 }) + 8 : 0;
@@ -380,16 +380,16 @@ exports.generateCandidateReport = async (req, res) => {
       doc.moveDown(2);
 
       questions.forEach((q, idx) => {
-        const ansData        = getAnswer(q.questionId);
-        const candidateAns   = ansData?.answer_text ? String(ansData.answer_text).trim() : null;
-        const referenceAns   = q.correct_answer || q.expected_answer || null;
-        const hasAnswer      = !!candidateAns;
-        const isCorrect      = (referenceAns && hasAnswer)
+        const ansData = getAnswer(q.questionId);
+        const candidateAns = ansData?.answer_text ? String(ansData.answer_text).trim() : null;
+        const referenceAns = q.correct_answer || q.expected_answer || null;
+        const hasAnswer = !!candidateAns;
+        const isCorrect = (referenceAns && hasAnswer)
           ? candidateAns.toLowerCase() === referenceAns.trim().toLowerCase()
           : null;
 
         const qType = (q.section_type || q.questionType || 'TECHNICAL').toUpperCase();
-        const diff  = (q.difficulty || 'MEDIUM').toUpperCase();
+        const diff = (q.difficulty || 'MEDIUM').toUpperCase();
 
         // Ensure enough space; add page if tight
         const estimatedH = 80
@@ -415,9 +415,9 @@ exports.generateCandidateReport = async (req, res) => {
         // Correct / Incorrect badge (right side)
         if (isCorrect !== null) {
           const badge = isCorrect ? 'CORRECT' : 'INCORRECT';
-          const bCol  = isCorrect ? C.green    : C.red;
-          const bColL = isCorrect ? C.greenL   : C.redL;
-          const bW    = doc.widthOfString(badge, { fontSize: 7 }) + 18;
+          const bCol = isCorrect ? C.green : C.red;
+          const bColL = isCorrect ? C.greenL : C.redL;
+          const bW = doc.widthOfString(badge, { fontSize: 7 }) + 18;
           doc.rect(MARGIN + CONTENT - bW, qStartY + 4, bW, 13).fill(bColL).stroke(bCol);
           doc.fillColor(bCol).font('Times-Bold').fontSize(7)
             .text(badge, MARGIN + CONTENT - bW + 5, qStartY + 7, { width: bW - 10 });
@@ -478,18 +478,18 @@ exports.generateCandidateReport = async (req, res) => {
     const iY = doc.y;
     const iW = (CONTENT - 12) / 3;
     // Integrity score card
-    scoreCard(doc, MARGIN,      iY, iW, 'Integrity Score',   integrityPct);
-    scoreCard(doc, MARGIN+iW+6, iY, iW, 'Violations Logged', malpractice.length, 10,
+    scoreCard(doc, MARGIN, iY, iW, 'Integrity Score', integrityPct);
+    scoreCard(doc, MARGIN + iW + 6, iY, iW, 'Violations Logged', malpractice.length, 10,
       malpractice.length === 0 ? C.green : C.red);
     // Risk level card
     const riskLabel = integrityPct >= 90 ? 'LOW RISK'
       : integrityPct >= 70 ? 'MODERATE RISK' : 'HIGH RISK';
-    const riskCol   = integrityPct >= 90 ? C.green : integrityPct >= 70 ? C.amber : C.red;
-    const riskColL  = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
-    doc.rect(MARGIN + (iW+6)*2, iY, iW, 64).fill(riskColL).stroke(riskCol);
-    doc.rect(MARGIN + (iW+6)*2, iY, iW, 3).fill(riskCol);
-    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10, { characterSpacing: 0.5 });
-    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
+    const riskCol = integrityPct >= 90 ? C.green : integrityPct >= 70 ? C.amber : C.red;
+    const riskColL = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
+    doc.rect(MARGIN + (iW + 6) * 2, iY, iW, 64).fill(riskColL).stroke(riskCol);
+    doc.rect(MARGIN + (iW + 6) * 2, iY, iW, 3).fill(riskCol);
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW + 6) * 2 + 8, iY + 10, { characterSpacing: 0.5 });
+    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW + 6) * 2 + 8, iY + 24);
 
     doc.y = iY + 74;
 
@@ -505,20 +505,20 @@ exports.generateCandidateReport = async (req, res) => {
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
       doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
-        .text('#',      MARGIN + 6,   hY + 5)
-        .text('EVENT TYPE', MARGIN + 36,  hY + 5)
-        .text('SEVERITY',   MARGIN + 236, hY + 5)
-        .text('TIMESTAMP',  MARGIN + 310, hY + 5)
-        .text('DETECTOR',   MARGIN + 430, hY + 5);
+        .text('#', MARGIN + 6, hY + 5)
+        .text('EVENT TYPE', MARGIN + 36, hY + 5)
+        .text('SEVERITY', MARGIN + 236, hY + 5)
+        .text('TIMESTAMP', MARGIN + 310, hY + 5)
+        .text('DETECTOR', MARGIN + 430, hY + 5);
       doc.y = hY + 18;
 
       malpractice.forEach((evt, i) => {
         if (doc.y > 690) doc.addPage();
-        const eY  = doc.y;
+        const eY = doc.y;
         const sev = evt.severity || 1;
         const col = sev >= 7 ? C.red : sev >= 4 ? C.amber : C.gray;
         doc.rect(MARGIN, eY, CONTENT, 18).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i + 1}`, MARGIN + 6, eY + 5);
         doc.fillColor(col).font('Times-Bold').fontSize(8)
           .text((evt.type || 'UNKNOWN').replace(/_/g, ' '), MARGIN + 36, eY + 5, { width: 190 });
         doc.fillColor(col).font('Times-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
@@ -539,16 +539,16 @@ exports.generateCandidateReport = async (req, res) => {
       const hY = doc.y;
       doc.rect(MARGIN, hY, CONTENT, 16).fill(C.accentL).stroke(C.border);
       doc.fillColor(C.accent).font('Times-Bold').fontSize(7)
-        .text('STATUS CHANGE',  MARGIN + 10,  hY + 5)
-        .text('FROM',           MARGIN + 200, hY + 5)
-        .text('DATE & TIME',    MARGIN + 340, hY + 5)
-        .text('NOTE',           MARGIN + 440, hY + 5);
+        .text('STATUS CHANGE', MARGIN + 10, hY + 5)
+        .text('FROM', MARGIN + 200, hY + 5)
+        .text('DATE & TIME', MARGIN + 340, hY + 5)
+        .text('NOTE', MARGIN + 440, hY + 5);
       doc.y = hY + 18;
 
       auditLogs.forEach((log, i) => {
         if (doc.y > 700) doc.addPage();
         const lY = doc.y;
-        const h  = Math.max(18, log.reason
+        const h = Math.max(18, log.reason
           ? doc.heightOfString(log.reason, { fontSize: 7, width: 110 }) + 8 : 18);
         doc.rect(MARGIN, lY, CONTENT, h).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
         doc.fillColor(C.accent).font('Times-Bold').fontSize(7.5)
@@ -598,12 +598,12 @@ exports.generateInterviewReport = async (req, res) => {
 
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
-    const candidateName  = application.Candidate?.User?.name  || 'N/A';
+    const candidateName = application.Candidate?.User?.name || 'N/A';
     const candidateEmail = application.Candidate?.User?.email || 'N/A';
-    const jobTitle       = application.Job?.title             || 'N/A';
+    const jobTitle = application.Job?.title || 'N/A';
     const interviewScore = application.interview_score || analysis?.overall_score || 0;
-    const integrityPct   = Math.max(0, 100 - (malpractice.length * 10));
-    const questions      = session?.questions_asked || [];
+    const integrityPct = Math.max(0, 100 - (malpractice.length * 10));
+    const questions = session?.questions_asked || [];
 
     const doc = new PDFDocument({ margin: MARGIN, size: 'A4', bufferPages: true, autoFirstPage: true });
     res.setHeader('Content-Type', 'application/pdf');
@@ -652,19 +652,19 @@ exports.generateInterviewReport = async (req, res) => {
     section(doc, 'Multi-Dimensional Score Matrix');
     if (analysis) {
       const matY = doc.y;
-      const cw   = (CONTENT - 24) / 5;
-      scoreCard(doc, MARGIN,              matY, cw, 'Overall',        analysis.overall_score       || 0);
-      scoreCard(doc, MARGIN + (cw+6)*1,   matY, cw, 'Technical',      analysis.technical_knowledge_score || 0);
-      scoreCard(doc, MARGIN + (cw+6)*2,   matY, cw, 'Communication',  analysis.communication_score || 0);
-      scoreCard(doc, MARGIN + (cw+6)*3,   matY, cw, 'Soft Skills',    analysis.soft_skills_score   || 0);
-      scoreCard(doc, MARGIN + (cw+6)*4,   matY, cw, 'Cultural Fit',   analysis.cultural_fit_score  || 0);
+      const cw = (CONTENT - 24) / 5;
+      scoreCard(doc, MARGIN, matY, cw, 'Overall', analysis.overall_score || 0);
+      scoreCard(doc, MARGIN + (cw + 6) * 1, matY, cw, 'Technical', analysis.technical_knowledge_score || 0);
+      scoreCard(doc, MARGIN + (cw + 6) * 2, matY, cw, 'Communication', analysis.communication_score || 0);
+      scoreCard(doc, MARGIN + (cw + 6) * 3, matY, cw, 'Soft Skills', analysis.soft_skills_score || 0);
+      scoreCard(doc, MARGIN + (cw + 6) * 4, matY, cw, 'Cultural Fit', analysis.cultural_fit_score || 0);
       doc.moveDown(5.5);
     }
 
     // ── AI Analysis ──────────────────────────────────
     if (analysis) {
       section(doc, 'AI Interview Analysis — Strengths & Areas for Improvement');
-      const strengths  = Array.isArray(analysis.strengths)  ? analysis.strengths  : [];
+      const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : [];
       const weaknesses = Array.isArray(analysis.weaknesses) ? analysis.weaknesses : [];
       const maxI = Math.max(strengths.length, weaknesses.length, 0);
 
@@ -681,7 +681,7 @@ exports.generateInterviewReport = async (req, res) => {
         let rowY = swY + 26;
         for (let i = 0; i < maxI; i++) {
           if (rowY > 680) { doc.addPage(); drawHeader(doc, 'AI VIDEO INTERVIEW REPORT', candidateName, applicationId); rowY = doc.y; }
-          const s = strengths[i]  ? `+ ${strengths[i]}`  : '';
+          const s = strengths[i] ? `+ ${strengths[i]}` : '';
           const w = weaknesses[i] ? `- ${weaknesses[i]}` : '';
           const sH = s ? doc.heightOfString(s, { fontSize: 8, width: colW - 20 }) + 8 : 0;
           const wH = w ? doc.heightOfString(w, { fontSize: 8, width: colW - 20 }) + 8 : 0;
@@ -697,7 +697,7 @@ exports.generateInterviewReport = async (req, res) => {
 
       // Behavioral flags
       const greenFlags = Array.isArray(analysis.green_flags) ? analysis.green_flags : [];
-      const redFlags   = Array.isArray(analysis.red_flags)   ? analysis.red_flags   : [];
+      const redFlags = Array.isArray(analysis.red_flags) ? analysis.red_flags : [];
       if (greenFlags.length > 0 || redFlags.length > 0) {
         section(doc, 'Behavioral Flag Analysis');
         greenFlags.forEach(f => {
@@ -738,15 +738,15 @@ exports.generateInterviewReport = async (req, res) => {
       questions.forEach((qa, idx) => {
         const questionText = qa.question_text || qa.question || `Question ${idx + 1}`;
         const responseText = qa.response_text || qa.answer || null;
-        const hasResponse  = !!(responseText);
-        const respTime     = qa.response_duration_seconds || 0;
-        const wordCount    = qa.analysis?.word_count || 0;
-        const confScore    = qa.analysis?.confidence ? Math.round(qa.analysis.confidence * 100) : null;
-        const relScore     = qa.analysis?.relevance  ? Math.round(qa.analysis.relevance  * 100) : null;
-        const fillerCount  = qa.analysis?.filler_words || 0;
+        const hasResponse = !!(responseText);
+        const respTime = qa.response_duration_seconds || 0;
+        const wordCount = qa.analysis?.word_count || 0;
+        const confScore = qa.analysis?.confidence ? Math.round(qa.analysis.confidence * 100) : null;
+        const relScore = qa.analysis?.relevance ? Math.round(qa.analysis.relevance * 100) : null;
+        const fillerCount = qa.analysis?.filler_words || 0;
 
         const estH = 90
-          + doc.heightOfString(questionText,          { fontSize: 9, width: CONTENT - 20 })
+          + doc.heightOfString(questionText, { fontSize: 9, width: CONTENT - 20 })
           + (hasResponse ? doc.heightOfString(responseText, { fontSize: 8.5, width: CONTENT - 20 }) : 14);
         if (doc.y + estH > 750) {
           doc.addPage();
@@ -793,7 +793,7 @@ exports.generateInterviewReport = async (req, res) => {
         // Per-answer metrics bar
         const metrics = [
           confScore !== null ? `Confidence: ${confScore}%` : null,
-          relScore  !== null ? `Relevance: ${relScore}%`   : null,
+          relScore !== null ? `Relevance: ${relScore}%` : null,
           `Filler Words: ${fillerCount}`,
         ].filter(Boolean);
         if (metrics.length) {
@@ -819,12 +819,12 @@ exports.generateInterviewReport = async (req, res) => {
     scoreCard(doc, MARGIN + iW + 6, iY, iW, 'Violations Logged', malpractice.length, 10,
       malpractice.length === 0 ? C.green : C.red);
     const riskLabel = integrityPct >= 90 ? 'LOW RISK' : integrityPct >= 70 ? 'MODERATE RISK' : 'HIGH RISK';
-    const riskCol   = integrityPct >= 90 ? C.green : integrityPct >= 70 ? C.amber : C.red;
-    const riskColL  = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
-    doc.rect(MARGIN + (iW+6)*2, iY, iW, 64).fill(riskColL).stroke(riskCol);
-    doc.rect(MARGIN + (iW+6)*2, iY, iW, 3).fill(riskCol);
-    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW+6)*2 + 8, iY + 10);
-    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW+6)*2 + 8, iY + 24);
+    const riskCol = integrityPct >= 90 ? C.green : integrityPct >= 70 ? C.amber : C.red;
+    const riskColL = integrityPct >= 90 ? C.greenL : integrityPct >= 70 ? C.amberL : C.redL;
+    doc.rect(MARGIN + (iW + 6) * 2, iY, iW, 64).fill(riskColL).stroke(riskCol);
+    doc.rect(MARGIN + (iW + 6) * 2, iY, iW, 3).fill(riskCol);
+    doc.fillColor(C.muted).font('Times-Roman').fontSize(7).text('AUTOMATED RISK STATUS', MARGIN + (iW + 6) * 2 + 8, iY + 10);
+    doc.fillColor(riskCol).font('Times-Bold').fontSize(13).text(riskLabel, MARGIN + (iW + 6) * 2 + 8, iY + 24);
     doc.y = iY + 74;
 
     section(doc, 'Malpractice Event Log');
@@ -847,7 +847,7 @@ exports.generateInterviewReport = async (req, res) => {
         const sev = evt.severity || 1;
         const col = sev >= 7 ? C.red : sev >= 4 ? C.amber : C.gray;
         doc.rect(MARGIN, eY, CONTENT, 18).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
-        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i+1}`, MARGIN + 6, eY + 5);
+        doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(`${i + 1}`, MARGIN + 6, eY + 5);
         doc.fillColor(col).font('Times-Bold').fontSize(8)
           .text((evt.type || 'UNKNOWN').replace(/_/g, ' '), MARGIN + 36, eY + 5, { width: 190 });
         doc.fillColor(col).font('Times-Bold').fontSize(8).text(`${sev}/10`, MARGIN + 236, eY + 5);
@@ -872,7 +872,7 @@ exports.generateInterviewReport = async (req, res) => {
       auditLogs.forEach((log, i) => {
         if (doc.y > 700) doc.addPage();
         const lY = doc.y;
-        const h  = Math.max(18, log.reason ? doc.heightOfString(log.reason, { fontSize: 7, width: 110 }) + 8 : 18);
+        const h = Math.max(18, log.reason ? doc.heightOfString(log.reason, { fontSize: 7, width: 110 }) + 8 : 18);
         doc.rect(MARGIN, lY, CONTENT, h).fill(i % 2 ? C.white : C.light).stroke(C.borderL);
         doc.fillColor(C.accent).font('Times-Bold').fontSize(7.5)
           .text(log.new_status || '-', MARGIN + 10, lY + 5, { width: 185 });
@@ -908,7 +908,7 @@ exports.generateExecutiveReport = async (req, res) => {
         include: [{ model: Candidate, include: [User] }, { model: Job }]
       }),
       InterviewAnalysis.findOne({ where: { application_id: applicationId } }),
-      InterviewSession.findOne({ 
+      InterviewSession.findOne({
         where: { application_id: applicationId },
         order: [['created_at', 'DESC']]
       })
@@ -916,7 +916,7 @@ exports.generateExecutiveReport = async (req, res) => {
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
     const name = application.Candidate?.User?.name || 'N/A';
-    const doc  = new PDFDocument({ margin: MARGIN, size: 'A4' });
+    const doc = new PDFDocument({ margin: MARGIN, size: 'A4' });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Executive_Report_${applicationId}.pdf`);
     doc.pipe(res);
@@ -938,11 +938,11 @@ exports.generateExecutiveReport = async (req, res) => {
 
     section(doc, 'Score Matrix');
     const matY = doc.y;
-    const cw   = (CONTENT - 18) / 4;
-    scoreCard(doc, MARGIN,              matY, cw, 'Assessment', application.technical_score || 0);
-    scoreCard(doc, MARGIN + cw + 6,     matY, cw, 'Interview',  application.interview_score || 0);
-    scoreCard(doc, MARGIN + (cw+6)*2,   matY, cw, 'Integrity',  application.integrity_score || 0);
-    scoreCard(doc, MARGIN + (cw+6)*3,   matY, cw, 'Success Prob',
+    const cw = (CONTENT - 18) / 4;
+    scoreCard(doc, MARGIN, matY, cw, 'Assessment', application.technical_score || 0);
+    scoreCard(doc, MARGIN + cw + 6, matY, cw, 'Interview', application.interview_score || 0);
+    scoreCard(doc, MARGIN + (cw + 6) * 2, matY, cw, 'Integrity', application.integrity_score || 0);
+    scoreCard(doc, MARGIN + (cw + 6) * 3, matY, cw, 'Success Prob',
       Math.round((application.success_probability || 0) * 100));
     doc.moveDown(5.5);
 
@@ -951,13 +951,13 @@ exports.generateExecutiveReport = async (req, res) => {
       section(doc, 'Phase 5: AI Interview Intelligence');
       infoRow(doc, 'Hire Recommendation', analysis.hire_recommendation || 'MAYBE');
       infoRow(doc, 'Rating', analysis.rating || 'N/A');
-      
+
       if (analysis.strengths && analysis.strengths.length > 0) {
         doc.moveDown(0.5);
         doc.fillColor(C.green).font('Times-Bold').fontSize(8).text('KEY STRENGTHS:', MARGIN);
         doc.fillColor(C.subtext).font('Times-Roman').fontSize(8).text(analysis.strengths.join(', '), MARGIN + 100, doc.y - 8, { width: CONTENT - 100 });
       }
-      
+
       if (analysis.weaknesses && analysis.weaknesses.length > 0) {
         doc.moveDown(0.5);
         doc.fillColor(C.red).font('Times-Bold').fontSize(8).text('AREAS OF CONCERN:', MARGIN);
@@ -977,25 +977,25 @@ exports.generateExecutiveReport = async (req, res) => {
         doc.addPage();
         drawHeader(doc, 'INTERVIEW Q&A TRANSCRIPT', name, applicationId);
         section(doc, 'Phase 5: Full Interview Interaction');
-        
+
         qa.forEach((pair, i) => {
           if (doc.y > 650) {
-             doc.addPage();
-             drawHeader(doc, 'INTERVIEW Q&A TRANSCRIPT', name, applicationId);
+            doc.addPage();
+            drawHeader(doc, 'INTERVIEW Q&A TRANSCRIPT', name, applicationId);
           }
-          
-          const questionText = pair.question_text || pair.question || `Question ${i+1}`;
-          const answerText   = pair.answer_text || pair.response_text || 'No verbal response recorded.';
-          
-          doc.fillColor(C.accent).font('Times-Bold').fontSize(8.5).text(`Q${i+1}: ${questionText}`, MARGIN);
+
+          const questionText = pair.question_text || pair.question || `Question ${i + 1}`;
+          const answerText = pair.answer_text || pair.response_text || 'No verbal response recorded.';
+
+          doc.fillColor(C.accent).font('Times-Bold').fontSize(8.5).text(`Q${i + 1}: ${questionText}`, MARGIN);
           doc.moveDown(0.2);
           doc.fillColor(C.subtext).font('Times-Roman').fontSize(8.5).text(`A: ${answerText}`, MARGIN + 12, doc.y, { width: CONTENT - 12 });
-          
+
           if (pair.relevance_score !== undefined) {
-             doc.fillColor(C.muted).font('Times-Italic').fontSize(7)
-               .text(`AI Relevance Score: ${pair.relevance_score}/10 | Logic Match: ${pair.logic_score || 'N/A'}`, MARGIN + 12, doc.y + 2);
+            doc.fillColor(C.muted).font('Times-Italic').fontSize(7)
+              .text(`AI Relevance Score: ${pair.relevance_score}/10 | Logic Match: ${pair.logic_score || 'N/A'}`, MARGIN + 12, doc.y + 2);
           }
-          
+
           doc.moveDown(1);
           rule(doc);
         });
@@ -1023,7 +1023,7 @@ exports.getReportStats = async (req, res) => {
     });
 
     const totalDownloaded = await DocumentRecord.sum('view_count');
-    
+
     // Type distribution
     const distribution = await DocumentRecord.findAll({
       attributes: ['document_type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],

@@ -52,13 +52,13 @@ const sendEmailWithRetry = async (mailOptions, retries = 3) => {
 exports.sendOTPEmail = async (to, otp) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers" <${emailUser}>`,
+      from: `"AI Hiring System" <${emailUser}>`,
       to,
-      subject: "Your Mask Polymers verification code",
+      subject: "Your AI Hiring System verification code",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f9fafb;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
           <div style="background:#2563eb;padding:28px 32px;text-align:center;">
-            <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:-0.5px;">Mask Polymers</h1>
+            <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:-0.5px;">AI Hiring System</h1>
             <p style="color:#bfdbfe;margin:4px 0 0;font-size:13px;">AI-Powered Recruitment Platform</p>
           </div>
           <div style="padding:32px;">
@@ -70,7 +70,7 @@ exports.sendOTPEmail = async (to, otp) => {
             <p style="color:#9ca3af;font-size:12px;margin:0;">If you didn't create an account, you can safely ignore this email.</p>
           </div>
           <div style="background:#f3f4f6;padding:16px 32px;text-align:center;">
-            <p style="color:#9ca3af;font-size:12px;margin:0;">&copy; ${new Date().getFullYear()} Mask Polymers. All rights reserved.</p>
+            <p style="color:#9ca3af;font-size:12px;margin:0;">&copy; ${new Date().getFullYear()} AI Hiring System. All rights reserved.</p>
           </div>
         </div>
       `,
@@ -84,9 +84,9 @@ exports.sendOTPEmail = async (to, otp) => {
 exports.sendOfferLetterEmail = async (to, name, position, salary, joiningDate) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers HR" <${emailUser}>`,
+      from: `"AI Hiring System HR" <${emailUser}>`,
       to,
-      subject: `Job Offer: ${position} at Mask Polymers`,
+      subject: `Job Offer: ${position} at AI Hiring System`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding:40px;text-align:center;color:#fff;">
@@ -95,7 +95,7 @@ exports.sendOfferLetterEmail = async (to, name, position, salary, joiningDate) =
           </div>
           <div style="padding:40px;">
             <h2 style="color:#111827;margin:0 0 20px;font-size:22px;">Hello ${name},</h2>
-            <p style="color:#374151;font-size:16px;line-height:1.6;">We are thrilled to formally offer you the position of <strong>${position}</strong> at Mask Polymers.</p>
+            <p style="color:#374151;font-size:16px;line-height:1.6;">We are thrilled to formally offer you the position of <strong>${position}</strong> at AI Hiring System.</p>
             
             <div style="background:#f9fafb;padding:24px;border-radius:12px;margin:24px 0;border:1px solid #f3f4f6;">
               <h3 style="margin:0 0 16px;font-size:12px;text-transform:uppercase;color:#6b7280;letter-spacing:1.5px;font-weight:700;">Offer Details</h3>
@@ -123,7 +123,7 @@ exports.sendOfferLetterEmail = async (to, name, position, salary, joiningDate) =
 
             <p style="color:#9ca3af;font-size:13px;text-align:center;">This offer is subject to a background verification process.</p>
             
-            <p style="color:#6b7280;font-size:14px;margin-top:40px;border-top:1px solid #f3f4f6;padding-top:20px;">Best regards,<br/><strong>The Mask Polymers HR Team</strong></p>
+            <p style="color:#6b7280;font-size:14px;margin-top:40px;border-top:1px solid #f3f4f6;padding-top:20px;">Best regards,<br/><strong>The AI Hiring System HR Team</strong></p>
           </div>
         </div>
       `,
@@ -137,20 +137,20 @@ exports.sendOfferLetterEmail = async (to, name, position, salary, joiningDate) =
 exports.sendRejectionEmail = async (to, name, jobTitle) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers HR" <${emailUser}>`,
+      from: `"AI Hiring System HR" <${emailUser}>`,
       to,
-      subject: `Application Update - ${jobTitle} - Mask Polymers`,
+      subject: `Application Update - ${jobTitle} - AI Hiring System`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="text-align:center;margin-bottom:24px;">
             <div style="width:48px;height:48px;background:#f3f4f6;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#9ca3af;font-size:24px;">ℹ️</div>
           </div>
           <h2 style="color:#111827;font-size:18px;margin-bottom:16px;">Hello ${name},</h2>
-          <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:16px;">Thank you for your interest in the <strong>${jobTitle}</strong> position at Mask Polymers.</p>
+          <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:16px;">Thank you for your interest in the <strong>${jobTitle}</strong> position at AI Hiring System.</p>
           <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:16px;">After carefully reviewing your application and assessment results, our team has determined that we will not be moving forward with your candidacy at this time.</p>
           <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:24px;">We appreciate the time you took to apply and wish you the best of luck in your future endeavors.</p>
           <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0;" />
-          <p style="color:#9ca3af;font-size:12px;text-align:center;">This is an automated notification from the Mask Polymers Recruitment Platform.</p>
+          <p style="color:#9ca3af;font-size:12px;text-align:center;">This is an automated notification from the AI Hiring System Recruitment Platform.</p>
         </div>
       `,
     });
@@ -163,7 +163,7 @@ exports.sendRejectionEmail = async (to, name, jobTitle) => {
 exports.sendRecommendationEmail = async (to, name, jobTitle, score) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers AI" <${emailUser}>`,
+      from: `"AI Hiring System AI" <${emailUser}>`,
       to,
       subject: `Excellent News! Next Steps for ${jobTitle}`,
       html: `
@@ -171,7 +171,7 @@ exports.sendRecommendationEmail = async (to, name, jobTitle, score) => {
           <h2 style="color:#111827;font-size:18px;">Hello ${name},</h2>
           <p style="color:#374151;font-size:14px;line-height:1.5;">Congratulations! Your application for the <strong>${jobTitle}</strong> position has been flagged as <strong>Strongly Recommended</strong> by our AI evaluation system with a score of ${score}/100.</p>
           <p style="color:#374151;font-size:14px;line-height:1.5;">Our HR team will be in touch with you shortly to discuss the next steps in the hiring process.</p>
-          <p style="color:#374151;font-size:14px;line-height:1.5;">Best regards,<br/>The Mask Polymers Recruitment Team</p>
+          <p style="color:#374151;font-size:14px;line-height:1.5;">Best regards,<br/>The AI Hiring System Recruitment Team</p>
         </div>
       `,
     });
@@ -184,9 +184,9 @@ exports.sendRecommendationEmail = async (to, name, jobTitle, score) => {
 exports.sendNotificationEmail = async (to, title, message, actionUrl) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers" <${emailUser}>`,
+      from: `"AI Hiring System" <${emailUser}>`,
       to,
-      subject: `Mask Polymers: ${title}`,
+      subject: `AI Hiring System: ${title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
           <div style="background-color: #2563eb; color: white; padding: 20px; text-align: center;">
@@ -200,7 +200,7 @@ exports.sendNotificationEmail = async (to, title, message, actionUrl) => {
             </div>` : ''}
           </div>
           <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #eee;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">You received this notification because of your application with Mask Polymers.</p>
+            <p style="margin: 0; color: #9ca3af; font-size: 12px;">You received this notification because of your application with AI Hiring System.</p>
           </div>
         </div>
       `
@@ -213,9 +213,9 @@ exports.sendNotificationEmail = async (to, title, message, actionUrl) => {
 exports.sendOfferConfirmationEmail = async (to, name, decision, jobTitle, content) => {
   try {
     await sendEmailWithRetry({
-      from: `"Mask Polymers" <${emailUser}>`,
+      from: `"AI Hiring System" <${emailUser}>`,
       to,
-      subject: `Confirmation: Offer ${decision} - ${jobTitle} - Mask Polymers`,
+      subject: `Confirmation: Offer ${decision} - ${jobTitle} - AI Hiring System`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fff;">
           <div style="background: ${decision === 'ACCEPTED' ? '#10b981' : '#ef4444'}; color: white; padding: 40px; text-align: center;">
@@ -225,7 +225,7 @@ exports.sendOfferConfirmationEmail = async (to, name, decision, jobTitle, conten
           <div style="padding: 40px;">
             <p style="font-size: 16px; color: #1f2937;">Hello ${name},</p>
             <p style="font-size: 15px; color: #4b5563; line-height: 1.6;">
-              This email serves as formal confirmation that you have <strong>${decision.toLowerCase()}</strong> the job offer for the position of <strong>${jobTitle}</strong> at Mask Polymers.
+              This email serves as formal confirmation that you have <strong>${decision.toLowerCase()}</strong> the job offer for the position of <strong>${jobTitle}</strong> at AI Hiring System.
             </p>
             
             <div style="margin-top: 32px; padding: 24px; border: 1px solid #f3f4f6; border-radius: 12px; background: #f9fafb;">
@@ -240,7 +240,7 @@ exports.sendOfferConfirmationEmail = async (to, name, decision, jobTitle, conten
             </p>
           </div>
           <div style="background-color: #f3f4f6; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px;">
-            &copy; ${new Date().getFullYear()} Mask Polymers. All rights reserved.
+            &copy; ${new Date().getFullYear()} AI Hiring System. All rights reserved.
           </div>
         </div>
       `

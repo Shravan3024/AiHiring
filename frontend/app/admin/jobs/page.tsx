@@ -168,14 +168,14 @@ export default function AdminJobsPage() {
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                  <Input 
                     placeholder="Filter positions..." 
-                    className="h-12 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
+                    className="h-12 pl-10 pr-4 w-72 bg-white shadow-sm border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-blue-500/50"
                     value={search} 
                     onChange={(e) => setSearch(e.target.value)} 
                  />
               </div>
               <Button 
                 onClick={openCreate} 
-                className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 group transition-all"
+                className="h-12 px-6 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 group transition-all"
               >
                 <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> 
                 Deploy Position
@@ -187,7 +187,7 @@ export default function AdminJobsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="h-64 bg-white shadow-sm border border-slate-200 rounded-[2rem] animate-pulse" />
+              <div key={i} className="h-64 bg-white shadow-sm border border-slate-200 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : (
@@ -195,7 +195,7 @@ export default function AdminJobsPage() {
             {filtered.map((job: Job) => (
               <div 
                 key={job._id} 
-                className="group relative bg-white shadow-sm border border-slate-200 rounded-[2.5rem] p-7 backdrop-blur-md hover:bg-slate-100 transition-all duration-500 hover:-translate-y-1"
+                className="group relative bg-white shadow-sm border border-slate-200 rounded-lg p-7 backdrop-blur-md hover:bg-slate-100 transition-all duration-500 hover:-translate-y-1"
               >
                 {/* Status Indicator */}
                 <div className="absolute top-7 right-7">
@@ -210,7 +210,7 @@ export default function AdminJobsPage() {
 
                 <div className="space-y-6">
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center border border-slate-200 shrink-0">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center border border-slate-200 shrink-0">
                          <Briefcase className="w-5 h-5 text-blue-400" />
                       </div>
                       <div className="min-w-0 pr-16">
@@ -289,9 +289,9 @@ export default function AdminJobsPage() {
 
         {/* DIALOG REDESIGN */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-white border-slate-200 text-slate-900 rounded-[2.5rem] p-0 custom-scrollbar shadow-2xl">
+          <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-white border-slate-200 text-slate-900 rounded-lg p-0 custom-scrollbar shadow-sm">
             <DialogHeader className="p-8 bg-slate-50 border-b border-slate-200 space-y-2">
-               <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+               <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
                   <Plus className="w-6 h-6 text-blue-400" />
                </div>
                <DialogTitle className="text-2xl font-bold tracking-tight">{editing ? "Sync Position" : "Deploy Position"}</DialogTitle>
@@ -380,7 +380,7 @@ export default function AdminJobsPage() {
                         </button>
                       </div>
                     ))}
-                    {form.skillsList.length === 0 && <div className="col-span-2 py-10 border border-dashed border-slate-200 rounded-2xl text-center opacity-20 italic text-xs uppercase tracking-widest font-black">Weight Matrix Empty</div>}
+                    {form.skillsList.length === 0 && <div className="col-span-2 py-10 border border-dashed border-slate-200 rounded-lg text-center opacity-20 italic text-xs uppercase tracking-widest font-black">Weight Matrix Empty</div>}
                  </div>
               </div>
 
@@ -391,7 +391,7 @@ export default function AdminJobsPage() {
                  </div>
                  
                  <Accordion type="single" collapsible className="space-y-3">
-                    <AccordionItem value="technical" className="border-0 bg-white shadow-sm rounded-2xl px-6">
+                    <AccordionItem value="technical" className="border-0 bg-white shadow-sm rounded-lg px-6">
                        <AccordionTrigger className="hover:no-underline py-4">
                           <span className="text-xs font-bold text-slate-900 tracking-tight">Technical Knowledge Evaluation ({form.technicalQuestions?.length || 0})</span>
                        </AccordionTrigger>
@@ -426,7 +426,7 @@ export default function AdminJobsPage() {
                        </AccordionContent>
                     </AccordionItem>
 
-                    <AccordionItem value="interview" className="border-0 bg-white shadow-sm rounded-2xl px-6">
+                    <AccordionItem value="interview" className="border-0 bg-white shadow-sm rounded-lg px-6">
                        <AccordionTrigger className="hover:no-underline py-4">
                           <span className="text-xs font-bold text-slate-900 tracking-tight">AI Interview Prompt Engineering ({form.interviewQuestions?.length || 0})</span>
                        </AccordionTrigger>
@@ -472,7 +472,7 @@ export default function AdminJobsPage() {
               <Button variant="ghost" onClick={() => setOpen(false)} className="text-slate-500 font-bold hover:bg-white shadow-sm">Cancel</Button>
               <Button 
                 onClick={handleSubmit} 
-                className="px-10 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl shadow-blue-500/20"
+                className="px-10 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-lg shadow-xl shadow-blue-500/20"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {editing ? "SYNC ARCHITECTURE" : "DEPLOY POSITION"}

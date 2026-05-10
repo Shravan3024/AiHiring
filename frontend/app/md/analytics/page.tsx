@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
       <div className="max-w-[1600px] mx-auto space-y-8 p-6">
 
         {/* Header */}
-        <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white border border-slate-100 rounded-lg shadow-sm px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Neural Analytics</h1>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">
@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
                   <p className="text-[9px] text-slate-400 mt-1">Scores will appear after candidates complete assessments</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={240}>
                   <BarChart data={hasScoreDist ? scoreDistMd : scoreDistribution}
                     margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
                   <p className="text-[9px] text-slate-400 mt-1">Decisions appear after AI evaluations run</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={240}>
                   <PieChart>
                     <Pie data={decisionBreakdown} cx="50%" cy="50%" outerRadius={90}
                       dataKey="value" label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-8 px-4 pb-6">
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={240}>
                 <LineChart data={timelineData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />

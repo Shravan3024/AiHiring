@@ -76,7 +76,7 @@ export default function MDApplicationReview() {
       <div className="max-w-7xl mx-auto p-6 space-y-8">
 
         {/* Header */}
-        <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-8">
+        <div className="bg-white border border-slate-100 rounded-lg shadow-sm p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
               <Button variant="ghost" size="icon" onClick={() => router.back()}
@@ -84,7 +84,7 @@ export default function MDApplicationReview() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl">
+                <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center shadow-xl">
                   <User className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -128,7 +128,7 @@ export default function MDApplicationReview() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-6 py-5 space-y-5">
-                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="p-5 bg-slate-50 rounded-lg border border-slate-100">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Candidate vs Peer Average</p>
                   <div className="flex items-end gap-3">
                     <p className="text-4xl font-black text-slate-900 tabular-nums">{overallScore}%</p>
@@ -141,7 +141,7 @@ export default function MDApplicationReview() {
                       style={{ width: `${overallScore}%` }} />
                   </div>
                 </div>
-                <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                <div className="p-5 bg-blue-50/50 rounded-lg border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-800 uppercase flex items-center gap-2 mb-2">
                     <ShieldCheck className="w-3 h-3" /> Integrity Verification
                   </p>
@@ -169,7 +169,7 @@ export default function MDApplicationReview() {
         </div>
 
         {/* Final Decision Bar */}
-        <div className="bg-slate-900 text-white p-8 rounded-[2rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-slate-900 text-white p-8 rounded-lg shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight">Final Executive Decision</h2>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
@@ -180,7 +180,7 @@ export default function MDApplicationReview() {
             <Button
               size="lg"
               variant="outline"
-              className="flex-1 md:flex-none h-14 px-10 rounded-2xl border-white/20 text-white bg-white/5 hover:bg-rose-600 hover:border-rose-600 font-bold uppercase text-[11px] tracking-widest transition-all gap-2"
+              className="flex-1 md:flex-none h-14 px-10 rounded-lg border-white/20 text-white bg-white/5 hover:bg-rose-600 hover:border-rose-600 font-bold uppercase text-[11px] tracking-widest transition-all gap-2"
               onClick={() => makeDecision('REJECTED')}
               disabled={isDeciding}
             >
@@ -189,7 +189,7 @@ export default function MDApplicationReview() {
             </Button>
             <Button
               size="lg"
-              className="flex-1 md:flex-none h-14 px-10 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-[11px] tracking-widest shadow-lg shadow-blue-900/30 transition-all gap-2"
+              className="flex-1 md:flex-none h-14 px-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-[11px] tracking-widest shadow-lg shadow-blue-900/30 transition-all gap-2"
               onClick={() => makeDecision('APPROVED')}
               disabled={isDeciding}
             >

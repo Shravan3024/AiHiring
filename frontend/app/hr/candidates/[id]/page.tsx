@@ -24,11 +24,11 @@ export default function CandidateProfilePage() {
     return (
       <PanelLayout title="Candidate Intelligence" allowedRoles={["HR", "ADMIN"]}>
         <div className="space-y-4 p-8">
-          <div className="h-48 animate-pulse bg-muted/20 rounded-[2rem]" />
+          <div className="h-48 animate-pulse bg-muted/20 rounded-lg" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="h-96 animate-pulse bg-muted/20 rounded-3xl" />
-            <div className="h-96 animate-pulse bg-muted/20 rounded-3xl" />
-            <div className="h-96 animate-pulse bg-muted/20 rounded-3xl" />
+            <div className="h-96 animate-pulse bg-muted/20 rounded-lg" />
+            <div className="h-96 animate-pulse bg-muted/20 rounded-lg" />
+            <div className="h-96 animate-pulse bg-muted/20 rounded-lg" />
           </div>
         </div>
       </PanelLayout>

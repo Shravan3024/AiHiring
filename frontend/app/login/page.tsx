@@ -49,9 +49,9 @@ export default function LoginPage() {
     <div className="min-h-screen relative flex flex-col justify-center font-sans overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="/login-bg.png" 
-          alt="Industrial Background" 
+        <img
+          src="/login-bg.png"
+          alt="Industrial Background"
           className="w-full h-full object-cover scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-gray-900/60 to-black/80 backdrop-blur-[4px]" />
@@ -62,20 +62,20 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-col items-center justify-center pt-20 px-4">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center mb-4">
-            <div className="bg-white/90 p-3 rounded-2xl shadow-2xl backdrop-blur-md border border-white/50">
-              <img src="/logo.png" alt="Mask Polymers Logo" className="h-16 w-auto object-contain" />
+            <div className="bg-white/90 p-3 rounded-lg shadow-sm backdrop-blur-md border border-white/50">
+              <img src="/logo.png" alt="AI Hiring System Logo" className="h-16 w-auto object-contain" />
             </div>
           </div>
           <h2 className="text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
             Welcome Back
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300 font-medium">
-            Professional access to the Mask Polymers ecosystem.
+            Professional access to the AI Hiring System ecosystem.
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]">
-          <div className="bg-white/80 backdrop-blur-2xl py-10 px-4 shadow-2xl border border-white/30 sm:rounded-[2.5rem] sm:px-10">
+          <div className="bg-white/80 backdrop-blur-2xl py-10 px-4 shadow-sm border border-white/30 sm:rounded-lg sm:px-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="flex items-center gap-2 bg-red-50/80 backdrop-blur-sm border border-red-100 text-red-600 rounded-xl p-4 text-sm animate-shake">
@@ -163,7 +163,7 @@ export default function LoginPage() {
                     key={cred.role}
                     type="button"
                     onClick={() => { const creds = { email: cred.email, password: cred.pass }; setForm(creds); setError(""); loginMutation.mutate(creds); }}
-                    className="group relative flex flex-col items-center justify-center p-3 rounded-2xl bg-gray-50/50 border border-gray-100/50 hover:bg-white hover:shadow-xl hover:border-blue-500/50 transition-all duration-300"
+                    className="group relative flex flex-col items-center justify-center p-3 rounded-lg bg-gray-50/50 border border-gray-100/50 hover:bg-white hover:shadow-xl hover:border-blue-500/50 transition-all duration-300"
                   >
                     <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter mb-1 select-none">{cred.role}</span>
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-blue-500 transition-colors" />
@@ -177,7 +177,7 @@ export default function LoginPage() {
 
       <div className="mt-8 text-center relative z-10 pb-10 px-4">
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest drop-shadow-sm">
-          &copy; {new Date().getFullYear()} Mask Polymers Pvt. Ltd. All rights reserved.
+          &copy; {new Date().getFullYear()} AI Hiring System Pvt. Ltd. All rights reserved.
         </p>
       </div>
     </div>

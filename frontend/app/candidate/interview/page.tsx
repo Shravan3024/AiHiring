@@ -555,14 +555,14 @@ export default function CandidateInterview() {
     return (
       <div className="flex items-center justify-center min-h-[70vh]">
         <Card className="w-full max-w-xl bg-white border-none shadow-sm rounded-[40px] p-16 text-center space-y-10">
-          <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-100/50">
+          <div className="w-24 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-100/50">
              <CheckCircle className="w-12 h-12" />
           </div>
           <div className="space-y-4">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Interview Complete</h2>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Interview Complete</h2>
             <p className="text-slate-500 font-medium leading-relaxed">Your professional evaluation has been successfully recorded and shared with the hiring team.</p>
           </div>
-          <Button onClick={() => window.location.href = "/candidate"} className="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-[24px] font-black uppercase tracking-widest transition-all shadow-xl">Return to Dashboard</Button>
+          <Button onClick={() => window.location.href = "/candidate"} className="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-[24px] font-black uppercase tracking-widest transition-all shadow-sm">Return to Dashboard</Button>
         </Card>
       </div>
     );
@@ -572,10 +572,10 @@ export default function CandidateInterview() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center font-mono p-12 text-white">
          <div className="text-center">
-            <AlertOctagon className="w-24 h-24 text-red-500 mx-auto mb-8 animate-bounce" />
+            <AlertOctagon className="w-24 h-14 text-red-500 mx-auto mb-8 animate-bounce" />
             <h2 className="text-5xl font-black uppercase tracking-tighter">Isolation Breach</h2>
             <p className="text-slate-400 mt-4 font-bold uppercase tracking-widest">Interview Locked: Fullscreen is mandatory</p>
-            <Button onClick={handleFullScreen} className="mt-10 bg-white text-black font-black uppercase px-16 h-20 rounded-3xl hover:bg-slate-200 transition-all">Re-Enable Shield</Button>
+            <Button onClick={handleFullScreen} className="mt-10 bg-white text-black font-black uppercase px-16 h-12 rounded-lg hover:bg-slate-200 transition-all">Re-Enable Shield</Button>
          </div>
       </div>
     );
@@ -585,20 +585,20 @@ export default function CandidateInterview() {
     <div ref={containerRef} className="min-h-screen bg-slate-50/30">
       {!isWindowFocused && started && !completed && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
-          <div className="text-center p-12 bg-white rounded-3xl max-w-lg shadow-2xl">
-             <AlertOctagon className="w-20 h-20 text-orange-500 mx-auto mb-6 animate-pulse" />
-             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Focus Lost</h2>
+          <div className="text-center p-12 bg-white rounded-lg max-w-lg shadow-sm">
+             <AlertOctagon className="w-20 h-12 text-orange-500 mx-auto mb-6 animate-pulse" />
+             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-4">Focus Lost</h2>
              <p className="text-slate-600 font-medium mb-8">You clicked away from the interview window. This action has been logged.</p>
-             <Button onClick={() => setIsWindowFocused(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 h-12 font-bold uppercase tracking-wide">Resume</Button>
+             <Button onClick={() => setIsWindowFocused(true)} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-5 h-12 font-bold uppercase tracking-wide">Resume</Button>
           </div>
         </div>
       )}
       
       {proctoringAlert && started && !completed && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-xl">
-          <div className="text-center p-12 bg-white rounded-3xl max-w-lg shadow-2xl">
-             <AlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-6 animate-pulse" />
-             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Security Alert</h2>
+          <div className="text-center p-12 bg-white rounded-lg max-w-lg shadow-sm">
+             <AlertTriangle className="w-20 h-12 text-red-500 mx-auto mb-6 animate-pulse" />
+             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-4">Security Alert</h2>
              <p className="text-slate-600 font-medium mb-8">{proctoringAlert}</p>
              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Fix the issue to resume interview</p>
           </div>
@@ -611,11 +611,11 @@ export default function CandidateInterview() {
             <Card className="max-w-4xl w-full bg-white border-none shadow-sm rounded-[40px] overflow-hidden">
               <div className="p-16 space-y-12">
                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-blue-100">
+                    <div className="w-10 h-10 bg-blue-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-blue-100">
                        <Video className="text-white w-8 h-8" />
                     </div>
                     <div>
-                       <h2 className="text-3xl font-black text-slate-900 tracking-tight">AI Technical Interview</h2>
+                       <h2 className="text-xl font-black text-slate-900 tracking-tight">AI Technical Interview</h2>
                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Phase 5: Cognitive Evaluation</p>
                     </div>
                  </div>
@@ -625,20 +625,20 @@ export default function CandidateInterview() {
                       { label: "Duration", val: `${interviewConfig?.DURATION_MINUTES || 60}m`, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" },
                       { label: "Questions", val: `${interviewConfig?.TOTAL_QUESTIONS || 10} Units`, icon: Target, color: "text-purple-500", bg: "bg-purple-50" }
                     ].map((stat, i) => (
-                      <div key={i} className="p-8 rounded-[32px] bg-slate-50 border border-slate-50 flex items-center gap-6">
-                        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm", stat.bg, stat.color)}><stat.icon className="w-6 h-6" /></div>
+                      <div key={i} className="p-5 rounded-xl bg-slate-50 border border-slate-50 flex items-center gap-6">
+                        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shadow-sm", stat.bg, stat.color)}><stat.icon className="w-6 h-6" /></div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                          <p className="text-2xl font-black text-slate-900">{stat.val}</p>
+                          <p className="text-lg font-black text-slate-900">{stat.val}</p>
                         </div>
                       </div>
                     ))}
                  </div>
 
                   {mediaError ? (
-                    <div className="p-10 rounded-[32px] bg-red-50 border border-red-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="p-6 rounded-xl bg-red-50 border border-red-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
                           <AlertOctagon className="w-6 h-6" />
                         </div>
                         <div>
@@ -653,7 +653,7 @@ export default function CandidateInterview() {
                           ? "We need access to your camera and microphone to conduct the AI interview. Please click the camera icon in your browser address bar and select 'Allow'." 
                           : "We couldn't find a working camera or microphone on your device. Please ensure they are connected and active."}
                       </p>
-                      <Button onClick={handleStart} variant="outline" className="bg-white border-red-200 text-red-600 hover:bg-red-50 rounded-2xl h-14 px-8 font-black uppercase tracking-widest">
+                      <Button onClick={handleStart} variant="outline" className="bg-white border-red-200 text-red-600 hover:bg-red-50 rounded-lg h-14 px-5 font-black uppercase tracking-widest">
                         Try Again
                       </Button>
                     </div>
@@ -669,7 +669,7 @@ export default function CandidateInterview() {
                             "Session locking is active to prevent navigation breaches.",
                             "Exiting fullscreen mode will be logged as a strike."
                          ].map((t, i) => (
-                           <div key={i} className="flex gap-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-50">
+                           <div key={i} className="flex gap-4 p-5 bg-slate-50/50 rounded-lg border border-slate-50">
                              <span className="text-blue-600 font-black">0{i + 1}.</span>
                              <span className="text-slate-600 text-sm font-medium leading-relaxed">{t}</span>
                            </div>
@@ -678,12 +678,12 @@ export default function CandidateInterview() {
                     </div>
                   )}
 
-                 <div className="bg-slate-900 rounded-[32px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                 <div className="bg-slate-900 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
                     <div className="relative z-10 flex items-start gap-6 max-w-xl">
                        <div 
                           onClick={() => setAgreed(!agreed)}
                           className={cn(
-                             "w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all shrink-0",
+                             "w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all shrink-0",
                              agreed ? "bg-blue-600 border-blue-600" : "border-slate-700 hover:border-slate-600"
                           )}
                        >
@@ -702,7 +702,7 @@ export default function CandidateInterview() {
                              <span className="text-[10px] font-black uppercase tracking-widest">Attempt Window Closing</span>
                           </div>
                           <p className={cn(
-                             "text-2xl font-black tabular-nums",
+                             "text-lg font-black tabular-nums",
                              isExpired ? "text-rose-500" : "text-white"
                           )}>
                              {isExpired ? "EXPIRED" : new Date(interviewStatus.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -717,7 +717,7 @@ export default function CandidateInterview() {
                        disabled={!agreed || startMutation.isPending || isExpired}
                        onClick={handleStart}
                        className={cn(
-                          "relative z-10 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all shadow-2xl",
+                          "relative z-10 h-16 px-12 rounded-[24px] font-black uppercase tracking-widest transition-all shadow-sm",
                           isExpired ? "bg-rose-500 text-white cursor-not-allowed" : "bg-white hover:bg-slate-50 text-slate-900"
                        )}
                     >
@@ -729,28 +729,28 @@ export default function CandidateInterview() {
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Question Area */}
             <div className="lg:col-span-8 space-y-8">
               {questions[currentQ] && (
                 <Card className="bg-white border-none shadow-sm rounded-[40px] overflow-hidden flex flex-col min-h-[600px]">
-                  <div className="p-10 lg:p-14 border-b border-slate-50 relative">
+                  <div className="p-6 lg:p-14 border-b border-slate-50 relative">
                      <div className="flex items-center justify-between mb-8">
                         <Badge className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-lg border-none font-black text-[10px] uppercase tracking-widest">Question {currentQ + 1} of {interviewConfig?.TOTAL_QUESTIONS || 10}</Badge>
                         {timeLeft !== null && (
                            <div className="flex items-center gap-3">
                               <Clock className={cn("w-5 h-5", timeLeft < 300 ? "text-red-500 animate-pulse" : "text-slate-300")} />
-                              <span className="text-2xl font-black text-slate-900 font-mono tracking-tighter">{formatTime(timeLeft)}</span>
+                              <span className="text-lg font-black text-slate-900 font-mono tracking-tighter">{formatTime(timeLeft)}</span>
                            </div>
                         )}
                      </div>
-                     <h3 className="text-3xl font-bold text-slate-900 leading-tight">
+                     <h3 className="text-xl font-bold text-slate-900 leading-tight">
                         {questions[currentQ].question}
                      </h3>
                   </div>
 
-                  <div className="flex-1 p-10 lg:p-14 flex flex-col bg-slate-50/30">
-                     <div className="flex-1 rounded-[32px] bg-white border-2 border-slate-50 p-12 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                  <div className="flex-1 p-6 lg:p-14 flex flex-col bg-slate-50/30">
+                     <div className="flex-1 rounded-xl bg-white border-2 border-slate-50 p-12 flex flex-col items-center justify-center text-center relative overflow-hidden group">
                         {!answer ? (
                            <div className="space-y-6">
                               <div className="flex justify-center items-center gap-2 h-16">
@@ -775,7 +775,7 @@ export default function CandidateInterview() {
                            </div>
                         ) : (
                            <div className="max-w-3xl">
-                              <p className="text-slate-700 text-2xl font-medium leading-relaxed italic">
+                              <p className="text-slate-700 text-lg font-medium leading-relaxed italic">
                                  "{answer}"
                               </p>
                            </div>
@@ -791,7 +791,7 @@ export default function CandidateInterview() {
                            <Button 
                               onClick={listening ? stopSpeech : startSpeech} 
                               className={cn(
-                                 "h-20 w-20 rounded-[28px] shadow-xl transition-all duration-300 relative group",
+                                 "h-12 w-20 rounded-[28px] shadow-sm transition-all duration-300 relative group",
                                  listening ? "bg-red-500 hover:bg-red-600 text-white" : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-100"
                               )}
                            >
@@ -800,7 +800,7 @@ export default function CandidateInterview() {
                            <Button 
                               onClick={() => setAnswer("")}
                               variant="ghost"
-                              className="h-20 px-8 rounded-[28px] text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-red-500"
+                              className="h-12 px-5 rounded-[28px] text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-red-500"
                            >
                               Reset Answer
                            </Button>
@@ -808,7 +808,7 @@ export default function CandidateInterview() {
                         <Button 
                            onClick={handleSubmitAnswer}
                            disabled={isSubmitting || !answer.trim()}
-                           className="h-20 px-16 rounded-[28px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-2xl transition-all disabled:opacity-20"
+                           className="h-12 px-16 rounded-[28px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-sm transition-all disabled:opacity-20"
                         >
                            {isSubmitting ? "Syncing..." : "Submit Response"}
                         </Button>
@@ -832,11 +832,11 @@ export default function CandidateInterview() {
                  </div>
               </Card>
 
-              <Card className="bg-white border-none shadow-sm rounded-[40px] p-10 space-y-10">
+              <Card className="bg-white border-none shadow-sm rounded-[40px] p-6 space-y-10">
                  <div className="space-y-2">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Real-time Analysis</h4>
                     <div className="flex items-center justify-between">
-                       <p className="text-2xl font-bold text-slate-900">Cognitive Metrics</p>
+                       <p className="text-lg font-bold text-slate-900">Cognitive Metrics</p>
                        <Activity className="w-6 h-6 text-blue-500/50" />
                     </div>
                  </div>
@@ -845,30 +845,30 @@ export default function CandidateInterview() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-end">
                         <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Alignment</span>
-                        <span className="text-3xl font-black text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
+                        <span className="text-xl font-black text-slate-900">{currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)}%</span>
                       </div>
                       <Progress value={currentAnalysis ? Math.round(currentAnalysis.relevance * 100) : (answer ? 88 : 12)} className="h-2 bg-slate-100 [&>div]:bg-blue-600" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-100">
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sentiment</p>
                            <p className="font-bold text-slate-900">{currentEmotion || (currentAnalysis ? (currentAnalysis.sentiment > 0.6 ? "Positive" : "Balanced") : "Syncing")}</p>
                         </div>
-                       <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                       <div className="bg-slate-50 p-6 rounded-lg border border-slate-100">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
                           <p className="font-bold text-blue-600">{currentAnalysis ? (currentAnalysis.confidence > 0.7 ? "High" : "Normal") : "Syncing"}</p>
                        </div>
                     </div>
                  </div>
 
-                 <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
+                 <div className="p-6 bg-blue-50/50 rounded-lg border border-blue-100 flex gap-4">
                     <Info className="w-5 h-5 text-blue-600 shrink-0" />
                     <p className="text-[10px] font-medium text-slate-500 leading-relaxed">Cognitive evaluation is powered by GPT-4 and behavioral biometric mapping.</p>
                  </div>
               </Card>
 
-              <Card className="bg-slate-900 rounded-[40px] p-8 text-white">
+              <Card className="bg-slate-900 rounded-[40px] p-5 text-white">
                  <div className="flex items-center gap-4 mb-6">
                     <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
                        <AlertTriangle className="w-5 h-5" />

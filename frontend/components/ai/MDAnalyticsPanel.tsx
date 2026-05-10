@@ -191,7 +191,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={decisionBreakdown}
@@ -229,7 +229,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="date" />
@@ -266,7 +266,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
               <CardTitle>Skill Level Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
                 <BarChart data={skillLevelDistribution}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="name" />
@@ -290,7 +290,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
               <BarChart data={scoreDistribution}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" />
@@ -310,7 +310,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
             <CardTitle>Resume vs Technical Score Correlation</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height={300}>
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="resume" type="number" name="Resume Score" label="Resume" />

@@ -28,8 +28,8 @@ export default function CandidateTable({ apps = [], refresh }: any) {
 
   if (!apps || apps.length === 0) {
     return (
-      <div className="text-center py-32 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100 m-10">
-        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100">
+      <div className="text-center py-32 bg-slate-50/50 rounded-lg border-2 border-dashed border-slate-100 m-10">
+        <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100">
            <Briefcase className="w-8 h-8 text-slate-300" />
         </div>
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">PIPELINE_SYNCHRONIZED_NO_PENDING_ACTION</p>
@@ -75,7 +75,7 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                 <tr className="group hover:bg-slate-50/50 transition-all duration-500">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-2xl group-hover:scale-110 transition-transform relative overflow-hidden">
+                      <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform relative overflow-hidden">
                         <User className="w-6 h-6" />
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-600" />
                       </div>
@@ -116,21 +116,21 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-4">
                       <Button
-                        className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-xl shadow-slate-200/50 active:scale-90"
+                        className="h-12 w-12 rounded-lg bg-white border border-slate-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-xl shadow-slate-200/50 active:scale-90"
                         onClick={() => handleDecision(app.id, "APPROVED")}
                         disabled={isLoading}
                       >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-6 h-6" />}
                       </Button>
                       <Button
-                        className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-slate-200/50 active:scale-90"
+                        className="h-12 w-12 rounded-lg bg-white border border-slate-100 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-slate-200/50 active:scale-90"
                         onClick={() => handleDecision(app.id, "REJECTED")}
                         disabled={isLoading}
                       >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-6 h-6" />}
                       </Button>
                       <Button
-                        className="h-12 w-12 rounded-2xl bg-slate-900 border border-slate-800 text-white hover:bg-black transition-all shadow-xl shadow-slate-200/50 active:scale-90"
+                        className="h-12 w-12 rounded-lg bg-slate-900 border border-slate-800 text-white hover:bg-black transition-all shadow-xl shadow-slate-200/50 active:scale-90"
                         onClick={() => (window.location.href = `/md/applications/${app.id}`)}
                       >
                         <ExternalLink className="w-6 h-6" />

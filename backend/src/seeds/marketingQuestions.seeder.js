@@ -1,11 +1,11 @@
 /**
- * Question Bank Seeder for Mask Polymers - Marketing Roles
+ * Question Bank Seeder for AI Hiring System - Marketing Roles
  * Covers 3 levels: Trainee, Executive, Assistant Manager
  * Maps to job roles: SENIOR_AI_ENGINEER (placeholder for marketing roles)
  * Total: 90 interview questions
  */
 
-// Note: For production Mask Polymers, these would map to actual Marketing roles
+// Note: For production AI Hiring System, these would map to actual Marketing roles
 // This is a demonstration with generic job role enums
 const ROLE_MAPPING = {
   MANAGEMENT_TRAINEE: "FULL_STACK_DEVELOPER", // Junior level
@@ -20,7 +20,7 @@ const MARKETING_QUESTIONS = {
       jobRole: "MANAGEMENT_TRAINEE_MARKETING",
       category: "INTRODUCTORY",
       difficulty: "EASY",
-      question: "Welcome to the interview! To start, could you please introduce yourself and tell us what interests you about a career in polymer marketing at Mask Polymers?",
+      question: "Welcome to the interview! To start, could you please introduce yourself and tell us what interests you about a career in polymer marketing at AI Hiring System?",
       expectedAnswer: "Candidate should introduce themselves, their educational background, and show genuine interest in the polymer industry/marketing role.",
       keywords: ["introduction", "background", "interest", "polymers", "marketing"],
       estimatedTime: 3,
@@ -407,8 +407,8 @@ const MARKETING_QUESTIONS = {
       jobRole: "EXECUTIVE_MARKETING",
       category: "INTRODUCTORY",
       difficulty: "MEDIUM",
-      question: "Good to see you. With several years of experience under your belt, could you give us an overview of your professional journey in industrial marketing and how you think you would add value to Mask Polymers?",
-      expectedAnswer: "Summarizes career journey, emphasizes industrial marketing experience, and connects personal skills to Mask Polymers' needs.",
+      question: "Good to see you. With several years of experience under your belt, could you give us an overview of your professional journey in industrial marketing and how you think you would add value to AI Hiring System?",
+      expectedAnswer: "Summarizes career journey, emphasizes industrial marketing experience, and connects personal skills to AI Hiring System' needs.",
       keywords: ["journey", "experience", "value", "industrial", "professional"],
       estimatedTime: 4,
       createdBy: "admin@maskpolymers.com",

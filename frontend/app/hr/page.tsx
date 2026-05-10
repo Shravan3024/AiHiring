@@ -26,32 +26,34 @@ function KPICard({ title, value, trend, trendValue, icon: Icon, sparkData, color
   trendValue: string; icon: any; sparkData: any[]; color: string;
 }) {
   return (
-    <Card className="border-border/40 glass shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className={cn("p-2 rounded-xl bg-muted/50 border border-border/50", color)}>
-            <Icon className="w-4 h-4" />
+    <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={cn("p-1.5 rounded-md bg-muted/50 border border-border/50", color)}>
+              <Icon className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{title}</span>
           </div>
-          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{title}</span>
           <ArrowUpRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary transition-colors" />
         </div>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-2xl font-black text-foreground tracking-tighter tabular-nums">{value ?? "—"}</p>
+            <p className="text-xl font-bold text-foreground tracking-tight tabular-nums">{value ?? "—"}</p>
             <div className={cn(
-              "flex items-center gap-1 text-[9px] font-black mt-1 uppercase tracking-widest",
+              "flex items-center gap-1 text-[9px] font-bold mt-0.5 uppercase tracking-wider",
               trend === "up" ? "text-emerald-500" : "text-rose-500"
             )}>
-              {trend === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {trend === "up" ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
               {trendValue}
             </div>
           </div>
-          <div className="h-10 w-24">
-             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkData}>
-                   <Area type="monotone" dataKey="v" stroke={trend === "up" ? "#10b981" : "#ef4444"} fill={trend === "up" ? "#10b98110" : "#ef444410"} strokeWidth={2} />
-                </AreaChart>
-             </ResponsiveContainer>
+          <div className="h-8 w-20">
+            <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
+              <AreaChart data={sparkData}>
+                <Area type="monotone" dataKey="v" stroke={trend === "up" ? "#10b981" : "#ef4444"} fill={trend === "up" ? "#10b98110" : "#ef444410"} strokeWidth={1.5} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </CardContent>
@@ -101,7 +103,7 @@ export default function HRDashboard() {
   });
 
   // --- MOCK / PROCESSED DATA ---
-  const sparkData = [ { v: 40 }, { v: 45 }, { v: 42 }, { v: 50 }, { v: 48 }, { v: 55 }, { v: 60 } ];
+  const sparkData = [{ v: 40 }, { v: 45 }, { v: 42 }, { v: 50 }, { v: 48 }, { v: 55 }, { v: 60 }];
 
   const funnelData = (funnelDataRaw && funnelDataRaw.length > 0) ? funnelDataRaw.map((f: { stage: string; count: number; dropoff: number }) => ({
     stage: f.stage.replace(/_/g, ' '),
@@ -134,360 +136,346 @@ export default function HRDashboard() {
   };
 
   return (
-    <PanelLayout title="Dashboard" allowedRoles={["HR", "ADMIN"]}>
-      <div className="max-w-[1600px] mx-auto space-y-8 p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-        
-        {/* Header Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-           <div className="space-y-1">
-              <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2 uppercase">Dashboard</h1>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Real-time overview of your hiring pipeline and insights</p>
-           </div>
-           <div className="flex flex-wrap items-center gap-3">
-              <div className="relative group">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                 <Input className="pl-10 h-10 w-64 bg-muted/30 border-border/50 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
-              </div>
+    <PanelLayout title="HR Dashboard" allowedRoles={["HR", "ADMIN"]}>
+      <div className="max-w-[1600px] mx-auto space-y-4 p-3 md:p-5 animate-in fade-in duration-500">
 
-              {/* REMOVED ADD CANDIDATE BUTTON AS REQUESTED */}
-           </div>
+        {/* Header Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-1">
+          <div className="space-y-0.5">
+            <h1 className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2 uppercase">Dashboard</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative group">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input className="pl-8 h-8 w-60 bg-white border-border/50 rounded-md text-xs font-medium" placeholder="Search candidates, roles, skills..." />
+            </div>
+          </div>
         </div>
 
         {/* KPI GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-           <KPICard title="Total Candidates" value={kpiData?.totalCandidates || "0"} trend="up" trendValue="18.6%" icon={Users} sparkData={sparkData} color="text-primary" />
-           <KPICard title="In Pipeline" value={kpiData?.pendingReview || "0"} trend="up" trendValue="8.3%" icon={TrendingUp} sparkData={sparkData} color="text-amber-500" />
-           <KPICard title="Interviews" value={kpiData?.pendingReview || "0"} trend="up" trendValue="21.7%" icon={MessageCircle} sparkData={sparkData} color="text-purple-500" />
-           <KPICard title="Offers" value={kpiData?.selected || "0"} trend="up" trendValue="14.2%" icon={CheckCircle} sparkData={sparkData} color="text-emerald-500" />
-           <KPICard title="Hires" value={kpiData?.selected || "0"} trend="up" trendValue="12.5%" icon={Trophy} sparkData={sparkData} color="text-primary" />
-           <KPICard title="Avg. Time to Hire" value={`${kpiData?.avgTimeToHire || 0} days`} trend="down" trendValue="5.6%" icon={Clock} sparkData={sparkData} color="text-rose-500" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <KPICard title="Total Candidates" value={kpiData?.totalCandidates || "0"} trend="up" trendValue="18.6%" icon={Users} sparkData={sparkData} color="text-primary" />
+          <KPICard title="In Pipeline" value={kpiData?.pendingReview || "0"} trend="up" trendValue="8.3%" icon={TrendingUp} sparkData={sparkData} color="text-amber-500" />
+          <KPICard title="Interviews" value={kpiData?.pendingReview || "0"} trend="up" trendValue="21.7%" icon={MessageCircle} sparkData={sparkData} color="text-purple-500" />
+          <KPICard title="Offers" value={kpiData?.selected || "0"} trend="up" trendValue="14.2%" icon={CheckCircle} sparkData={sparkData} color="text-emerald-500" />
+          <KPICard title="Hires" value={kpiData?.selected || "0"} trend="up" trendValue="12.5%" icon={Trophy} sparkData={sparkData} color="text-primary" />
+          <KPICard title="Avg Time to Hire" value={`${kpiData?.avgTimeToHire || 0}d`} trend="down" trendValue="5.6%" icon={Clock} sparkData={sparkData} color="text-rose-500" />
         </div>
 
         {/* ROW 2: Pipeline & AI Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           
-           {/* Pipeline Overview */}
-           <Card className="lg:col-span-6 border-border/40 glass-dark shadow-2xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                   <Target className="w-4 h-4 text-primary" /> Pipeline Overview
-                 </CardTitle>
-                 <div className="flex bg-muted/30 p-1 rounded-lg gap-1">
-                    <Button 
-                       variant="ghost" 
-                       onClick={() => setPipelineView("funnel")}
-                       className={cn("h-7 text-[9px] font-black uppercase tracking-widest transition-all", pipelineView === "funnel" ? "bg-card shadow-sm text-primary" : "opacity-50")}
-                    >Funnel</Button>
-                    <Button 
-                       variant="ghost" 
-                       onClick={() => setPipelineView("flow")}
-                       className={cn("h-7 text-[9px] font-black uppercase tracking-widest transition-all", pipelineView === "flow" ? "bg-card shadow-sm text-primary" : "opacity-50")}
-                    >Flow</Button>
-                 </div>
-              </CardHeader>
-              <CardContent className="p-8">
-                 {pipelineView === "funnel" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                       <div className="h-[250px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={funnelData} layout="vertical" margin={{ left: -30 }}>
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="stage" type="category" hide />
-                                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 12, 12, 0]} barSize={30}>
-                                   {funnelData.map((entry: { stage: string; count: number; conversion: number }, index: number) => (
-                                      <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.12)} />
-                                   ))}
-                                </Bar>
-                             </BarChart>
-                          </ResponsiveContainer>
-                       </div>
-                       <div className="space-y-4">
-                          <table className="w-full text-left">
-                             <thead className="text-[9px] font-black uppercase text-muted-foreground/50 tracking-widest">
-                                <tr>
-                                   <th className="pb-3">Stage</th>
-                                   <th className="pb-3">Candidates</th>
-                                   <th className="pb-3 text-right">Conversion</th>
-                                </tr>
-                             </thead>
-                             <tbody className="text-[10px] font-black uppercase">
-                                {funnelData.map((row: { stage: string; count: number; conversion: number }, i: number) => (
-                                   <tr key={i} className="border-t border-border/10">
-                                      <td className="py-2.5 flex items-center gap-2">
-                                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `hsla(var(--primary), ${1 - i * 0.15})` }}></div>
-                                         {row.stage}
-                                      </td>
-                                      <td className="py-2.5 text-muted-foreground">{row.count}</td>
-                                      <td className="py-2.5 text-right text-primary">{row.conversion}%</td>
-                                   </tr>
-                                ))}
-                             </tbody>
-                          </table>
-                       </div>
-                    </div>
-                  ) : (
-                    <div className="h-[250px] flex items-center justify-center relative overflow-hidden">
-                       <div className="absolute inset-0 bg-primary/10 blur-[100px] rounded-full scale-50"></div>
-                       <div className="flex items-center gap-4 md:gap-8 z-10">
-                          {funnelData.slice(0, 4).map((f: { stage: string; count: number }, i: number) => {
-                             const Icons = [Search, Briefcase, MessageCircle, Star];
-                             const Icon = Icons[i % Icons.length];
-                             return (
-                                <React.Fragment key={i}>
-                                   <div className="flex flex-col items-center gap-4 group/node">
-                                      <div className="relative">
-                                         <div className="absolute -inset-2 bg-primary/20 rounded-[2rem] blur-xl opacity-0 group-hover/node:opacity-100 transition-opacity duration-500"></div>
-                                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.8rem] glass-dark border border-white/10 flex flex-col items-center justify-center shadow-2xl relative z-10 group-hover/node:border-primary/50 transition-colors">
-                                            <Icon className="w-5 h-5 md:w-6 md:h-6 text-primary mb-1 group-hover/node:scale-110 transition-transform" />
-                                            <span className="text-sm md:text-lg font-black text-foreground tabular-nums">{f.count}</span>
-                                         </div>
-                                      </div>
-                                      <span className="text-[8px] md:text-[9px] font-black uppercase text-muted-foreground tracking-widest text-center max-w-[80px] leading-tight">{f.stage}</span>
-                                   </div>
-                                   {i < 3 && (
-                                      <div className="w-8 md:w-16 h-[2px] bg-gradient-to-r from-primary/40 via-primary/80 to-primary/40 relative">
-                                         <div className="absolute inset-0 bg-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)] animate-pulse"></div>
-                                      </div>
-                                   )}
-                                </React.Fragment>
-                             );
-                          })}
-                       </div>
-                       <div className="absolute bottom-4 flex items-center gap-2">
-                          <Activity className="w-3 h-3 text-primary animate-pulse" />
-                          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] italic">Live Pipeline Flow Synchronized</p>
-                       </div>
-                    </div>
-                 )}
-              </CardContent>
-           </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-           {/* AI Insights & Top Candidate */}
-           <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* AI Insights */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
-                 <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-amber-500" /> AI Insights
-                    </CardTitle>
-                    <Button variant="link" onClick={() => router.push('/hr/ai-insights')} className="text-[9px] font-black uppercase p-0 h-fit">View All</Button>
-                 </CardHeader>
-                 <CardContent className="p-6 space-y-4">
-                    {[
-                       { title: 'Top Performer', desc: `${topCandidate.name} is in top 5% of all candidates`, score: `${topCandidate.score}/100`, icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                       { title: 'Risk Alert', desc: `${kpiData?.rejected || 0} candidates flagged for potential risks`, score: 'High', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                       { title: 'Bottleneck', desc: 'Assessment stage is dropping significant candidates', score: 'High', icon: Target, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                       { title: 'Hiring Forecast', desc: `You will reach hiring goal by ${new Date(new Date().setMonth(new Date().getMonth() + 2)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, score: 'On Track', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    ].map((item, i) => (
-                       <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50">
-                          <div className="flex items-center gap-3">
-                             <div className={cn("p-2 rounded-xl", item.bg)}>
-                                <item.icon className={cn("w-4 h-4", item.color)} />
-                             </div>
-                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-tight text-foreground">{item.title}</p>
-                                <p className="text-[9px] font-medium text-muted-foreground truncate max-w-[150px]">{item.desc}</p>
-                             </div>
-                          </div>
-                          <span className={cn("text-[10px] font-black uppercase tracking-widest", item.color)}>{item.score}</span>
-                       </div>
-                    ))}
-                 </CardContent>
-              </Card>
-
-              {/* Top Candidate Spotlight */}
-              <Card className="border-border/40 glass shadow-2xl rounded-3xl overflow-hidden border-t-2 border-t-emerald-500/30">
-                 <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-emerald-500" /> Top Candidate
-                    </CardTitle>
-                    <Button variant="link" onClick={() => router.push('/hr/candidates')} className="text-[9px] font-black uppercase p-0 h-fit">View All</Button>
-                 </CardHeader>
-                 <CardContent className="p-6">
-                    <div className="flex items-center gap-4 mb-6">
-                       <div className="w-14 h-14 rounded-2xl bg-muted border border-border/50 overflow-hidden">
-                          <img 
-                              src={topCandidate.profileImage || "/images/default-avatar.png"} 
-                              alt="Top" 
-                              className="w-full h-full object-cover" 
-                              onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
-                           />
-                       </div>
-                       <div>
-                          <h4 className="text-sm font-black text-foreground uppercase tracking-tight">{topCandidate.name}</h4>
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{topCandidate.job}</p>
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-black mt-1">Strong Hire</Badge>
-                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mb-6">
-                       <div>
-                          <p className="text-[18px] font-black text-foreground">{topCandidate.score}<span className="text-xs text-muted-foreground/50 uppercase ml-1">/100</span></p>
-                          <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Overall Score</p>
-                       </div>
-                       <div className="flex gap-2">
-                          {['Communication', 'Logic', 'Fit'].map((k) => (
-                             <Badge key={k} variant="outline" className="text-[8px] font-black uppercase border-border/50">{k}</Badge>
+          {/* Pipeline Overview */}
+          <Card className="lg:col-span-6 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+              <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-primary" /> Pipeline Overview
+              </CardTitle>
+              <div className="flex bg-muted/40 p-0.5 rounded-md gap-0.5">
+                <Button
+                  variant="ghost"
+                  onClick={() => setPipelineView("funnel")}
+                  className={cn("h-6 px-2 text-[9px] font-bold uppercase tracking-wider transition-all", pipelineView === "funnel" ? "bg-white shadow-sm text-primary" : "opacity-60")}
+                >Funnel</Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setPipelineView("flow")}
+                  className={cn("h-6 px-2 text-[9px] font-bold uppercase tracking-wider transition-all", pipelineView === "flow" ? "bg-white shadow-sm text-primary" : "opacity-60")}
+                >Flow</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {pipelineView === "funnel" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div className="h-[180px]">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
+                      <BarChart data={funnelData} layout="vertical" margin={{ left: -30, right: 0, top: 0, bottom: 0 }}>
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="stage" type="category" hide />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20}>
+                          {funnelData.map((entry: { stage: string; count: number; conversion: number }, index: number) => (
+                            <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
                           ))}
-                       </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mb-6 border-t border-border/10 pt-4">
-                       <div className="text-center">
-                          <p className="text-xs font-black text-foreground">3.2 Yrs</p>
-                          <p className="text-[8px] font-black text-muted-foreground uppercase">Exp</p>
-                       </div>
-                       <div className="text-center border-x border-border/10">
-                          <p className="text-xs font-black text-foreground">{topCandidate.integrityScore}%</p>
-                          <p className="text-[8px] font-black text-muted-foreground uppercase">Fit</p>
-                       </div>
-                       <div className="text-center">
-                          <p className="text-xs font-black text-emerald-500">Low</p>
-                          <p className="text-[8px] font-black text-muted-foreground uppercase">Risk</p>
-                       </div>
-                    </div>
-                    <Button className="w-full h-10 industrial-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl group" onClick={() => router.push(`/hr/applications/${topCandidate.applicationId}`)}>
-                       View Full Profile <ChevronRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                 </CardContent>
-              </Card>
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-2">
+                    <table className="w-full text-left">
+                      <thead className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider">
+                        <tr>
+                          <th className="pb-2">Stage</th>
+                          <th className="pb-2">Candidates</th>
+                          <th className="pb-2 text-right">Conv.</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-[10px] font-medium text-foreground">
+                        {funnelData.map((row: { stage: string; count: number; conversion: number }, i: number) => (
+                          <tr key={i} className="border-t border-border/40">
+                            <td className="py-1.5 flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: `hsla(var(--primary), ${1 - i * 0.15})` }}></div>
+                              <span className="truncate max-w-[100px]">{row.stage}</span>
+                            </td>
+                            <td className="py-1.5">{row.count}</td>
+                            <td className="py-1.5 text-right font-bold text-primary">{row.conversion}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[180px] flex items-center justify-center relative overflow-hidden">
+                  <div className="flex items-center gap-4 z-10">
+                    {funnelData.slice(0, 4).map((f: { stage: string; count: number }, i: number) => {
+                      const Icons = [Search, Briefcase, MessageCircle, Star];
+                      const Icon = Icons[i % Icons.length];
+                      return (
+                        <React.Fragment key={i}>
+                          <div className="flex flex-col items-center gap-2 group/node">
+                            <div className="w-10 h-10 rounded-lg bg-card border border-border/60 flex items-center justify-center shadow-sm z-10 group-hover/node:border-primary/50 transition-colors">
+                              <Icon className="w-4 h-4 text-primary group-hover/node:scale-110 transition-transform" />
+                            </div>
+                            <div className="text-center">
+                              <span className="text-sm font-bold text-foreground tabular-nums block">{f.count}</span>
+                              <span className="text-[8px] font-bold uppercase text-muted-foreground tracking-wider leading-tight block w-14">{f.stage}</span>
+                            </div>
+                          </div>
+                          {i < 3 && (
+                            <div className="w-8 h-[1px] bg-primary/30 relative mt-[-28px]">
+                              <div className="absolute inset-0 bg-primary/60 animate-pulse"></div>
+                            </div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-           </div>
+          {/* AI Insights & Top Candidate */}
+          <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* AI Insights */}
+            <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+              <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+                <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-amber-500" /> AI Insights
+                </CardTitle>
+                <Button variant="link" onClick={() => router.push('/hr/ai-insights')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
+              </CardHeader>
+              <CardContent className="p-3 space-y-2.5">
+                {[
+                  { title: 'Top Performer', desc: `${topCandidate.name} is in top 5%`, score: `${topCandidate.score}/100`, icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                  { title: 'Risk Alert', desc: `${kpiData?.rejected || 0} flagged candidates`, score: 'High', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                  { title: 'Bottleneck', desc: 'Assessment stage drops', score: 'Medium', icon: Target, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                  { title: 'Hiring Forecast', desc: `Goal by Next Month`, score: 'On Track', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg border border-border/40 bg-muted/10 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("p-1.5 rounded-md", item.bg)}>
+                        <item.icon className={cn("w-3.5 h-3.5", item.color)} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-foreground leading-none mb-0.5">{item.title}</p>
+                        <p className="text-[9px] text-muted-foreground truncate max-w-[120px]">{item.desc}</p>
+                      </div>
+                    </div>
+                    <span className={cn("text-[9px] font-bold uppercase tracking-widest", item.color)}>{item.score}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Top Candidate Spotlight */}
+            <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden border-t-2 border-t-emerald-500">
+              <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+                <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5 text-emerald-500" /> Top Candidate
+                </CardTitle>
+                <Button variant="link" onClick={() => router.push('/hr/candidates')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 overflow-hidden">
+                    <img
+                      src={topCandidate.profileImage || "/images/default-avatar.png"}
+                      alt="Top"
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-tight">{topCandidate.name}</h4>
+                    <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">{topCandidate.job}</p>
+                    <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-bold mt-1 px-1.5 py-0">Strong Hire</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-lg font-bold text-foreground leading-none">{topCandidate.score}<span className="text-[10px] text-muted-foreground uppercase ml-0.5">/100</span></p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Overall Score</p>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {['Comm', 'Logic', 'Fit'].map((k) => (
+                      <Badge key={k} variant="outline" className="text-[8px] font-bold uppercase border-border/60 px-1 py-0">{k}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-4 border-t border-border/40 pt-3">
+                  <div className="text-center">
+                    <p className="text-[11px] font-bold text-foreground">3.2 Yrs</p>
+                    <p className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider">Exp</p>
+                  </div>
+                  <div className="text-center border-x border-border/40">
+                    <p className="text-[11px] font-bold text-foreground">{topCandidate.integrityScore}%</p>
+                    <p className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider">Fit</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[11px] font-bold text-emerald-500">Low</p>
+                    <p className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider">Risk</p>
+                  </div>
+                </div>
+                <Button className="w-full h-8 text-[9px] font-bold uppercase tracking-wider rounded-md" onClick={() => router.push(`/hr/applications/${topCandidate.applicationId}`)}>
+                  View Profile <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </CardContent>
+            </Card>
+
+          </div>
         </div>
 
         {/* ROW 3: Evaluation Summary & Pending */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-           
-           {/* Evaluation Summary */}
-           <Card className="lg:col-span-9 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 px-8 py-5">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                   <Activity className="w-4 h-4 text-primary" /> Evaluation Summary
-                 </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    
-                    {/* Score Distribution */}
-                    <div className="space-y-6">
-                       <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status Distribution</h4>
-                       <div className="relative h-48 w-full flex items-center justify-center">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <PieChart>
-                                <Pie data={distributionData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                   {distributionData.map((entry: { name: string; value: number; color: string }, index: number) => (
-                                      <Cell key={`cell-${index}`} fill={entry.color} />
-                                   ))}
-                                </Pie>
-                                <Tooltip />
-                             </PieChart>
-                          </ResponsiveContainer>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                             <span className="text-xl font-black text-foreground tracking-tighter">{kpiData?.totalCandidates || 0}</span>
-                             <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Total</span>
-                          </div>
-                       </div>
-                       <div className="space-y-2">
-                          {distributionData.map((d: { name: string; value: number; color: string }, i: number) => (
-                             <div key={i} className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }}></div>
-                                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter">{d.name}</span>
-                                </div>
-                                <span className="text-[9px] font-black text-foreground">{d.value}</span>
-                             </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-8">
+
+          {/* Evaluation Summary */}
+          <Card className="lg:col-span-8 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="border-b border-border/40 px-4 py-2.5 bg-muted/20">
+              <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-primary" /> Evaluation Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* Score Distribution */}
+                <div className="space-y-4">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Status Distribution</h4>
+                  <div className="relative h-32 w-full flex items-center justify-center">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={distributionData} innerRadius={35} outerRadius={50} paddingAngle={2} dataKey="value">
+                          {distributionData.map((entry: { name: string; value: number; color: string }, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
-                       </div>
+                        </Pie>
+                        <Tooltip contentStyle={{ fontSize: '10px', padding: '4px 8px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-sm font-bold text-foreground">{kpiData?.totalCandidates || 0}</span>
                     </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {distributionData.slice(0, 4).map((d: { name: string; value: number; color: string }, i: number) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: d.color }}></div>
+                          <span className="text-[9px] font-medium text-muted-foreground uppercase truncate max-w-[80px]">{d.name}</span>
+                        </div>
+                        <span className="text-[9px] font-bold text-foreground">{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                    {/* Job Role Performance */}
-                    <div className="space-y-6">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Operational Efficiency</h4>
-                          <Button variant="link" onClick={() => router.push('/hr/analytics')} className="text-[8px] font-black uppercase p-0 h-fit">View All</Button>
-                       </div>
-                       <div className="space-y-6">
-                          {[
-                             { role: 'SLA Efficiency', score: opsCore?.slaEfficiency || 0 },
-                             { role: 'Internal Discussions', score: Math.min(100, (opsCore?.internalDiscussions || 0) * 5) },
-                             { role: 'Interview Turnaround', score: 72 },
-                             { role: 'Offer Accuracy', score: 98 },
-                          ].map((item, i) => (
-                             <div key={i} className="space-y-2">
-                                <div className="flex justify-between text-[9px] font-black uppercase tracking-tighter">
-                                   <span className="text-muted-foreground">{item.role}</span>
-                                   <span className="text-foreground">{item.score}%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-muted/30 rounded-full overflow-hidden">
-                                   <div className="h-full bg-primary" style={{ width: `${item.score}%` }} />
-                                </div>
-                             </div>
-                          ))}
-                       </div>
+                {/* Job Role Performance */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Efficiency Metrics</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { role: 'SLA Efficiency', score: opsCore?.slaEfficiency || 0 },
+                      { role: 'Internal Reviews', score: Math.min(100, (opsCore?.internalDiscussions || 0) * 5) },
+                      { role: 'Interview Turnaround', score: 72 },
+                      { role: 'Offer Accuracy', score: 98 },
+                    ].map((item, i) => (
+                      <div key={i} className="space-y-1.5">
+                        <div className="flex justify-between text-[9px] font-medium uppercase">
+                          <span className="text-muted-foreground">{item.role}</span>
+                          <span className="font-bold text-foreground">{item.score}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary" style={{ width: `${item.score}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hiring Trend */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Hiring Trend</h4>
+                  </div>
+                  <div className="h-32 w-full">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
+                      <LineChart data={sparkData.map((d, i) => ({ ...d, x: i }))}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                        <XAxis dataKey="x" hide />
+                        <YAxis hide />
+                        <Tooltip contentStyle={{ fontSize: '10px', padding: '4px 8px' }} />
+                        <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex justify-center gap-4 pt-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-0.5 bg-primary rounded-full"></div>
+                      <span className="text-[8px] font-bold uppercase text-muted-foreground tracking-wider">Hired</span>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Hiring Trend */}
-                    <div className="space-y-6">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hiring Trend</h4>
-                          <Button variant="link" onClick={() => router.push('/hr/analytics')} className="text-[8px] font-black uppercase p-0 h-fit">View Report</Button>
-                       </div>
-                       <div className="h-48 w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <LineChart data={sparkData.map((d, i) => ({ ...d, x: i }))}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="x" hide />
-                                <YAxis hide />
-                                <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px' }} />
-                                <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: 'hsl(var(--primary))' }} />
-                             </LineChart>
-                          </ResponsiveContainer>
-                       </div>
-                       <div className="flex justify-center gap-6">
-                          <div className="flex items-center gap-2">
-                             <div className="w-3 h-0.5 bg-primary"></div>
-                             <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Hired</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                             <div className="w-3 h-0.5 bg-muted-foreground/30"></div>
-                             <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Offers</span>
-                          </div>
-                       </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Actions */}
+          <Card className="lg:col-span-4 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden h-fit">
+            <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+              <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-rose-500" /> Action Items
+              </CardTitle>
+              <Button variant="link" onClick={() => router.push('/hr/pipeline')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/40">
+                {pendingRaw && pendingRaw.length > 0 ? pendingRaw.slice(0, 5).map((item: { _id: string; candidateName: string; action: string; urgency: string }, i: number) => (
+                  <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors cursor-pointer group" onClick={() => router.push(`/hr/applications/${item._id}`)}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("p-1.5 rounded-md border border-border/60 bg-white shadow-sm")}>
+                        <FileText className={cn("w-3.5 h-3.5 text-primary")} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-foreground uppercase tracking-tight leading-none mb-1">{item.candidateName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[9px] font-medium text-muted-foreground">{item.action}</p>
+                          <Badge className={cn("text-[8px] font-bold border-none px-1 py-0", item.urgency === 'CRITICAL' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500')}>{item.urgency}</Badge>
+                        </div>
+                      </div>
                     </div>
-
-                 </div>
-              </CardContent>
-           </Card>
-
-           {/* Pending Actions */}
-           <Card className="lg:col-span-3 border-border/40 glass shadow-2xl rounded-3xl overflow-hidden h-fit">
-              <CardHeader className="border-b border-white/5 px-8 py-5 flex flex-row items-center justify-between">
-                 <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                   <Clock className="w-4 h-4 text-rose-500" /> Pending Actions
-                 </CardTitle>
-                 <Button variant="link" onClick={() => router.push('/hr/pipeline')} className="text-[9px] font-black uppercase p-0 h-fit">View All</Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                 <div className="divide-y divide-border/10">
-                    {pendingRaw && pendingRaw.length > 0 ? pendingRaw.slice(0, 4).map((item: { _id: string; candidateName: string; action: string; urgency: string }, i: number) => (
-                       <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-muted/10 transition-colors cursor-pointer group" onClick={() => router.push(`/hr/applications/${item._id}`)}>
-                          <div className="flex items-center gap-4">
-                             <div className={cn("p-2 rounded-xl border border-border/50 bg-primary/10")}>
-                                <FileText className={cn("w-4 h-4 text-primary")} />
-                             </div>
-                             <div>
-                                <p className="text-[10px] font-black text-foreground uppercase tracking-tight">{item.candidateName}</p>
-                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{item.action}</p>
-                                <Badge className={cn("text-[7px] font-black border-none", item.urgency === 'CRITICAL' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500')}>{item.urgency}</Badge>
-                             </div>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                       </div>
-                    )) : (
-                       <div className="p-8 text-center text-[10px] font-black text-muted-foreground uppercase opacity-40">No pending actions</div>
-                    )}
-                 </div>
-              </CardContent>
-           </Card>
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                  </div>
+                )) : (
+                  <div className="p-6 text-center text-[10px] font-bold text-muted-foreground uppercase opacity-60">No pending actions</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
         </div>
 

@@ -25,12 +25,12 @@ function ExecutiveStatCard({
   trendValue?: string; icon: any; colorClass: string;
 }) {
   return (
-    <div className="relative group overflow-hidden bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+    <div className="relative group overflow-hidden bg-white border border-slate-100 rounded-lg p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
       <div className={cn("absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-10 transition-all group-hover:opacity-20", colorClass)} />
       
       <div className="relative z-10 flex flex-col h-full justify-between">
         <div className="flex items-center justify-between">
-          <div className={cn("p-3.5 rounded-2xl bg-slate-50 border border-slate-100", colorClass.replace('bg-', 'text-'))}>
+          <div className={cn("p-3.5 rounded-lg bg-slate-50 border border-slate-100", colorClass.replace('bg-', 'text-'))}>
             <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
           {trend && (
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                  </div>
 
                  <div className="h-[380px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                        <AreaChart data={Array.isArray(trendData) ? trendData : []}>
                           <defs>
                              <linearGradient id="velocityGrad" x1="0" y1="0" x2="0" y2="1">
@@ -194,8 +194,8 @@ export default function AdminDashboard() {
                  ))}
               </div>
 
-              <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center gap-5">
-                 <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+              <div className="p-6 rounded-lg bg-slate-50 border border-slate-100 flex items-center gap-5">
+                 <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center shadow-sm">
                     <TrendingUp className="w-6 h-6 text-blue-600" />
                  </div>
                  <div>
@@ -212,14 +212,14 @@ export default function AdminDashboard() {
            <div className="bg-white border border-slate-100 rounded-[3rem] p-10 shadow-sm relative overflow-hidden group">
               <div className="flex items-center justify-between mb-10">
                  <h3 className="text-xl font-black text-[#0f172a] tracking-tight uppercase leading-none">Resource Allocation</h3>
-                 <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                 <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
                     <Layers className="w-5 h-5 text-blue-600" />
                  </div>
               </div>
 
               <div className="flex flex-col md:flex-row items-center gap-14">
                  <div className="w-56 h-56 md:w-64 md:h-64 shrink-0 relative">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                        <PieChart>
                           <Pie 
                             data={Array.isArray(roleData) ? roleData : []} 
@@ -266,7 +266,7 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                  {healthData ? Object.entries(healthData).map(([key, val]) => (
-                    <div key={key} className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 space-y-4 hover:border-blue-200 transition-all hover:bg-white hover:shadow-lg">
+                    <div key={key} className="p-5 rounded-lg bg-slate-50/50 border border-slate-100 space-y-4 hover:border-blue-200 transition-all hover:bg-white hover:shadow-lg">
                        <div className="flex items-center justify-between">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] truncate mr-2">{key.replace(/_/g, " ")}</span>
                           <div className={cn(

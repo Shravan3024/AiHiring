@@ -96,14 +96,14 @@ export default function RegisterPage() {
     setError("");
     if (!form.name.trim()) return setError("Name is required.");
     if (!form.email.trim()) return setError("Email is required.");
-    
+
     // Strict password validation matching backend
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
     if (form.password.length < 8) return setError("Password must be at least 8 characters.");
     if (!passwordRegex.test(form.password)) {
       return setError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
     }
-    
+
     if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
     registerMutation.mutate();
   };
@@ -160,9 +160,9 @@ export default function RegisterPage() {
     <div className="min-h-screen relative flex flex-col justify-center font-sans overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="/login-bg.png" 
-          alt="Industrial Background" 
+        <img
+          src="/login-bg.png"
+          alt="Industrial Background"
           className="w-full h-full object-cover scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-gray-900/60 to-black/80 backdrop-blur-[4px]" />
@@ -173,23 +173,23 @@ export default function RegisterPage() {
       <div className="relative z-10 flex flex-col items-center justify-center pt-20 px-4">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center mb-4">
-            <div className="bg-white/90 p-3 rounded-2xl shadow-2xl backdrop-blur-md border border-white/50">
-              <img src="/logo.png" alt="Mask Polymers Logo" className="h-16 w-auto object-contain" />
+            <div className="bg-white/90 p-3 rounded-lg shadow-sm backdrop-blur-md border border-white/50">
+              <img src="/logo.png" alt="AI Hiring System Logo" className="h-16 w-auto object-contain" />
             </div>
           </div>
           <h2 className="text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
             {step === "register" ? "Create Account" : "Verify Identity"}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300 font-medium whitespace-pre-line">
-            {step === "register" 
-              ? "Professional onboarding for Mask Polymers ecosystem." 
+            {step === "register"
+              ? "Professional onboarding for AI Hiring System ecosystem."
               : `A 6-digit verification code has been sent to\n${registeredEmail}`}
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]">
-          <div className="bg-white/80 backdrop-blur-2xl py-10 px-4 shadow-2xl border border-white/30 sm:rounded-[2.5rem] sm:px-10">
-            
+          <div className="bg-white/80 backdrop-blur-2xl py-10 px-4 shadow-sm border border-white/30 sm:rounded-lg sm:px-10">
+
             {step === "register" && (
               <form className="space-y-5" onSubmit={handleRegisterSubmit}>
                 {error && (
@@ -262,9 +262,9 @@ export default function RegisterPage() {
                     <div className="mt-2 px-1">
                       <div className="flex gap-1.5 h-1">
                         {[1, 2, 3, 4, 5].map(i => (
-                          <div 
-                            key={i} 
-                            className={`flex-1 rounded-full transition-all duration-500 ${i <= strength.score ? strength.color : "bg-gray-100"}`} 
+                          <div
+                            key={i}
+                            className={`flex-1 rounded-full transition-all duration-500 ${i <= strength.score ? strength.color : "bg-gray-100"}`}
                           />
                         ))}
                       </div>
@@ -335,8 +335,8 @@ export default function RegisterPage() {
                       onPaste={i === 0 ? handleOtpPaste : undefined}
                       className={cn(
                         "w-12 h-14 text-center text-xl font-bold border-2 rounded-xl transition-all outline-none",
-                        digit 
-                          ? "border-blue-600 bg-blue-50/30 text-blue-600" 
+                        digit
+                          ? "border-blue-600 bg-blue-50/30 text-blue-600"
                           : "border-gray-100 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                       )}
                     />
@@ -370,7 +370,7 @@ export default function RegisterPage() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="pt-6 border-t border-gray-100">
                   <button
                     type="button"
@@ -384,7 +384,7 @@ export default function RegisterPage() {
               </div>
             )}
           </div>
-          
+
           <div className="mt-8 text-center sm:block">
             <p className="text-sm text-gray-300">
               Already a member?{" "}
@@ -395,10 +395,10 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-      
+
       <div className="mt-8 text-center relative z-10 pb-10">
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-          &copy; {new Date().getFullYear()} Mask Polymers Pvt. Ltd. All rights reserved.
+          &copy; {new Date().getFullYear()} AI Hiring System Pvt. Ltd. All rights reserved.
         </p>
       </div>
     </div>
