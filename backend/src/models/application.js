@@ -91,6 +91,18 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    md_notes: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    md_decision_date: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    md_user_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     role_recommendation: {
       type: DataTypes.TEXT,
       allowNull: true

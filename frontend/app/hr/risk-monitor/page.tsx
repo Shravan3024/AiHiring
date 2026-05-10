@@ -1,29 +1,43 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   ShieldAlert, ShieldCheck, Shield, AlertTriangle, 
-  Search, Filter, ChevronRight, Download, Share2, 
-  MoreVertical, Eye, Edit, Trash2, Clock, Calendar,
-  ArrowUpRight, ArrowDownRight, Activity, Users,
-  Lock, FileWarning, Fingerprint, Gavel, UserX, UserPlus,
-  Target, TrendingUp, BarChart3, PieChart as PieIcon,
-  RefreshCw, CheckCircle2, AlertCircle
+  Search, ChevronRight, Download,
+  MoreVertical, Eye,
+  ArrowUpRight, ArrowDownRight,
+  Fingerprint, Gavel, UserX, UserPlus,
+  RefreshCw, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, Cell, PieChart, Pie, Legend
-} from "recharts";
 import { cn } from "@/lib/utils";
 import { hrApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { debounce } from "lodash";
 import { useRouter } from "next/navigation";
+
+// ── Dynamic recharts imports ─────────────────────────────────────────────────
+// Splitting recharts out of the initial bundle cuts ~15s off first compile
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then(m => m.ResponsiveContainer), { ssr: false }
+);
+const LineChart = dynamic(() => import("recharts").then(m => m.LineChart), { ssr: false });
+const Line     = dynamic(() => import("recharts").then(m => m.Line),      { ssr: false });
+const BarChart = dynamic(() => import("recharts").then(m => m.BarChart),  { ssr: false });
+const Bar      = dynamic(() => import("recharts").then(m => m.Bar),       { ssr: false });
+const Cell     = dynamic(() => import("recharts").then(m => m.Cell),      { ssr: false });
+const PieChart = dynamic(() => import("recharts").then(m => m.PieChart),  { ssr: false });
+const Pie      = dynamic(() => import("recharts").then(m => m.Pie),       { ssr: false });
+const XAxis    = dynamic(() => import("recharts").then(m => m.XAxis),     { ssr: false });
+const YAxis    = dynamic(() => import("recharts").then(m => m.YAxis),     { ssr: false });
+const Tooltip  = dynamic(() => import("recharts").then(m => m.Tooltip),   { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then(m => m.CartesianGrid), { ssr: false });
+const Legend   = dynamic(() => import("recharts").then(m => m.Legend),    { ssr: false });
 
 export default function HighFidelityRiskMonitorV3() {
   const router = useRouter();
@@ -363,9 +377,9 @@ export default function HighFidelityRiskMonitorV3() {
                        <YAxis tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
                        <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '10px' }} />
                        <Legend verticalAlign="top" align="left" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase' }} />
-                       <Line type="monotone" dataKey="high" name="High Risk" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444' }} />
+                       <Line type="monotone" dataKey="high" name="High Risk" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e' }} />
                        <Line type="monotone" dataKey="medium" name="Medium Risk" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} />
-                       <Line type="monotone" dataKey="low" name="Low Risk" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} />
+                       <Line type="monotone" dataKey="low" name="Low Risk" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4, fill: '#0ea5e9' }} />
                     </LineChart>
                  </ResponsiveContainer>
               </div>
@@ -387,9 +401,9 @@ export default function HighFidelityRiskMonitorV3() {
                        <YAxis tick={{ fontSize: 9, fontWeight: 'black', fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '10px' }} />
                        <Legend verticalAlign="top" align="left" height={36} iconType="square" wrapperStyle={{ fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase' }} />
-                       <Bar dataKey="high" name="High (71-100)" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
+                       <Bar dataKey="high" name="High (71-100)" stackId="a" fill="#f43f5e" radius={[0, 0, 0, 0]} />
                        <Bar dataKey="medium" name="Medium (41-70)" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
-                       <Bar dataKey="low" name="Low (0-40)" stackId="a" fill="#10b981" radius={[4, 4, 0, 0]} />
+                       <Bar dataKey="low" name="Low (0-40)" stackId="a" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                  </ResponsiveContainer>
               </div>

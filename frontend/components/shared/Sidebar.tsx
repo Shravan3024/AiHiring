@@ -30,9 +30,9 @@ const hrNav = [
   { label: "Candidates", href: "/hr/candidates", icon: Users },
   { label: "Assessments", href: "/hr/assessments", icon: ClipboardList },
   { label: "Interviews", href: "/hr/interviews", icon: Bot },
+  { label: "MD Decisions", href: "/hr/md-decisions", icon: Shield },
   { label: "Offer Center", href: "/hr/offers", icon: FileText },
-  { label: "Risk Monitor", href: "/hr/risk-monitor", icon: Shield },
-  { label: "AI Insights", href: "/hr/ai-insights", icon: Sparkles },
+  { label: "Risk Monitor", href: "/hr/risk-monitor", icon: Lock },
   { label: "Reports", href: "/hr/reports", icon: FileText },
 ];
 

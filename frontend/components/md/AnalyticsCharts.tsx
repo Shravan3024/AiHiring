@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 
-const COLORS = ["#10b981", "#f59e0b", "#ef4444"];
+const COLORS = ["#14b8a6", "#f59e0b", "#f43f5e"];
 
 export default function AnalyticsCharts({ data }: any) {
   const chartData = [

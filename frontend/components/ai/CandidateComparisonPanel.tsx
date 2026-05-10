@@ -183,8 +183,8 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
               <YAxis domain={[0, 100]} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="resume" fill="#3b82f6" />
-              <Bar dataKey="technical" fill="#10b981" />
+              <Bar dataKey="resume" fill="#0ea5e9" />
+              <Bar dataKey="technical" fill="#14b8a6" />
               <Bar dataKey="interview" fill="#f59e0b" />
               <Bar dataKey="final" fill="#8b5cf6" />
             </BarChart>
@@ -210,15 +210,15 @@ export const CandidateComparisonPanel: React.FC<CandidateComparisonPanelProps> =
                 <Radar
                   name="Technical"
                   dataKey="technical"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
+                  stroke="#0ea5e9"
+                  fill="#0ea5e9"
                   fillOpacity={0.3}
                 />
                 <Radar
                   name="Communication"
                   dataKey="communication"
-                  stroke="#10b981"
-                  fill="#10b981"
+                  stroke="#14b8a6"
+                  fill="#14b8a6"
                   fillOpacity={0.3}
                 />
                 <Radar

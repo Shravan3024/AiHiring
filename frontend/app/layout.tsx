@@ -3,7 +3,11 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: "swap",   // show system font first, swap to Inter when loaded
+  preload: false,    // disable preload link to avoid blocking initial paint
+});
 
 export const metadata: Metadata = {
   title: "AI Recruitment Platform",
@@ -17,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

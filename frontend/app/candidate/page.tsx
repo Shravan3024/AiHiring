@@ -35,7 +35,7 @@ export default function CandidateDashboard() {
     queryKey: ["candidate-overview"],
     queryFn: () => candidateApi.getDashboard().then((r) => r.data),
     enabled: !!user,
-    refetchInterval: 5000, // Update dashboard data every 5 seconds for real-time feel
+    refetchInterval: 30_000, // 30s — dashboard data doesn't need sub-10s polling
   });
 
   const apps = overview?.applications || overview?.dashboard?.applications || [];

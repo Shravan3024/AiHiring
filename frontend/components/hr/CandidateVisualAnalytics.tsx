@@ -26,16 +26,16 @@ export default function CandidateVisualAnalytics({ profileData }: CandidateVisua
 
   const pipelineData = [
     { name: 'Applied', value: 100, fill: '#64748b' },
-    { name: 'Screening', value: 85, fill: '#3b82f6' },
+    { name: 'Screening', value: 85, fill: '#0ea5e9' },
     { name: 'Technical', value: 70, fill: '#8b5cf6' },
-    { name: 'Interview', value: 40, fill: '#d946ef' },
-    { name: 'Final', value: 15, fill: '#10b981' },
+    { name: 'Interview', value: 40, fill: '#ec4899' },
+    { name: 'Final', value: 15, fill: '#14b8a6' },
   ];
 
   const sentimentData = [
-    { name: 'Positive', value: 75, color: '#10b981' },
+    { name: 'Positive', value: 75, color: '#14b8a6' },
     { name: 'Neutral', value: 20, color: '#f59e0b' },
-    { name: 'Negative', value: 5, color: '#ef4444' },
+    { name: 'Negative', value: 5, color: '#f43f5e' },
   ];
 
   return (

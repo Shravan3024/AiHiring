@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import PanelLayout from "@/components/shared/PanelLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,33 +12,63 @@ import {
   Users, TrendingUp, Target, CheckCircle2, Clock, AlertCircle,
   ArrowUpRight, ArrowDownRight, Brain, Zap, Shield, Star,
   BarChart3, Activity, ChevronRight, RefreshCw, Download,
-  DollarSign, Briefcase, Calendar, Building2
+  DollarSign, Briefcase, Calendar, Building2, CheckCircle, XCircle, X, Loader2
 } from "lucide-react";
-import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
-  CartesianGrid, BarChart, Bar, Cell, PieChart, Pie, LineChart, Line
-} from "recharts";
+import dynamic from "next/dynamic";
+import { toast } from "sonner";
 
-const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"];
+const ResponsiveContainer = dynamic(() => import("recharts").then(m => m.ResponsiveContainer), { ssr: false });
+const AreaChart  = dynamic(() => import("recharts").then(m => m.AreaChart),  { ssr: false });
+const Area       = dynamic(() => import("recharts").then(m => m.Area),       { ssr: false });
+const XAxis      = dynamic(() => import("recharts").then(m => m.XAxis),      { ssr: false });
+const YAxis      = dynamic(() => import("recharts").then(m => m.YAxis),      { ssr: false });
+const Tooltip    = dynamic(() => import("recharts").then(m => m.Tooltip),    { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then(m => m.CartesianGrid), { ssr: false });
+const PieChart   = dynamic(() => import("recharts").then(m => m.PieChart),   { ssr: false });
+const Pie        = dynamic(() => import("recharts").then(m => m.Pie),        { ssr: false });
+const Cell       = dynamic(() => import("recharts").then(m => m.Cell),       { ssr: false });
+
+const COLORS = ["#0ea5e9", "#14b8a6", "#8b5cf6", "#f59e0b", "#f43f5e"];
+
+import { createPortal } from "react-dom";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function MDCommandCenter() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{ app: any; action: 'APPROVED' | 'REJECTED' } | null>(null);
 
   const { data: appsRaw = [], refetch: refetchApps } = useQuery({
     queryKey: ["md-applications"],
     queryFn: async () => (await api.get("/md/applications")).data,
-    refetchInterval: 30000,
+    refetchInterval: 30_000,
   });
   const { data: analytics = {} as any, refetch: refetchAnalytics } = useQuery({
     queryKey: ["md-analytics"],
     queryFn: async () => (await api.get("/md/analytics")).data,
-    refetchInterval: 30000,
+    refetchInterval: 30_000,
   });
   const { data: top = [] as any[], refetch: refetchTop } = useQuery({
     queryKey: ["md-top-candidates"],
     queryFn: async () => (await api.get("/md/top-candidates")).data,
-    refetchInterval: 30000,
+    refetchInterval: 30_000,
+  });
+
+  const { mutate: makeDecision, isPending: isDeciding } = useMutation({
+    mutationFn: (data: { application_id: number; decision: 'APPROVED' | 'REJECTED' }) =>
+      api.post('/md/decision', data),
+    onSuccess: (res) => {
+      const d = res.data;
+      toast.success(d.decision === 'APPROVED'
+        ? `✅ ${d.candidateName} recommended to HR`
+        : `❌ ${d.candidateName} rejected for HR review`);
+      setConfirmDialog(null);
+      queryClient.invalidateQueries({ queryKey: ['md-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['md-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['md-top-candidates'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Decision failed'),
   });
 
   const handleRefresh = async () => {
@@ -84,6 +114,9 @@ export default function MDCommandCenter() {
       OFFER_SENT: "bg-blue-500/10 text-blue-500",
       REJECTED: "bg-rose-500/10 text-rose-500",
       INTERVIEW_COMPLETED: "bg-purple-500/10 text-purple-500",
+      HR_REVIEW: "bg-amber-500/10 text-amber-500",
+      OFFERED: "bg-blue-500/10 text-blue-500",
+      HIRED: "bg-emerald-500/10 text-emerald-500",
     };
     return map[status] || "bg-muted text-muted-foreground";
   };
@@ -91,6 +124,47 @@ export default function MDCommandCenter() {
   return (
     <PanelLayout title="Command Center" allowedRoles={["MD"]}>
       <div className="max-w-[1600px] mx-auto space-y-4 p-3 md:p-5 animate-in fade-in duration-500">
+
+        {/* 2-STEP CONFIRMATION DIALOG */}
+        <Dialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+          <DialogContent className="max-w-lg bg-white border-slate-100 rounded-xl shadow-2xl p-0 overflow-hidden">
+            <div className={cn("px-6 py-4 border-b", confirmDialog?.action === 'APPROVED' ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100")}>
+              <DialogHeader>
+                <DialogTitle className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                  {confirmDialog?.action === 'APPROVED' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-rose-600" />}
+                  {confirmDialog?.action === 'APPROVED' ? 'Confirm Recommendation' : 'Confirm Rejection'}
+                </DialogTitle>
+                <DialogDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Step 2 of 2 — Verification Required</DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className={cn("p-4 rounded-lg border", confirmDialog?.action === 'APPROVED' ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100")}>
+                <p className="text-xs text-slate-600">
+                  {confirmDialog?.action === 'APPROVED'
+                    ? <>Do you really want to <span className="font-black text-emerald-700">recommend</span> candidate <span className="font-black text-slate-900">{confirmDialog?.app?.candidateName || confirmDialog?.app?.name}</span> to HR?</>
+                    : <>Do you really want to <span className="font-black text-rose-700">reject</span> candidate <span className="font-black text-slate-900">{confirmDialog?.app?.candidateName || confirmDialog?.app?.name}</span> for HR review?</>}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[10px]">
+                <div><span className="text-slate-400 font-bold">Name:</span><span className="text-slate-700 font-bold block">{confirmDialog?.app?.candidateName || '—'}</span></div>
+                <div><span className="text-slate-400 font-bold">Email:</span><span className="text-slate-700 block">{confirmDialog?.app?.candidateEmail || confirmDialog?.app?.candidate?.email || '—'}</span></div>
+                <div><span className="text-slate-400 font-bold">Position:</span><span className="text-slate-700 font-bold block">{confirmDialog?.app?.jobTitle || confirmDialog?.app?.position || '—'}</span></div>
+                <div><span className="text-slate-400 font-bold">AI Score:</span><span className="text-primary font-bold block">{Math.round(confirmDialog?.app?.aiScore || 0)}%</span></div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-[10px] text-amber-700">This is a recommendation only. HR is the final authority for candidate selection and offer process.</p>
+              </div>
+            </div>
+            <DialogFooter className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex sm:justify-between gap-3">
+              <Button variant="outline" className="flex-1 h-11 font-black uppercase text-[10px] tracking-widest" onClick={() => setConfirmDialog(null)} disabled={isDeciding}>Cancel</Button>
+              <Button className={cn("flex-1 h-11 text-white font-black uppercase text-[10px] tracking-widest gap-2", confirmDialog?.action === 'APPROVED' ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500")} onClick={() => makeDecision({ application_id: confirmDialog?.app?.applicationId || confirmDialog?.app?.id, decision: confirmDialog?.action as 'APPROVED' | 'REJECTED' })} disabled={isDeciding}>
+                {isDeciding ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmDialog?.action === 'APPROVED' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                {confirmDialog?.action === 'APPROVED' ? 'Confirm Recommendation' : 'Confirm Rejection'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* HEADER */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-1">
@@ -134,7 +208,6 @@ export default function MDCommandCenter() {
 
         {/* ROW 2: TREND + FUNNEL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
           <Card className="lg:col-span-7 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -147,27 +220,26 @@ export default function MDCommandCenter() {
                 <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="appsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="hiresGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="month" tick={{ fontSize: 9, fontWeight: 700, fill: '#6b7280' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fontWeight: 700, fill: '#6b7280' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px' }} />
-                  <Area type="monotone" dataKey="apps" name="Applications" stroke="#3b82f6" fill="url(#appsGrad)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="hires" name="Hires" stroke="#10b981" fill="url(#hiresGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="apps" name="Applications" stroke="#0ea5e9" fill="url(#appsGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="hires" name="Hires" stroke="#14b8a6" fill="url(#hiresGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <div className="lg:col-span-5 grid grid-cols-1 gap-4">
-
             <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="border-b border-border/40 px-4 py-2 bg-muted/20">
                 <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -187,8 +259,8 @@ export default function MDCommandCenter() {
                         </div>
                       </div>
                       <div className="h-1 w-full bg-muted/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full"
-                          style={{ width: `${pct}%`, opacity: 1 - i * 0.15 }} />
+                        <div className="h-full rounded-full"
+                          style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }} />
                       </div>
                     </div>
                   );
@@ -213,7 +285,6 @@ export default function MDCommandCenter() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
           </div>
         </div>
 
@@ -233,7 +304,7 @@ export default function MDCommandCenter() {
               <div className="divide-y divide-border/40">
                 {topList.length > 0 ? topList.slice(0, 6).map((c: any, i: number) => (
                   <div key={i} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors cursor-pointer group"
-                    onClick={() => router.push(`/hr/applications/${c.applicationId || c.id}`)}>
+                    onClick={() => router.push(`/md/applications/${c.id}`)}>
                     <div className={cn("w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 shadow-sm border border-border/40",
                       i === 0 ? "bg-amber-50 text-amber-600" : i === 1 ? "bg-slate-50 text-slate-600" :
                       i === 2 ? "bg-orange-50 text-orange-600" : "bg-muted/50 text-muted-foreground")}>#{i + 1}</div>
@@ -274,24 +345,26 @@ export default function MDCommandCenter() {
                       <th className="px-4 py-2">Role</th>
                       <th className="px-4 py-2">AI Score</th>
                       <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2 text-right">Action</th>
+                      <th className="px-4 py-2 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40 text-[11px]">
                     {apps.slice(0, 8).map((app: any, i: number) => (
                       <tr key={app.applicationId || i}
-                        className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                        onClick={() => router.push(`/hr/applications/${app.applicationId || app.id}`)}>
-                        <td className="px-4 py-2">
+                        className="hover:bg-gray-50 transition-colors group">
+                        <td className="px-4 py-2 cursor-pointer" onClick={() => router.push(`/md/applications/${app.applicationId || app.id}`)}>
                           <div className="flex items-center gap-2.5">
                             <div className="w-6 h-6 rounded-md bg-muted border border-border/50 overflow-hidden shrink-0 shadow-sm">
                               <img src={app.profileImage || "/images/default-avatar.png"} alt=""
                                 className="w-full h-full object-cover"
                                 onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }} />
                             </div>
-                            <span className="font-bold text-foreground uppercase tracking-tight group-hover:text-primary transition-colors text-[10px]">
-                              {app.candidateName || app.name}
-                            </span>
+                            <div>
+                              <span className="font-bold text-foreground uppercase tracking-tight group-hover:text-primary transition-colors text-[10px] block">
+                                {app.candidateName || app.name}
+                              </span>
+                              <span className="text-[8px] text-muted-foreground">{app.candidateEmail || app.candidate?.email || ''}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-2 text-[9px] font-medium text-muted-foreground uppercase truncate max-w-[120px]">{app.position || app.jobTitle || "—"}</td>
@@ -304,18 +377,38 @@ export default function MDCommandCenter() {
                           </div>
                         </td>
                         <td className="px-4 py-2">
-                          <Badge className={cn("text-[8px] font-bold uppercase border-none px-1.5 py-0", statusBadge(app.applicationStatus))}>
-                            {(app.applicationStatus || "—").replace(/_/g, " ")}
+                          <Badge className={cn("text-[8px] font-bold uppercase border-none px-1.5 py-0", statusBadge(app.applicationStatus || app.status))}>
+                            {(app.applicationStatus || app.status || "—").replace(/_/g, " ")}
                           </Badge>
                         </td>
                         <td className="px-4 py-2 text-right">
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary inline-block transition-colors" />
+                          <div className="flex items-center justify-end gap-1">
+                            {app.final_decision !== 'APPROVED' && app.final_decision !== 'REJECTED' && app.final_decision !== 'MD_RECOMMENDED' && app.final_decision !== 'MD_REJECTED' && (
+                              <>
+                                <Button size="icon" variant="ghost"
+                                  className="w-6 h-6 rounded-md hover:bg-emerald-500/10 text-emerald-600"
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDialog({ app, action: 'APPROVED' }); }}>
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button size="icon" variant="ghost"
+                                  className="w-6 h-6 rounded-md hover:bg-rose-500/10 text-rose-600"
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDialog({ app, action: 'REJECTED' }); }}>
+                                  <XCircle className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
+                            <Button size="icon" variant="ghost"
+                              className="w-6 h-6 rounded-md hover:bg-muted/50"
+                              onClick={() => router.push(`/md/applications/${app.applicationId || app.id}`)}>
+                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                     {apps.length === 0 && (
                       <tr><td colSpan={5} className="px-4 py-8 text-center text-[10px] font-bold uppercase text-muted-foreground/60">
-                        No pipeline data available
+                        No interview-completed candidates available
                       </td></tr>
                     )}
                   </tbody>

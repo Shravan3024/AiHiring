@@ -154,25 +154,31 @@ class CandidateProfileController {
       if (allQIds.size > 0) {
         const ids = Array.from(allQIds).map(id => String(id).trim());
         
+        // Filter IDs to only valid UUIDs to prevent Postgres from throwing "invalid input syntax for type uuid"
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidIds = ids.filter(id => uuidRegex.test(id));
+        
         // 1. TechnicalQuestionBank - Fetch by both questionId and ID
-        const techQuestions = await TechnicalQuestionBank.findAll({
-          where: {
-            [Op.or]: [
-              { questionId: { [Op.in]: ids } },
-              { questionId: { [Op.in]: ids.map(id => id.toLowerCase()) } }
-            ]
-          },
-          attributes: ['questionId', 'question', 'correct_answer', 'expected_answer']
-        });
+        if (uuidIds.length > 0) {
+          const techQuestions = await TechnicalQuestionBank.findAll({
+            where: {
+              [Op.or]: [
+                { questionId: { [Op.in]: uuidIds } },
+                { questionId: { [Op.in]: uuidIds.map(id => id.toLowerCase()) } }
+              ]
+            },
+            attributes: ['questionId', 'question', 'correct_answer', 'expected_answer']
+          });
 
-        techQuestions.forEach(q => {
-          const qData = { text: q.question || "N/A", correct: q.correct_answer || q.expected_answer || "N/A" };
-          if (q.questionId) {
-            questionMap[q.questionId.trim()] = qData;
-            questionMap[q.questionId.toLowerCase().trim()] = qData;
-            questionMap[String(q.questionId).trim()] = qData;
-          }
-        });
+          techQuestions.forEach(q => {
+            const qData = { text: q.question || "N/A", correct: q.correct_answer || q.expected_answer || "N/A" };
+            if (q.questionId) {
+              questionMap[q.questionId.trim()] = qData;
+              questionMap[q.questionId.toLowerCase().trim()] = qData;
+              questionMap[String(q.questionId).trim()] = qData;
+            }
+          });
+        }
 
         // 2. MCQQuestion - Fetch by ID
         const mcqIds = ids.filter(id => !isNaN(parseInt(id, 10)));

@@ -5,24 +5,39 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { hrApi } from "@/lib/api";
 import api from "@/lib/api";
 import PanelLayout from "@/components/shared/PanelLayout";
-import { AIDecisionPanel } from "@/components/ai/AIDecisionPanel";
-import { AssessmentAnalysisPanel } from "@/components/ai/AssessmentAnalysisPanel";
-import { InterviewAnalysisPanel } from "@/components/ai/InterviewAnalysisPanel";
+import dynamic from "next/dynamic";
+
+const AIDecisionPanel = dynamic(
+  () => import("@/components/ai/AIDecisionPanel").then(m => m.AIDecisionPanel),
+  { ssr: false, loading: () => <div className="animate-pulse h-64 rounded-xl bg-muted/30 border border-border/40" /> }
+);
+const AssessmentAnalysisPanel = dynamic(
+  () => import("@/components/ai/AssessmentAnalysisPanel").then(m => m.AssessmentAnalysisPanel),
+  { ssr: false, loading: () => <div className="animate-pulse h-48 rounded-xl bg-muted/30 border border-border/40" /> }
+);
+const InterviewAnalysisPanel = dynamic(
+  () => import("@/components/ai/InterviewAnalysisPanel").then(m => m.InterviewAnalysisPanel),
+  { ssr: false, loading: () => <div className="animate-pulse h-48 rounded-xl bg-muted/30 border border-border/40" /> }
+);
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText, TrendingUp, ShieldCheck, Download,
-  ChevronLeft, BarChart2, BrainCircuit, CheckCircle, XCircle, Loader2, User
+  ChevronLeft, BarChart2, BrainCircuit, CheckCircle, XCircle, Loader2, User,
+  Mail, MapPin, Briefcase, GraduationCap, Star, Code, X, Phone
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function MDApplicationReview() {
   const { id } = useParams();
   const router = useRouter();
   const applicationId = Number(id);
   const queryClient = useQueryClient();
+  const [confirmDialog, setConfirmDialog] = useState<'APPROVED' | 'REJECTED' | null>(null);
+  const [mdNotes, setMdNotes] = useState('');
 
   const { data: appResponse, isLoading } = useQuery({
     queryKey: ["hr-application", applicationId],
@@ -30,20 +45,45 @@ export default function MDApplicationReview() {
     refetchInterval: 30000,
   });
 
-  // The candidateProfile controller returns { success, data: { id, status, Candidate: { User }, Job } }
   const app = appResponse?.data;
   const candidateName = app?.Candidate?.User?.name || app?.candidateName || '—';
+  const candidateEmail = app?.Candidate?.User?.email || '—';
   const jobTitle = app?.Job?.title || app?.jobTitle || '—';
+  const department = app?.Job?.department || '—';
   const overallScore = Math.round(app?.overall_score || 0);
   const integrityScore = app?.integrity_score ?? app?.Candidate?.integrity_score ?? 100;
 
+  // Candidate profile info
+  const candidate = app?.Candidate || {};
+  const education = app?.education || candidate?.education || '—';
+  const specialization = app?.specialization || '—';
+  const experience = app?.experience_years || candidate?.experience_years || 0;
+  const skills = app?.skills || [];
+  const summary = app?.summary || '';
+  const domain = candidate?.domain || '—';
+  const areaOfInterest = candidate?.area_of_interest || '—';
+  const currentCompany = candidate?.current_company || '—';
+  const candidateType = candidate?.candidate_type || '—';
+  const phone = candidate?.phone || '—';
+  const location = candidate?.location || candidate?.working_address || '—';
+
+  // Resume parsed data
+  const resumeAnalysis = app?.ResumeAnalysis || null;
+
+  const hasDecision = ['APPROVED','REJECTED','MD_RECOMMENDED','MD_REJECTED'].includes(app?.final_decision);
+
   const { mutate: makeDecision, isPending: isDeciding } = useMutation({
     mutationFn: (decision: 'APPROVED' | 'REJECTED') =>
-      api.post('/md/decision', { application_id: applicationId, decision }),
-    onSuccess: (_, decision) => {
-      toast.success(decision === 'APPROVED' ? '✅ Offer dispatched successfully!' : '❌ Candidate rejected.');
+      api.post('/md/decision', { application_id: applicationId, decision, md_notes: mdNotes || null }),
+    onSuccess: (res) => {
+      const d = res.data;
+      toast.success(d.decision === 'APPROVED'
+        ? `✅ ${d.candidateName} recommended to HR`
+        : `❌ ${d.candidateName} rejected for HR review`);
+      setConfirmDialog(null);
+      setMdNotes('');
       queryClient.invalidateQueries({ queryKey: ['hr-application', applicationId] });
-      router.push('/md/decision');
+      router.push('/md');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Decision failed'),
   });
@@ -73,7 +113,57 @@ export default function MDApplicationReview() {
 
   return (
     <PanelLayout title="Executive Approval Terminal" allowedRoles={['MD', 'ADMIN']}>
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+
+        {/* 2-STEP CONFIRMATION DIALOG */}
+        <Dialog open={!!confirmDialog} onOpenChange={(open) => { if (!open) { setConfirmDialog(null); setMdNotes(''); } }}>
+          <DialogContent className="max-w-lg bg-white border-slate-100 rounded-xl shadow-2xl p-0 overflow-hidden">
+            <div className={cn(
+              "px-6 py-4 border-b",
+              confirmDialog === 'APPROVED' ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
+            )}>
+              <DialogHeader>
+                <DialogTitle className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                  {confirmDialog === 'APPROVED' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-rose-600" />}
+                  {confirmDialog === 'APPROVED' ? 'Confirm Recommendation' : 'Confirm Rejection'}
+                </DialogTitle>
+                <DialogDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">
+                  Step 2 of 2 — Verification Required
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className={cn("p-4 rounded-lg border", confirmDialog === 'APPROVED' ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100")}>
+                <p className="text-xs text-slate-600">
+                  {confirmDialog === 'APPROVED'
+                    ? <>Do you really want to <span className="font-black text-emerald-700">recommend</span> candidate <span className="font-black text-slate-900">{candidateName}</span> to HR?</>
+                    : <>Do you really want to <span className="font-black text-rose-700">reject</span> candidate <span className="font-black text-slate-900">{candidateName}</span> for HR review?</>}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[10px]">
+                <div className="space-y-1"><span className="text-slate-400 font-bold">Name:</span> <span className="text-slate-700 font-bold block">{candidateName}</span></div>
+                <div className="space-y-1"><span className="text-slate-400 font-bold">Email:</span> <span className="text-slate-700 block">{candidateEmail}</span></div>
+                <div className="space-y-1"><span className="text-slate-400 font-bold">Position:</span> <span className="text-slate-700 font-bold block">{jobTitle}</span></div>
+                <div className="space-y-1"><span className="text-slate-400 font-bold">AI Score:</span> <span className="text-primary font-bold block">{overallScore}%</span></div>
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">MD Notes (Optional)</label>
+                <textarea className="w-full text-xs h-16 resize-none border border-slate-200 rounded-lg p-2.5 focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none" placeholder="Add notes for HR team..." value={mdNotes} onChange={(e) => setMdNotes(e.target.value)} />
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                <Star className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-[10px] text-amber-700">This is a recommendation only. HR is the final authority for candidate selection and offer process.</p>
+              </div>
+            </div>
+            <DialogFooter className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex sm:justify-between gap-3">
+              <Button variant="outline" className="flex-1 h-11 font-black uppercase text-[10px] tracking-widest" onClick={() => { setConfirmDialog(null); setMdNotes(''); }} disabled={isDeciding}>Cancel</Button>
+              <Button className={cn("flex-1 h-11 text-white font-black uppercase text-[10px] tracking-widest gap-2", confirmDialog === 'APPROVED' ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500")} onClick={() => makeDecision(confirmDialog as 'APPROVED' | 'REJECTED')} disabled={isDeciding}>
+                {isDeciding ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmDialog === 'APPROVED' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                {confirmDialog === 'APPROVED' ? 'Confirm Recommendation' : 'Confirm Rejection'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Header */}
         <div className="bg-white border border-slate-100 rounded-lg shadow-sm p-8">
@@ -114,13 +204,109 @@ export default function MDApplicationReview() {
           </div>
         </div>
 
+        {/* Candidate Profile Card */}
+        <Card className="border-slate-100 shadow-sm rounded-xl overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-4">
+            <CardTitle className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+              <User className="w-4 h-4 text-blue-600" /> Candidate Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 py-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Contact & Basic Info */}
+              <div className="space-y-3">
+                <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Contact Info</h4>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">{candidateEmail}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">{phone}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">{location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">{experience} years • {candidateType}</span>
+                </div>
+              </div>
+
+              {/* Education & Domain */}
+              <div className="space-y-3">
+                <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Education & Domain</h4>
+                <div className="flex items-center gap-2 text-sm">
+                  <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">{education} {specialization ? `(${specialization})` : ''}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Star className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">Domain: {domain}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <BrainCircuit className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">Interest: {areaOfInterest}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-slate-700 text-xs">Company: {currentCompany}</span>
+                </div>
+              </div>
+
+              {/* Skills */}
+              <div className="space-y-3">
+                <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Skills</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {skills.length > 0 ? skills.map((s: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5">
+                      {s}
+                    </Badge>
+                  )) : (
+                    <span className="text-xs text-slate-400">No skills data</span>
+                  )}
+                </div>
+                {summary && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Summary</p>
+                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{summary}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Resume Parsed Data */}
+            {resumeAnalysis && (
+              <div className="mt-5 pt-5 border-t border-slate-100">
+                <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                  <FileText className="w-3 h-3" /> Resume Analysis
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {resumeAnalysis.experience_summary && (
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-[9px] font-bold uppercase text-slate-400 mb-1">Experience Summary</p>
+                      <p className="text-xs text-slate-600">{resumeAnalysis.experience_summary}</p>
+                    </div>
+                  )}
+                  {resumeAnalysis.overall_assessment && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <p className="text-[9px] font-bold uppercase text-blue-600 mb-1">Overall Assessment</p>
+                      <p className="text-xs text-slate-600">{resumeAnalysis.overall_assessment}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Score + AI Decision */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8">
             <AIDecisionPanel applicationId={applicationId} />
           </div>
           <div className="lg:col-span-4 space-y-5">
-            {/* Peer Benchmarking */}
             <Card className="border-slate-100 shadow-sm rounded-[1.5rem] overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-5">
                 <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
@@ -168,35 +354,44 @@ export default function MDApplicationReview() {
           <InterviewAnalysisPanel applicationId={applicationId} />
         </div>
 
-        {/* Final Decision Bar */}
-        <div className="bg-slate-900 text-white p-8 rounded-lg shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* MD Recommendation Bar */}
+        <div className="bg-slate-900/5 border border-slate-200 p-8 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tight">Final Executive Decision</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
-              This decision will be permanently logged as the Board Action for Application #{applicationId}.
+            <h2 className="text-xl font-black uppercase tracking-tight text-slate-800">MD Recommendation to HR</h2>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">
+              Your recommendation will be sent to HR for final decision. Application #{applicationId}.
             </p>
           </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <Button
-              size="lg"
-              variant="outline"
-              className="flex-1 md:flex-none h-14 px-10 rounded-lg border-white/20 text-white bg-white/5 hover:bg-rose-600 hover:border-rose-600 font-bold uppercase text-[11px] tracking-widest transition-all gap-2"
-              onClick={() => makeDecision('REJECTED')}
-              disabled={isDeciding}
-            >
-              {isDeciding ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-              Reject Candidate
-            </Button>
-            <Button
-              size="lg"
-              className="flex-1 md:flex-none h-14 px-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-[11px] tracking-widest shadow-lg shadow-blue-900/30 transition-all gap-2"
-              onClick={() => makeDecision('APPROVED')}
-              disabled={isDeciding}
-            >
-              {isDeciding ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Approve &amp; Dispatch Offer
-            </Button>
-          </div>
+          {hasDecision ? (
+            <Badge className={cn('px-6 py-3 text-sm font-black uppercase tracking-widest rounded-xl',
+              app?.final_decision === 'MD_RECOMMENDED' || app?.final_decision === 'APPROVED'
+                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                : 'bg-rose-100 text-rose-700 border border-rose-200'
+            )}>
+              {app?.final_decision === 'MD_RECOMMENDED' || app?.final_decision === 'APPROVED' ? 'Recommended to HR' : 'Rejected for HR Review'}
+            </Badge>
+          ) : (
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Button
+                size="lg"
+                className="flex-1 md:flex-none h-16 px-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-sm tracking-widest shadow-xl shadow-rose-900/20 transition-all gap-3"
+                onClick={() => setConfirmDialog('REJECTED')}
+                disabled={isDeciding}
+              >
+                <XCircle className="w-5 h-5" />
+                Reject
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1 md:flex-none h-16 px-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-sm tracking-widest shadow-xl shadow-emerald-900/20 transition-all gap-3"
+                onClick={() => setConfirmDialog('APPROVED')}
+                disabled={isDeciding}
+              >
+                <CheckCircle className="w-5 h-5" />
+                Recommend
+              </Button>
+            </div>
+          )}
         </div>
 
       </div>

@@ -11,12 +11,26 @@ import {
   ArrowUpRight, ArrowDownRight, Activity, Calendar, MessageCircle, ShieldCheck,
   Trophy, Star, Loader2, ExternalLink, Zap, Brain, BarChart3, PieChart as PieIcon,
   Search, Filter, Plus, ChevronRight, Target, LayoutDashboard, FileText, Briefcase,
-  Layers, MousePointer2, RefreshCw
+  Layers, MousePointer2, RefreshCw, Shield
 } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
-} from "recharts";
+import dynamic from "next/dynamic";
+
+// Dynamic recharts — splits the chart lib out of the initial bundle
+const BarChart  = dynamic(() => import("recharts").then(m => m.BarChart),  { ssr: false });
+const Bar       = dynamic(() => import("recharts").then(m => m.Bar),       { ssr: false });
+const XAxis     = dynamic(() => import("recharts").then(m => m.XAxis),     { ssr: false });
+const YAxis     = dynamic(() => import("recharts").then(m => m.YAxis),     { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then(m => m.CartesianGrid), { ssr: false });
+const Tooltip   = dynamic(() => import("recharts").then(m => m.Tooltip),   { ssr: false });
+const ResponsiveContainer = dynamic(() => import("recharts").then(m => m.ResponsiveContainer), { ssr: false });
+const Legend    = dynamic(() => import("recharts").then(m => m.Legend),    { ssr: false });
+const LineChart = dynamic(() => import("recharts").then(m => m.LineChart), { ssr: false });
+const Line      = dynamic(() => import("recharts").then(m => m.Line),      { ssr: false });
+const PieChart  = dynamic(() => import("recharts").then(m => m.PieChart),  { ssr: false });
+const Pie       = dynamic(() => import("recharts").then(m => m.Pie),       { ssr: false });
+const Cell      = dynamic(() => import("recharts").then(m => m.Cell),      { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
+const Area      = dynamic(() => import("recharts").then(m => m.Area),      { ssr: false });
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,9 +64,7 @@ function KPICard({ title, value, trend, trendValue, icon: Icon, sparkData, color
           </div>
           <div className="h-8 w-20">
             <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
-              <AreaChart data={sparkData}>
-                <Area type="monotone" dataKey="v" stroke={trend === "up" ? "#10b981" : "#ef4444"} fill={trend === "up" ? "#10b98110" : "#ef444410"} strokeWidth={1.5} />
-              </AreaChart>
+                <Area type="monotone" dataKey="v" stroke={trend === "up" ? "#14b8a6" : "#f43f5e"} fill={trend === "up" ? "#14b8a610" : "#f43f5e10"} strokeWidth={1.5} />
             </ResponsiveContainer>
           </div>
         </div>
@@ -69,46 +81,52 @@ export default function HRDashboard() {
   const { data: kpiData } = useQuery({
     queryKey: ["hr-kpi"],
     queryFn: () => hrApi.getKPICards().then(r => r.data?.data || {}),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const { data: funnelDataRaw } = useQuery({
     queryKey: ["hr-funnel"],
     queryFn: () => hrApi.getHiringFunnel().then(r => r.data?.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const { data: distributionRaw } = useQuery({
     queryKey: ["hr-distribution"],
     queryFn: () => hrApi.getStatusDistribution().then(r => r.data?.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const { data: pendingRaw } = useQuery({
     queryKey: ["hr-pending"],
     queryFn: () => hrApi.getPendingActions().then(r => r.data?.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const { data: topCandidatesRaw } = useQuery({
     queryKey: ["hr-top-candidates"],
     queryFn: () => hrApi.getTopCandidates().then(r => r.data?.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const { data: opsCore } = useQuery({
     queryKey: ["hr-ops-core"],
     queryFn: () => hrApi.getOperationalCore().then(r => r.data?.data || {}),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
+  });
+
+  const { data: mdDecisionsRaw } = useQuery({
+    queryKey: ["hr-md-decisions"],
+    queryFn: () => hrApi.getMDDecisions().then(r => r.data?.data || []),
+    refetchInterval: 30_000,
   });
 
   // --- MOCK / PROCESSED DATA ---
   const sparkData = [{ v: 40 }, { v: 45 }, { v: 42 }, { v: 50 }, { v: 48 }, { v: 55 }, { v: 60 }];
 
-  const funnelData = (funnelDataRaw && funnelDataRaw.length > 0) ? funnelDataRaw.map((f: { stage: string; count: number; dropoff: number }) => ({
-    stage: f.stage.replace(/_/g, ' '),
-    count: f.count,
-    conversion: f.dropoff === 0 ? 100 : 100 - f.dropoff
+  const funnelData = (funnelDataRaw && funnelDataRaw.length > 0) ? funnelDataRaw.map((f: any) => ({
+    stage: (f.stage || "").replace(/_/g, ' '),
+    count: Number(f.count || 0),
+    conversion: f.dropoff === 0 ? 100 : 100 - (f.dropoff || 0)
   })) : [
     { stage: 'APPLIED', count: 0, conversion: 0 },
     { stage: 'RESUME CLEARED', count: 0, conversion: 0 },
@@ -118,12 +136,12 @@ export default function HRDashboard() {
     { stage: 'SELECTED', count: 0, conversion: 0 },
   ];
 
-  const distributionData = (distributionRaw && distributionRaw.length > 0) ? distributionRaw.map((d: { label: string; value: number }, i: number) => ({
-    name: d.label,
-    value: d.value,
-    color: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444'][i % 5]
+  const distributionData = (distributionRaw && distributionRaw.length > 0) ? distributionRaw.map((d: any, i: number) => ({
+    name: d.label || d.status || d.name || 'Unknown',
+    value: Number(d.value || d.count || 0),
+    color: ['#14b8a6', '#0ea5e9', '#f59e0b', '#8b5cf6', '#f43f5e'][i % 5]
   })) : [
-    { name: 'Loading...', value: 100, color: '#333' }
+    { name: 'Loading...', value: 100, color: '#94a3b8' }
   ];
 
   const topCandidate = topCandidatesRaw?.[0] || {
@@ -192,9 +210,9 @@ export default function HRDashboard() {
                       <BarChart data={funnelData} layout="vertical" margin={{ left: -30, right: 0, top: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="stage" type="category" hide />
-                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20}>
-                          {funnelData.map((entry: { stage: string; count: number; conversion: number }, index: number) => (
-                            <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
+                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                          {funnelData.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={['#14b8a6', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#ec4899'][index % 6]} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -213,7 +231,7 @@ export default function HRDashboard() {
                         {funnelData.map((row: { stage: string; count: number; conversion: number }, i: number) => (
                           <tr key={i} className="border-t border-border/40">
                             <td className="py-1.5 flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: `hsla(var(--primary), ${1 - i * 0.15})` }}></div>
+                              <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: ['#14b8a6', '#0ea5e9', '#8b5cf6', '#f59e0b', '#f43f5e', '#ec4899'][i % 6] }}></div>
                               <span className="truncate max-w-[100px]">{row.stage}</span>
                             </td>
                             <td className="py-1.5">{row.count}</td>
@@ -264,7 +282,6 @@ export default function HRDashboard() {
                 <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-amber-500" /> AI Insights
                 </CardTitle>
-                <Button variant="link" onClick={() => router.push('/hr/ai-insights')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
               </CardHeader>
               <CardContent className="p-3 space-y-2.5">
                 {[
@@ -428,13 +445,13 @@ export default function HRDashboard() {
                         <XAxis dataKey="x" hide />
                         <YAxis hide />
                         <Tooltip contentStyle={{ fontSize: '10px', padding: '4px 8px' }} />
-                        <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} />
+                        <Line type="monotone" dataKey="v" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3, fill: '#0ea5e9' }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="flex justify-center gap-4 pt-2">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-0.5 bg-primary rounded-full"></div>
+                      <div className="w-2 h-0.5 rounded-full" style={{ backgroundColor: "#0ea5e9" }}></div>
                       <span className="text-[8px] font-bold uppercase text-muted-foreground tracking-wider">Hired</span>
                     </div>
                   </div>
@@ -477,6 +494,63 @@ export default function HRDashboard() {
             </CardContent>
           </Card>
 
+        </div>
+
+        {/* ROW 4: MD Decisions */}
+        <div className="pb-8">
+          <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+              <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-purple-500" /> MD Decisions
+                <Badge variant="secondary" className="font-bold text-[8px] px-1 py-0 bg-white border border-border/50">{(mdDecisionsRaw || []).length}</Badge>
+              </CardTitle>
+              <Button variant="link" onClick={() => router.push('/hr/md-decisions')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {mdDecisionsRaw && mdDecisionsRaw.length > 0 ? (
+                <div className="divide-y divide-border/40">
+                  {mdDecisionsRaw.slice(0, 8).map((d: any, i: number) => (
+                    <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors cursor-pointer group"
+                      onClick={() => router.push(`/hr/applications/${d.applicationId}`)}>
+                      <div className="flex items-center gap-3">
+                        <div className={cn("p-1.5 rounded-md border border-border/60 shadow-sm",
+                          d.decision === 'RECOMMENDED' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                        )}>
+                          {d.decision === 'RECOMMENDED'
+                            ? <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            : <AlertCircle className="w-3.5 h-3.5 text-rose-600" />}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-tight leading-none mb-1">{d.candidateName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[9px] font-medium text-muted-foreground">{d.jobTitle}{d.department ? ` • ${d.department}` : ''}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn("text-[8px] font-bold border-none px-1.5 py-0",
+                          d.decision === 'RECOMMENDED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
+                        )}>
+                          {d.decision === 'RECOMMENDED' ? 'MD RECOMMENDED' : 'MD REJECTED'}
+                        </Badge>
+                        {d.mdName && <span className="text-[8px] font-medium text-muted-foreground">{d.mdName}</span>}
+                        <span className="text-[8px] font-medium text-muted-foreground tabular-nums">
+                          {d.decidedAt ? new Date(d.decidedAt).toLocaleDateString() : ''}
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <Shield className="w-6 h-6 text-muted-foreground/20 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">No MD decisions yet</p>
+                  <p className="text-[9px] text-muted-foreground/40 mt-1">Decisions will appear here once MD reviews candidates</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
       </div>

@@ -205,6 +205,9 @@ export const hrApi = {
 
   // Assessment Analysis
   analyzeAssessment: (applicationId: string) => api.post(`/assessment/analyze/${applicationId}`),
+
+  // MD Decisions feed
+  getMDDecisions: () => api.get('/hr/dashboard/md-decisions'),
 };
 
 // ==================== MD ====================

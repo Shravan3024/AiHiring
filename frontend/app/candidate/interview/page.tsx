@@ -126,9 +126,47 @@ export default function CandidateInterview() {
     };
 
     const handleKeys = (e: KeyboardEvent) => {
-        if (started && !completed && (e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
+        if (started && !completed) {
+            // Block Copy/Paste/Save/Print shortcuts
+            if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+                logMalpracticeMutation.mutate({ type: "COPY_ATTEMPT", meta: { key: e.key, question: currentQ + 1 } });
+                toast.warning("Keyboard shortcuts are disabled.");
+            }
+            // Block DevTools (F12, Ctrl+Shift+I/C/J)
+            if (e.key === "F12" || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i', 'c', 'j'].includes(e.key.toLowerCase()))) {
+                e.preventDefault();
+                logMalpracticeMutation.mutate({ type: "DEVELOPER_TOOLS_ATTEMPT", meta: { key: e.key, question: currentQ + 1 } });
+                toast.error("Developer tools are prohibited.");
+            }
+        }
+    };
+
+    const handlePrint = (e: Event) => {
+        if (started && !completed) {
             e.preventDefault();
-            logMalpracticeMutation.mutate({ type: "COPY_ATTEMPT", meta: { key: e.key, question: currentQ + 1 } });
+            logMalpracticeMutation.mutate({ type: "PRINT_ATTEMPT", meta: { timestamp: new Date() } });
+            toast.warning("Printing is disabled during the interview.");
+        }
+    };
+
+    const handleMouseLeave = (e: MouseEvent) => {
+        if (started && !completed && e.clientY <= 0) {
+            // Log when mouse leaves through the top of the window (towards tabs/address bar)
+            logMalpracticeMutation.mutate({ type: "MOUSE_OUT_OF_BOUNDS", meta: { timestamp: new Date(), question: currentQ + 1 } });
+        }
+    };
+
+    const handleOffline = () => {
+        if (started && !completed) {
+            logMalpracticeMutation.mutate({ type: "NETWORK_DISCONNECTED", meta: { timestamp: new Date() } });
+            toast.error("Network disconnected! Reconnect immediately.");
+        }
+    };
+
+    const handleOnline = () => {
+        if (started && !completed) {
+            toast.success("Network restored.");
         }
     };
 
@@ -139,7 +177,13 @@ export default function CandidateInterview() {
     document.addEventListener("copy", blockAction);
     document.addEventListener("paste", blockAction);
     document.addEventListener("contextmenu", blockAction);
+    document.addEventListener("dragstart", blockAction);
+    document.addEventListener("drop", blockAction);
+    window.addEventListener("beforeprint", handlePrint);
+    document.addEventListener("mouseleave", handleMouseLeave);
     document.addEventListener("keydown", handleKeys);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
 
     return () => {
       document.removeEventListener("fullscreenchange", handleFSChange);
@@ -149,7 +193,13 @@ export default function CandidateInterview() {
       document.removeEventListener("copy", blockAction);
       document.removeEventListener("paste", blockAction);
       document.removeEventListener("contextmenu", blockAction);
+      document.removeEventListener("dragstart", blockAction);
+      document.removeEventListener("drop", blockAction);
+      window.removeEventListener("beforeprint", handlePrint);
+      document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("keydown", handleKeys);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
     };
   }, [started, completed, currentQ, interviewId]);
 
@@ -473,6 +523,19 @@ export default function CandidateInterview() {
         video: { width: 1280, height: 720 }, 
         audio: true 
       });
+
+      // Detect Virtual Cameras
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        const label = videoTrack.label.toLowerCase();
+        if (label.includes("virtual") || label.includes("obs") || label.includes("manycam") || label.includes("snap camera")) {
+          stream.getTracks().forEach(t => t.stop());
+          toast.error("Virtual cameras are strictly prohibited. Please use a physical webcam.");
+          setMediaError("UNKNOWN_ERROR");
+          return false;
+        }
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

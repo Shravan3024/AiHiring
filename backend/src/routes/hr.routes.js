@@ -159,6 +159,15 @@ router.get(
   HRDashboardController.getTopCandidates
 );
 
+// MD Decisions feed for HR dashboard
+const { getMDDecisions } = require("../controllers/md.controller");
+router.get(
+  "/dashboard/md-decisions",
+  auth,
+  role(["HR", "ADMIN", "MD"]),
+  getMDDecisions
+);
+
 router.get(
   "/assessments/stats",
   auth,

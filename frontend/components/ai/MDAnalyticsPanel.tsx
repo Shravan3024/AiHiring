@@ -60,10 +60,10 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
   }, []);
 
   const decisionColors = {
-    AUTO_REJECTED: "#ef4444",
-    RECOMMENDED: "#10b981",
+    AUTO_REJECTED: "#f43f5e",
+    RECOMMENDED: "#14b8a6",
     PROCEED_TO_HR: "#f59e0b",
-    PENDING: "#6b7280",
+    PENDING: "#64748b",
   };
 
   const scoreScatterData = candidates.map((c: any) => ({
@@ -239,19 +239,19 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
                 <Line
                   type="monotone"
                   dataKey="applications"
-                  stroke="#3b82f6"
+                  stroke="#0ea5e9"
                   name="Total Applications"
                 />
                 <Line
                   type="monotone"
                   dataKey="recommended"
-                  stroke="#10b981"
+                  stroke="#14b8a6"
                   name="Recommended"
                 />
                 <Line
                   type="monotone"
                   dataKey="rejected"
-                  stroke="#ef4444"
+                  stroke="#f43f5e"
                   name="Rejected"
                 />
               </LineChart>
@@ -296,7 +296,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
                 <XAxis dataKey="range" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#3b82f6" />
+                <Bar dataKey="count" fill="#0ea5e9" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -319,7 +319,7 @@ export const MDAnalyticsPanel: React.FC<MDAnalyticsPanelProps> = ({
                 <Scatter
                   name="Candidates"
                   data={scoreScatterData}
-                  fill="#3b82f6"
+                  fill="#0ea5e9"
                   shape="circle"
                 />
               </ScatterChart>

@@ -18,7 +18,7 @@ export default function AdminApprovalsPage() {
   const { data: bottleneckData } = useQuery({
     queryKey: ["approval-bottleneck"],
     queryFn: () => adminApi.getApprovalBottleneck().then(r => r.data?.data || r.data || []),
-    refetchInterval: 5000, // Real-time updates every 5s
+    refetchInterval: 30_000,
   });
 
   const { data: funnelData } = useQuery({
@@ -30,7 +30,7 @@ export default function AdminApprovalsPage() {
   const { data: pipelineData, isLoading } = useQuery({
     queryKey: ["hr-pipeline-admin"],
     queryFn: () => hrApi.getPipeline().then(r => r.data?.data || r.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
   });
 
   const pipeline: any[] = Array.isArray(pipelineData) ? pipelineData : [];

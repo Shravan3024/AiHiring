@@ -58,8 +58,8 @@ export default function CandidateIntelligence({ profileData }: CandidateIntellig
   ];
 
   const scoreBreakdown = [
-    { name: 'Resume', value: application?.resume_score || 25, color: '#10b981' },
-    { name: 'Assessment', value: application?.technical_score || 25, color: '#3b82f6' },
+    { name: 'Resume', value: application?.resume_score || 25, color: '#14b8a6' },
+    { name: 'Assessment', value: application?.technical_score || 25, color: '#0ea5e9' },
     { name: 'Interview', value: application?.interview_score || 27, color: '#8b5cf6' },
     { name: 'Integrity', value: 100 - (application?.resume_score || 0 + application?.technical_score || 0 + application?.interview_score || 0) / 3, color: '#f59e0b' },
   ].map(b => ({ ...b, value: Math.max(1, b.value) }));
