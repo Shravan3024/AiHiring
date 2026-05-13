@@ -302,9 +302,9 @@ export default function CandidatesPage() {
                              </td>
                              <td className="px-8 py-5 text-center">
                                 <div className="inline-flex flex-col items-center">
-                                   <span className="text-[11px] font-black text-foreground tabular-nums">{Math.round(app.overall_score) || 0}%</span>
+                                   <span className="text-[11px] font-black text-foreground tabular-nums">{Math.round(app.aiScore ?? app.overall_score ?? 0)}%</span>
                                    <div className="w-12 h-1 bg-muted rounded-full mt-1 overflow-hidden">
-                                      <div className="h-full bg-primary" style={{ width: `${app.overall_score || 0}%` }} />
+                                      <div className="h-full bg-primary" style={{ width: `${app.aiScore ?? app.overall_score ?? 0}%` }} />
                                    </div>
                                 </div>
                              </td>

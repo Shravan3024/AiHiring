@@ -30,7 +30,7 @@ export default function AdminApprovalsPage() {
   const { data: pipelineData, isLoading } = useQuery({
     queryKey: ["hr-pipeline-admin"],
     queryFn: () => hrApi.getPipeline().then(r => r.data?.data || r.data || []),
-    refetchInterval: 30_000,
+    refetchInterval: 10000,
   });
 
   const pipeline: any[] = Array.isArray(pipelineData) ? pipelineData : [];
@@ -59,11 +59,11 @@ export default function AdminApprovalsPage() {
   );
 
   const approved = pipeline.filter(a => 
-    ["HIRED", "SELECTED", "OFFERED"].some(s => (a.status || "").toUpperCase().includes(s))
+    ["HIRED", "SELECTED", "OFFERED"].some(s => (a.status || a.applicationStatus || "").toUpperCase().includes(s))
   ).length;
 
   const rejected = pipeline.filter(a => 
-    ["REJECTED", "AUTO_REJECTED"].some(s => (a.status || "").toUpperCase().includes(s))
+    ["REJECTED", "AUTO_REJECTED"].some(s => (a.status || a.applicationStatus || "").toUpperCase().includes(s))
   ).length;
 
   // Map bottleneck data if it's an object from the API

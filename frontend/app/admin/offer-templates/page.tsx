@@ -64,8 +64,30 @@ export default function OfferTemplatesPage() {
     setEditing(null);
     setForm({
       name: "",
-      subject: "Offer Letter - {{jobTitle}} at MSK Recruitment",
-      body: `Dear {{candidateName}},\n\nWe are pleased to offer you the position of {{jobTitle}}.\n\nSalary: {{salary}}\nStart Date: {{startDate}}\n\nPlease confirm your acceptance by {{deadline}}.\n\nBest regards,\n{{hrName}}`,
+      subject: "Offer Letter - {{jobTitle}} at AI Hiring System",
+      body: `<div style="font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.5; color: black; max-width: 800px; margin: 0 auto; padding: 40px; background: white; text-align: justify;">
+<p style="text-align: center; margin-bottom: 30px;"><span style="font-size: 14pt; font-weight: bold; text-decoration: underline;">STANDARD JOB OFFER LETTER</span></p>
+
+<p style="margin-bottom: 15px;">Dear <strong>{{candidateName}}</strong>,</p>
+
+<p style="margin-bottom: 15px;"><strong>AI Hiring System</strong> is excited to bring you on board as <strong>{{jobTitle}}</strong>.</p>
+
+<p style="margin-bottom: 15px;">We're just a few formalities away from getting down to work. Please take the time to review our formal offer. It includes important details about your compensation, benefits, and the terms and conditions of your anticipated employment with <strong>AI Hiring System</strong>.</p>
+
+<p style="margin-bottom: 15px;"><strong>AI Hiring System</strong> is offering a <strong>full-time</strong> position for you as <strong>{{jobTitle}}</strong>, reporting to <strong>the Hiring Manager</strong> starting on <strong>{{startDate}}</strong> at <strong>Pune, Maharashtra</strong>. Expected hours of work are <strong>Monday to Friday, 9:00 AM to 6:00 PM</strong>.</p>
+
+<p style="margin-bottom: 15px;">In this position, <strong>AI Hiring System</strong> is offering to start you at a pay rate of <strong>{{salary}}</strong> per <strong>annum</strong>. You will be paid on a <strong>monthly</strong> basis, starting <strong>from your first month of employment</strong>.</p>
+
+<p style="margin-bottom: 15px;">As part of your compensation, we're also offering <strong>performance-based bonuses and a comprehensive benefits package</strong>.</p>
+
+<p style="margin-bottom: 15px;">As an employee of <strong>AI Hiring System</strong> you will be eligible for <strong>standard company benefits, including health insurance, PF, and paid time off</strong>.</p>
+
+<p style="margin-bottom: 15px;">Please indicate your agreement with these terms and accept this offer by signing and dating this agreement on or before <strong>{{deadline}}</strong>.</p>
+
+<p style="margin-bottom: 15px;">Sincerely,</p>
+
+<p><strong>{{hrName}}</strong></p>
+</div>`,
       jobId: "all", legalClauses: "Standard NDA, Non-Compete", salaryBreakupTemplate: JSON.stringify({ basic: 50, hra: 20 }), brandingLogo: "",
       downloadAllowed: true, watermarkEnabled: true, expiryDurationDays: 30
     });

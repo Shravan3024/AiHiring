@@ -71,21 +71,23 @@ const getRoleWiseApplications = async (req, res) => {
 
 const getFunnelAnalysis = async (req, res) => {
   try {
-    const statuses = [
-      { stage: "Applied", key: "APPLIED" },
-        { stage: "Shortlisted", key: "RESUME_EVALUATED" },
-        { stage: "Assessment", key: "TECHNICAL_ROUND_COMPLETED" },
-        { stage: "Interview", key: "INTERVIEW_COMPLETED" },
-        { stage: "Selected", key: "SELECTED" },
-        { stage: "Offered", key: "HR_REVIEW" },
-    ];
+    const allApps = await Application.findAll({ attributes: ['status'] });
+    
+    const counts = {};
+    for (const app of allApps) {
+        counts[app.status] = (counts[app.status] || 0) + 1;
+    }
 
-    const funnelData = await Promise.all(
-      statuses.map(async ({ stage, key }) => {
-        const count = await Application.count({ where: { status: key } });
-        return { stage, count };
-      })
-    );
+    const sum = (arr) => arr.reduce((acc, status) => acc + (counts[status] || 0), 0);
+
+    const funnelData = [
+        { stage: "Applied", count: allApps.length },
+        { stage: "Shortlisted", count: sum(["RESUME_EVALUATED", "ASSESSMENT_PENDING", "TECHNICAL_ROUND_PENDING", "TECHNICAL_ROUND_COMPLETED", "INTERVIEW_SCHEDULED", "INTERVIEW_IN_PROGRESS", "INTERVIEW_COMPLETED", "HR_REVIEW", "MD_APPROVAL", "MD_APPROVED", "OFFER_PENDING", "OFFERED", "ACCEPTED", "HIRED"]) },
+        { stage: "Assessment", count: sum(["TECHNICAL_ROUND_COMPLETED", "INTERVIEW_SCHEDULED", "INTERVIEW_IN_PROGRESS", "INTERVIEW_COMPLETED", "HR_REVIEW", "MD_APPROVAL", "MD_APPROVED", "OFFER_PENDING", "OFFERED", "ACCEPTED", "HIRED"]) },
+        { stage: "Interview", count: sum(["INTERVIEW_COMPLETED", "HR_REVIEW", "MD_APPROVAL", "MD_APPROVED", "OFFER_PENDING", "OFFERED", "ACCEPTED", "HIRED"]) },
+        { stage: "Selected", count: sum(["HR_REVIEW", "MD_APPROVAL", "MD_APPROVED", "OFFER_PENDING", "OFFERED", "ACCEPTED", "HIRED"]) },
+        { stage: "Offered", count: sum(["OFFER_PENDING", "OFFERED", "ACCEPTED", "HIRED"]) }
+    ];
 
     res.json({ success: true, data: funnelData });
   } catch (error) {

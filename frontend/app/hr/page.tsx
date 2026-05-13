@@ -117,7 +117,13 @@ export default function HRDashboard() {
   const { data: mdDecisionsRaw } = useQuery({
     queryKey: ["hr-md-decisions"],
     queryFn: () => hrApi.getMDDecisions().then(r => r.data?.data || []),
-    refetchInterval: 30_000,
+    refetchInterval: 10000,
+  });
+
+  const { data: recentHiresRaw } = useQuery({
+    queryKey: ["hr-recent-hires"],
+    queryFn: () => hrApi.getRecentHires().then(r => r.data?.data || []),
+    refetchInterval: 10000,
   });
 
   // --- MOCK / PROCESSED DATA ---
@@ -496,8 +502,8 @@ export default function HRDashboard() {
 
         </div>
 
-        {/* ROW 4: MD Decisions */}
-        <div className="pb-8">
+        {/* ROW 4: MD Decisions & Recent Hires */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-8">
           <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -547,6 +553,58 @@ export default function HRDashboard() {
                   <Shield className="w-6 h-6 text-muted-foreground/20 mx-auto mb-2" />
                   <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">No MD decisions yet</p>
                   <p className="text-[9px] text-muted-foreground/40 mt-1">Decisions will appear here once MD reviews candidates</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
+              <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-primary" /> Recently Hired Candidates
+                <Badge variant="secondary" className="font-bold text-[8px] px-1 py-0 bg-white border border-border/50">{(recentHiresRaw || []).length}</Badge>
+              </CardTitle>
+              <Button variant="link" onClick={() => router.push('/hr/pipeline')} className="text-[9px] font-bold uppercase p-0 h-fit text-muted-foreground hover:text-primary">View All</Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {recentHiresRaw && recentHiresRaw.length > 0 ? (
+                <div className="divide-y divide-border/40">
+                  {recentHiresRaw.slice(0, 8).map((d: any, i: number) => (
+                    <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors cursor-pointer group"
+                      onClick={() => router.push(`/hr/applications/${d.id}`)}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted border border-border/50 overflow-hidden shrink-0">
+                           <img 
+                             src={d.profileImage || "/images/default-avatar.png"} 
+                             alt={d.name} 
+                             className="w-full h-full object-cover"
+                             onError={(e: any) => { e.target.src = "/images/default-avatar.png"; }}
+                           />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-tight leading-none mb-1">{d.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[9px] font-medium text-muted-foreground">{d.jobTitle}{d.department ? ` • ${d.department}` : ''}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-primary/10 text-primary border-none text-[8px] font-bold px-1.5 py-0 uppercase">
+                          Hired
+                        </Badge>
+                        <span className="text-[8px] font-medium text-muted-foreground tabular-nums">
+                          {d.hiredAt ? new Date(d.hiredAt).toLocaleDateString() : ''}
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <Trophy className="w-6 h-6 text-muted-foreground/20 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">No Recent Hires</p>
+                  <p className="text-[9px] text-muted-foreground/40 mt-1">Candidates who accept offers will appear here perfectly in real-time</p>
                 </div>
               )}
             </CardContent>

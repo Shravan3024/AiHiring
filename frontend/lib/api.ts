@@ -208,6 +208,9 @@ export const hrApi = {
 
   // MD Decisions feed
   getMDDecisions: () => api.get('/hr/dashboard/md-decisions'),
+
+  // Recent Hires feed
+  getRecentHires: () => api.get('/hr/dashboard/recent-hires'),
 };
 
 // ==================== MD ====================

@@ -42,33 +42,42 @@ export default function MDApplicationReview() {
   const { data: appResponse, isLoading } = useQuery({
     queryKey: ["hr-application", applicationId],
     queryFn: async () => (await hrApi.getCandidateProfile(String(applicationId))).data,
-    refetchInterval: 30000,
+    refetchInterval: 5000,
   });
 
   const app = appResponse?.data;
-  const candidateName = app?.Candidate?.User?.name || app?.candidateName || '—';
-  const candidateEmail = app?.Candidate?.User?.email || '—';
-  const jobTitle = app?.Job?.title || app?.jobTitle || '—';
-  const department = app?.Job?.department || '—';
-  const overallScore = Math.round(app?.overall_score || 0);
-  const integrityScore = app?.integrity_score ?? app?.Candidate?.integrity_score ?? 100;
+  const candidateName = app?.candidate?.name || app?.candidateName || '—';
+  const candidateEmail = app?.candidate?.email || '—';
+  const jobTitle = app?.job?.title || app?.jobTitle || '—';
+  const department = app?.job?.department || '—';
+  const overallScore = Math.round(app?.aiScore || app?.overall_score || 0);
+  const integrityScore = app?.integrityScore ?? app?.candidate?.integrity_score ?? 100;
 
   // Candidate profile info
-  const candidate = app?.Candidate || {};
-  const education = app?.education || candidate?.education || '—';
-  const specialization = app?.specialization || '—';
-  const experience = app?.experience_years || candidate?.experience_years || 0;
-  const skills = app?.skills || [];
-  const summary = app?.summary || '';
-  const domain = candidate?.domain || '—';
-  const areaOfInterest = candidate?.area_of_interest || '—';
-  const currentCompany = candidate?.current_company || '—';
-  const candidateType = candidate?.candidate_type || '—';
+  const candidate = app?.candidate || {};
+  const resumeDetails = app?.ResumeAnalysis || null;
+
+  const education = candidate?.education || app?.education || resumeDetails?.education || '—';
+  const specialization = candidate?.specialization || app?.specialization || '—';
+  const experience = candidate?.experience || app?.experience_years || resumeDetails?.total_years_experience || 0;
+  
+  let skills = candidate?.skills?.length ? candidate.skills : (app?.skills?.length ? app.skills : (resumeDetails?.skills || []));
+  if (typeof skills === 'string') {
+    try { skills = JSON.parse(skills); } catch { skills = skills.split(',').map((s: string) => s.trim()); }
+  }
+  
+  const summary = candidate?.summary || app?.summary || resumeDetails?.ai_summary || resumeDetails?.overall_assessment || '';
+  const domain = candidate?.domain || app?.domain || '—';
+  const areaOfInterest = candidate?.area_of_interest || app?.area_of_interest || '—';
+  const currentCompany = candidate?.current_company || app?.current_company || '—';
+  const candidateType = candidate?.candidate_type || app?.candidate_type || '—';
   const phone = candidate?.phone || '—';
   const location = candidate?.location || candidate?.working_address || '—';
+  const profileImage = candidate?.profileImage || candidate?.profile_image_path ? `http://localhost:5000${candidate.profile_image_path?.startsWith('/') ? '' : '/'}${candidate.profile_image_path}` : null;
 
   // Resume parsed data
-  const resumeAnalysis = app?.ResumeAnalysis || null;
+  // The backend might not send ResumeAnalysis directly, let's check evaluationProsCons or use it if available
+  const resumeAnalysis = app?.ResumeAnalysis || app?.evaluationProsCons?.find?.((e: any) => e.stage === 'RESUME_PARSING') || null;
 
   const hasDecision = ['APPROVED','REJECTED','MD_RECOMMENDED','MD_REJECTED'].includes(app?.final_decision);
 
@@ -174,8 +183,16 @@ export default function MDApplicationReview() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center shadow-xl">
-                  <User className="w-7 h-7 text-white" />
+                <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center shadow-xl overflow-hidden relative">
+                  {profileImage ? (
+                    <img 
+                      src={profileImage}
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                    />
+                  ) : null}
+                  <User className="w-7 h-7 text-white" style={{ display: profileImage ? 'none' : 'block' }} />
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">

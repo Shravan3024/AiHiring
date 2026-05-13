@@ -80,7 +80,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="space-y-2">
                            <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Website</label>
-                           <Input className="h-12 bg-muted/20 border-border/40 rounded-xl text-xs font-medium" defaultValue="https://maskpolymers.com" />
+                           <Input className="h-12 bg-muted/20 border-border/40 rounded-xl text-xs font-medium" defaultValue="https://AI HIRING SYSTEM.com" />
                         </div>
                         <div className="space-y-2">
                            <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Logo</label>

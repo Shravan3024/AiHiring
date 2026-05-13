@@ -43,6 +43,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+function PolicyInput({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) {
+  const [val, setVal] = useState(initialValue);
+  
+  // Sync state if initialValue changes (from network)
+  React.useEffect(() => {
+    setVal(initialValue);
+  }, [initialValue]);
+
+  return (
+    <Input 
+       type="number" 
+       className="w-20 text-right" 
+       value={val ?? ''} 
+       onChange={e => setVal(parseInt(e.target.value) || 0)}
+       onBlur={() => onSave(val)}
+    />
+  );
+}
+
 interface AuditLog {
   auditId: string;
   actionType: string;
@@ -96,6 +115,7 @@ export default function AuditPage() {
   const { data: logsResponse, isLoading: logsLoading } = useQuery({
     queryKey: ["audit-logs"],
     queryFn: () => adminApi.getAuditLogs({ limit: 200 }).then(r => r.data),
+    refetchInterval: 10000,
   });
   const logs = Array.isArray(logsResponse?.data) ? logsResponse.data : [];
 
@@ -103,6 +123,7 @@ export default function AuditPage() {
   const { data: statsResponse } = useQuery({
     queryKey: ["audit-stats"],
     queryFn: () => adminApi.getAuditStats().then(r => r.data),
+    refetchInterval: 10000,
   });
   const stats = statsResponse?.data || { actions: [], status: [] };
 
@@ -110,6 +131,7 @@ export default function AuditPage() {
   const { data: retentionResponse } = useQuery({
     queryKey: ["retention-policy"],
     queryFn: () => adminApi.getDataRetentionPolicy().then(r => r.data),
+    refetchInterval: 10000,
   });
   const policy = retentionResponse?.data || {
     resumeRetentionDays: 730,
@@ -122,7 +144,8 @@ export default function AuditPage() {
   // Query: System Health
   const { data: healthResponse, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
     queryKey: ["system-health"],
-    queryFn: () => adminApi.getSystemHealth().then(r => r.data),
+    queryFn: () => adminApi.getSystemHealthAudit().then(r => r.data),
+    refetchInterval: 10000,
   });
   const health = healthResponse?.data || {
     resumeParsingFailures: 0,
@@ -282,7 +305,14 @@ export default function AuditPage() {
                       <div key={field.key} className="flex justify-between items-center">
                         <div><p className="font-bold text-sm">{field.label}</p><p className="text-[11px] text-gray-400">{field.sub}</p></div>
                         <div className="flex items-center gap-2">
-                          <Input type="number" className="w-20 text-right" value={policy[field.key as keyof typeof policy]} onChange={e => updateRetentionMutation.mutate({ [field.key]: parseInt(e.target.value) })} />
+                          <PolicyInput 
+                             initialValue={policy[field.key as keyof typeof policy] as number}
+                             onSave={(val) => {
+                               if (val !== policy[field.key as keyof typeof policy]) {
+                                 updateRetentionMutation.mutate({ [field.key]: val });
+                               }
+                             }}
+                          />
                           <span className="text-xs text-gray-400 font-bold">Days</span>
                         </div>
                       </div>
@@ -294,7 +324,7 @@ export default function AuditPage() {
                  <CardHeader className="bg-gray-50"><CardTitle>Data Privacy Controls</CardTitle></CardHeader>
                  <CardContent className="pt-6 space-y-6">
                     <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50/50">
-                       <div className="space-y-0.5"><p className="font-bold text-sm">Data Anonymization Policy</p><p className="text-xs text-gray-400 italic">Mask personal identifiers in training sets & analytics.</p></div>
+                       <div className="space-y-0.5"><p className="font-bold text-sm">Data Anonymization Policy</p><p className="text-xs text-gray-400 italic"> personal identifiers in training sets & analytics.</p></div>
                        <Switch checked={policy.anonymizationEnabled} onCheckedChange={(v: boolean) => updateRetentionMutation.mutate({ anonymizationEnabled: v })} />
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50/50">

@@ -438,11 +438,11 @@ export default function OffersCommunicationsPage() {
             </DialogHeader>
             <div className="p-8 space-y-4">
               <div className="p-4 bg-muted/20 rounded-xl border border-border/40">
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Subject / Type</p>
+                <div className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Subject / Type</div>
                 <div className="text-sm font-bold text-foreground flex items-center">{previewTemplate?.subject} <Badge variant="outline" className="ml-2 text-[8px] font-black uppercase">{previewTemplate?.type}</Badge></div>
               </div>
               <div className="p-4 bg-muted/20 rounded-xl border border-border/40">
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Content</p>
+                <div className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Content</div>
                 <pre className="text-[12px] font-medium text-foreground whitespace-pre-wrap leading-relaxed">{previewTemplate?.body}</pre>
               </div>
             </div>

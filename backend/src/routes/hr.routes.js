@@ -97,6 +97,13 @@ router.get(
 );
 
 router.get(
+  "/dashboard/recent-hires",
+  auth,
+  role(["HR", "ADMIN", "MD"]),
+  HRDashboardController.getRecentHires
+);
+
+router.get(
   "/dashboard/distribution",
   auth,
   role(["HR", "ADMIN", "MD"]),

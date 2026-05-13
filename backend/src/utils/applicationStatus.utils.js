@@ -69,11 +69,14 @@ function computeApplicationScore({
   resumeScore,
   technicalScore,
   interviewScore,
-  malpracticeWarnings = 0
+  malpracticeWarnings = 0,
+  customWeights = null
 }) {
   if (typeof overallScore === 'number' && !Number.isNaN(overallScore) && overallScore > 0) {
     return Math.round(overallScore);
   }
+
+  const weights = customWeights || SCORE_WEIGHTS;
 
   const weightedParts = [
     ['resume', resumeScore],
@@ -83,9 +86,9 @@ function computeApplicationScore({
 
   if (weightedParts.length === 0) return 0;
 
-  const weightTotal = weightedParts.reduce((sum, [key]) => sum + SCORE_WEIGHTS[key], 0);
+  const weightTotal = weightedParts.reduce((sum, [key]) => sum + (weights[key] || SCORE_WEIGHTS[key]), 0);
   const weightedScore = weightedParts.reduce(
-    (sum, [key, score]) => sum + (score * SCORE_WEIGHTS[key]),
+    (sum, [key, score]) => sum + (score * (weights[key] || SCORE_WEIGHTS[key])),
     0
   );
 

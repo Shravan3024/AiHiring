@@ -53,6 +53,14 @@ exports.getAllApplications = async (req, res) => {
     });
 
     const { computeApplicationScore } = require('../utils/applicationStatus.utils');
+    const { AIConfig } = require("../models");
+
+    // Fetch all active AI configs
+    const aiConfigs = await AIConfig.findAll({ where: { status: 'ACTIVE' }, raw: true });
+    const aiConfigMap = {};
+    aiConfigs.forEach(config => {
+      aiConfigMap[config.jobId] = config;
+    });
     
     // Deduplicate applications by ID to prevent React duplicate key errors
     const uniqueApplications = [];
@@ -68,13 +76,26 @@ exports.getAllApplications = async (req, res) => {
     const mapped = uniqueApplications.map(app => {
       const j = app.toJSON();
       
+      const jobIdStr = String(j.job_id || (j.Job && j.Job.id));
+      const configForJob = aiConfigMap[jobIdStr];
+
+      let customWeights = null;
+      if (configForJob) {
+        customWeights = {
+           resume: configForJob.resumeWeight || 0.3,
+           technical: configForJob.technicalWeight || 0.4,
+           interview: configForJob.interviewWeight || 0.3
+        };
+      }
+
       // Calculate real-time aggregate score using all available data
       const realTimeScore = computeApplicationScore({
         overallScore: j.overall_score,
         resumeScore: j.resume_score,
         technicalScore: j.TechnicalRound?.score || j.AssessmentAnalysis?.overall_score || j.technical_score,
         interviewScore: j.interview_session?.overall_score || j.interview_score,
-        malpracticeWarnings: j.malpractice_warnings || 0
+        malpracticeWarnings: j.malpractice_warnings || 0,
+        customWeights
       });
 
       return {
@@ -721,13 +742,38 @@ exports.scheduleInterview = async (req, res) => {
 
     // Notify candidate
     try {
+      // 1. Create legacy notification
       await Notification.create({
         user_id: application.Candidate.user_id,
         role: "CANDIDATE",
         message: `Your interview for ${application.Job?.title} has been scheduled for ${interview_date} at ${interview_time}. Interviewer: ${interviewer || 'HR Team'}`
       });
+
+      // 2. Create modern NotificationQueue record for the candidate dashboard
+      const { NotificationQueue } = require("../models");
+      await NotificationQueue.create({
+        candidate_id: application.candidate_id,
+        application_id: applicationId,
+        notification_type: "INTERVIEW_SCHEDULED",
+        title: "Interview Scheduled",
+        message: `Your interview for ${application.Job?.title} has been scheduled for ${interview_date} at ${interview_time}. Interviewer: ${interviewer || 'HR Team'}`,
+        sent_via_email: true,
+        status: "PENDING"
+      });
+
+      // 3. Send Email Notification
+      if (application.Candidate?.User?.email) {
+        const messageBody = `Hello ${application.Candidate.User.name},<br/><br/>Your interview for the <strong>${application.Job?.title}</strong> position has been successfully scheduled.<br/><br/><strong>Date:</strong> ${interview_date}<br/><strong>Time:</strong> ${interview_time}<br/><strong>Interviewer:</strong> ${interviewer || 'HR Team'}<br/><strong>Format:</strong> ${interview_type || 'VIDEO'}<br/><br/>Please log in to your Candidate Portal at the scheduled time to join the interview session. Make sure you have a working camera and microphone.`;
+        
+        await emailService.sendNotificationEmail(
+          application.Candidate.User.email,
+          "Interview Scheduled - AI Hiring System",
+          messageBody,
+          `${process.env.FRONTEND_URL || 'http://localhost:3000'}/candidate/interview`
+        );
+      }
     } catch (e) {
-      console.log("Notification failed");
+      console.log("Notification/Email failed:", e.message);
     }
 
     res.json({

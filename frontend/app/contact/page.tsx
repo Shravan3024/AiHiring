@@ -18,10 +18,10 @@ export default function ContactPage() {
    };
 
    const departments = [
-      { name: "MARKETING & SALES", email: "marketing@maskpolymers.com", phone: "Enter Your Phone Number" },
-      { name: "PURCHASE & VENDORS", email: "purchase@maskpolymers.com", phone: "+91 98765 43211" },
-      { name: "HUMAN RESOURCES", email: "hr@maskpolymers.com", phone: "+91 98765 43212" },
-      { name: "FINANCE", email: "finance@maskpolymers.com", phone: "+91 98765 43213" }
+      { name: "MARKETING & SALES", email: "marketing@AI HIRING SYSTEM.com", phone: "Enter Your Phone Number" },
+      { name: "PURCHASE & VENDORS", email: "purchase@AI HIRING SYSTEM.com", phone: "+91 98765 43211" },
+      { name: "HUMAN RESOURCES", email: "hr@AI HIRING SYSTEM.com", phone: "+91 98765 43212" },
+      { name: "FINANCE", email: "finance@AI HIRING SYSTEM.com", phone: "+91 98765 43213" }
    ];
 
    return (

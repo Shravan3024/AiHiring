@@ -65,6 +65,86 @@ class HRDecisionController {
         return res.status(400).json({ success: false, message: 'Unsupported decision type' });
       }
 
+      // --- QUORUM LOGIC START ---
+      const { HRApprovalRule, ApprovalRecord } = require('../models');
+      const getStageMapping = (status) => {
+        if (['APPLIED', 'RESUME_SUBMITTED', 'RESUME_EVALUATED'].includes(status)) return { approval: 'RESUME_REVIEW', rule: 'RESUME' };
+        if (status.includes('ASSESSMENT') || status.includes('TECHNICAL')) return { approval: 'TECHNICAL_REVIEW', rule: 'TECHNICAL' };
+        if (status.includes('INTERVIEW')) return { approval: 'INTERVIEW_REVIEW', rule: 'INTERVIEW' };
+        return { approval: 'FINAL_DECISION', rule: 'FINAL' };
+      };
+      
+      const { approval: approvalStage, rule: ruleStage } = getStageMapping(prevStatus);
+      const activeRule = await HRApprovalRule.findOne({ where: { stage: ruleStage, isActive: true } });
+      
+      let quorumReached = true;
+      let totalNeeded = 1;
+      let currentApprovals = 1;
+
+      if (activeRule && ['APPROVED', 'REJECTED', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW', 'FINAL_SELECTION'].includes(decision)) {
+        totalNeeded = activeRule.approvalsRequired || 1;
+        
+        let existingVote = await ApprovalRecord.findOne({
+          where: { applicationId, hrUserId: userId, approvalStage }
+        });
+        
+        if (existingVote) {
+           existingVote.decision = decision;
+           existingVote.reason = reason;
+           existingVote.comments = comments;
+           existingVote.status = decision === 'REJECTED' ? 'REJECTED' : 'APPROVED';
+           await existingVote.save();
+        } else {
+           await ApprovalRecord.create({
+             approvalId: `appr_${Date.now()}_${Math.random().toString(36).substring(2,8)}`,
+             applicationId,
+             hrUserId: userId,
+             approvalStage,
+             decision: decision,
+             reason: reason,
+             comments: comments,
+             status: decision === 'REJECTED' ? 'REJECTED' : 'APPROVED',
+             totalApprovalsNeeded: totalNeeded,
+             reviewedAt: new Date(),
+             approvedAt: new Date()
+           });
+        }
+        
+        const votes = await ApprovalRecord.findAll({
+          where: { applicationId, approvalStage }
+        });
+        
+        const positiveVotes = votes.filter(v => ['APPROVED', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW', 'FINAL_SELECTION'].includes(v.decision));
+        const negativeVotes = votes.filter(v => v.decision === 'REJECTED');
+        
+        currentApprovals = positiveVotes.length;
+
+        if (negativeVotes.length > 0 && decision === 'REJECTED') {
+           quorumReached = true;
+        } else if (positiveVotes.length < totalNeeded) {
+           quorumReached = false;
+        }
+      }
+
+      if (!quorumReached) {
+        try {
+          await ApplicationStatusLog.create({
+            application_id: applicationId,
+            previous_status: prevStatus,
+            new_status: prevStatus,
+            changed_by: userId,
+            reason: `Vote recorded (${decision}): ${reason} [Quorum: ${currentApprovals}/${totalNeeded}]`
+          });
+        } catch (_) {}
+
+        return res.status(200).json({
+          success: true,
+          message: `Approval recorded. Waiting for quorum (${currentApprovals}/${totalNeeded}).`,
+          data: { applicationId, previousStatus: prevStatus, newStatus: prevStatus, decision, quorumPending: true }
+        });
+      }
+      // --- QUORUM LOGIC END ---
+
       application.status = newStatus;
       application.hr_decision = decision;
       application.hr_notes = `${reason}${comments ? ` | ${comments}` : ''}`;
@@ -258,22 +338,41 @@ class HRDecisionController {
         return res.status(404).json({ success: false, message: 'Application not found' });
       }
 
+      const { HRApprovalRule, ApprovalRecord } = require('../models');
+      const getStageMapping = (status) => {
+        if (['APPLIED', 'RESUME_SUBMITTED', 'RESUME_EVALUATED'].includes(status)) return { approval: 'RESUME_REVIEW', rule: 'RESUME' };
+        if (status.includes('ASSESSMENT') || status.includes('TECHNICAL')) return { approval: 'TECHNICAL_REVIEW', rule: 'TECHNICAL' };
+        if (status.includes('INTERVIEW')) return { approval: 'INTERVIEW_REVIEW', rule: 'INTERVIEW' };
+        return { approval: 'FINAL_DECISION', rule: 'FINAL' };
+      };
+      
+      const { approval: approvalStage, rule: ruleStage } = getStageMapping(application.status);
+      const activeRule = await HRApprovalRule.findOne({ where: { stage: ruleStage, isActive: true } });
+      const totalNeeded = activeRule ? (activeRule.approvalsRequired || 1) : 1;
+      
+      const votes = await ApprovalRecord.findAll({
+        where: { applicationId, approvalStage },
+        include: [{ model: User, as: 'reviewer', attributes: ['name', 'email'] }]
+      });
+      
+      const positiveVotes = votes.filter(v => ['APPROVED', 'SEND_TO_ASSESSMENT', 'APPROVE_FOR_INTERVIEW', 'FINAL_SELECTION'].includes(v.decision));
+
       return res.status(200).json({
         success: true,
         data: {
           applicationId,
           candidateName: application.Candidate?.User?.name || 'N/A',
           currentStatus: application.status,
-          totalNeeded: 1,
-          received: application.hr_decision ? 1 : 0,
+          totalNeeded,
+          received: positiveVotes.length,
           isLocked: FINAL_STATES.includes(application.status),
-          allApprovals: application.hr_decision ? [{
-            reviewer: 'HR',
-            decision: application.hr_decision,
-            reason: application.hr_notes,
-            timestamp: application.updated_at,
-            order: 1,
-          }] : [],
+          allApprovals: votes.map(v => ({
+            reviewer: v.reviewer?.name || 'HR Reviewer',
+            decision: v.decision,
+            reason: v.reason,
+            timestamp: v.reviewedAt,
+            order: v.approvalOrder
+          }))
         }
       });
 

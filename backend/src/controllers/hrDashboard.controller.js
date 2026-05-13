@@ -418,6 +418,45 @@ class HRDashboardController {
       return res.status(500).json({ success: false, message: 'Error fetching top candidates' });
     }
   }
+
+  /**
+   * GET /hr/dashboard/recent-hires
+   */
+  static async getRecentHires(req, res) {
+    try {
+      const applications = await Application.findAll({
+        where: {
+          status: 'HIRED'
+        },
+        attributes: ['id', 'status', 'updated_at'],
+        include: [
+          {
+            model: Candidate,
+            attributes: ['id', 'profile_image_path'],
+            include: [{ model: User, attributes: ['name', 'email'] }]
+          },
+          { model: Job, attributes: ['title', 'department'] }
+        ],
+        order: [['updated_at', 'DESC']],
+        limit: 5
+      });
+
+      const recentHires = applications.map(app => ({
+        id: app.id,
+        name: app.Candidate?.User?.name || 'Unknown',
+        email: app.Candidate?.User?.email || '',
+        jobTitle: app.Job?.title || 'N/A',
+        department: app.Job?.department || '',
+        profileImage: app.Candidate?.profile_image_path ? `http://localhost:5000/${app.Candidate.profile_image_path}` : null,
+        hiredAt: app.updated_at
+      }));
+
+      return res.status(200).json({ success: true, data: recentHires });
+    } catch (error) {
+      console.error('Error fetching recent hires:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching recent hires' });
+    }
+  }
 }
 
 module.exports = HRDashboardController;

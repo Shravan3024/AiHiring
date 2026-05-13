@@ -56,7 +56,7 @@ export default function AboutPage() {
         {/* Core Values Grid */}
         <section className="space-y-12">
           <div className="text-center">
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">The Mask Standard</h2>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">The Ai Hiring System Standard</h2>
             <p className="text-slate-400 text-sm mt-2 uppercase tracking-widest font-bold">Four Pillars of Corporate Integrity</p>
           </div>
 

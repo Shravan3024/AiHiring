@@ -64,7 +64,7 @@ exports.getMDApplications = async (req, res) => {
           attributes: [
             'id', 'experience_years', 'candidate_type', 'domain',
             'area_of_interest', 'current_company', 'working_address',
-            'resume_path'
+            'resume_path', 'profile_image_path'
           ],
           include: [{ model: User, attributes: ['name', 'email'] }]
         },
@@ -95,6 +95,7 @@ exports.getMDApplications = async (req, res) => {
         applicationId: app.id,
         candidateName: app.Candidate?.User?.name || 'Unknown',
         candidateEmail: app.Candidate?.User?.email || '',
+        profileImage: app.Candidate?.profile_image_path ? `http://localhost:5000${app.Candidate.profile_image_path.startsWith('/') ? '' : '/'}${app.Candidate.profile_image_path}` : null,
         jobTitle: app.Job?.title || 'N/A',
         department: app.Job?.department || '',
         aiScore: app.overall_score || 0,
@@ -110,6 +111,7 @@ exports.getMDApplications = async (req, res) => {
           area_of_interest: app.Candidate?.area_of_interest || null,
           current_company: app.Candidate?.current_company || null,
           working_address: app.Candidate?.working_address || null,
+          profile_image_path: app.Candidate?.profile_image_path || null,
         },
         profile: {
           education: app.education || '',

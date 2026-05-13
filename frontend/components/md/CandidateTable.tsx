@@ -276,7 +276,15 @@ export default function CandidateTable({ apps = [], refresh }: any) {
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-6">
                         <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform relative overflow-hidden">
-                          <User className="w-6 h-6" />
+                          {app.profileImage || app.candidate?.profile_image_path ? (
+                            <img 
+                              src={app.profileImage || (app.candidate?.profile_image_path ? `http://localhost:5000${app.candidate.profile_image_path.startsWith('/') ? '' : '/'}${app.candidate.profile_image_path}` : '')}
+                              alt="Profile" 
+                              className="w-full h-full object-cover"
+                              onError={(e: any) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                            />
+                          ) : null}
+                          <User className="w-6 h-6" style={{ display: (app.profileImage || app.candidate?.profile_image_path) ? 'none' : 'block' }} />
                           <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-600" />
                         </div>
                         <div>

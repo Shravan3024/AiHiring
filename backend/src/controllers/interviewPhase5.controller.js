@@ -243,6 +243,14 @@ exports.startInterviewPhase5 = async (req, res) => {
       return res.status(400).json({ error: 'Interview not scheduled or completed.' });
     }
 
+    // 🔥 Strict Start Time Check
+    if (interviewSession.status === 'SCHEDULED' && interviewSession.scheduled_at && new Date() < new Date(interviewSession.scheduled_at)) {
+      return res.status(403).json({ 
+        error: 'Interview session has not started.',
+        message: `Your interview is strictly scheduled to start at ${new Date(interviewSession.scheduled_at).toLocaleString()}. Please return at the scheduled time.`
+      });
+    }
+
     // 🔥 Expiry Check (10-hour window)
     if (interviewSession.expires_at && new Date() > new Date(interviewSession.expires_at)) {
       if (interviewSession.status === 'SCHEDULED') {
@@ -292,7 +300,10 @@ exports.startInterviewPhase5 = async (req, res) => {
 
     // 3. Fetch Behavioral from DB
     let behavioralQuestions = await InterviewQuestionBank.findAll({
-      where: { category: 'BEHAVIORAL' },
+      where: { 
+        [Op.or]: [{ jobId: job.id }, { jobRole: questionRole }],
+        category: 'BEHAVIORAL' 
+      },
       order: sequelize.literal('RANDOM()'),
       limit: INTERVIEW_CONFIG.BEHAVIORAL_QUESTIONS
     });
@@ -304,6 +315,7 @@ exports.startInterviewPhase5 = async (req, res) => {
     if (techQuestions.length < INTERVIEW_CONFIG.TECH_QUESTIONS) {
       const extraTech = await InterviewQuestionBank.findAll({
         where: { 
+          [Op.or]: [{ jobId: job.id }, { jobRole: questionRole }],
           category: { [Op.notIn]: ['BEHAVIORAL', 'INTRODUCTORY'] },
           questionId: { [Op.notIn]: techQuestions.map(q => q.questionId) }
         },
@@ -318,6 +330,7 @@ exports.startInterviewPhase5 = async (req, res) => {
     if (behavioralQuestions.length < INTERVIEW_CONFIG.BEHAVIORAL_QUESTIONS) {
       const extraBeh = await InterviewQuestionBank.findAll({
         where: { 
+          [Op.or]: [{ jobId: job.id }, { jobRole: questionRole }],
           category: 'BEHAVIORAL',
           questionId: { [Op.notIn]: behavioralQuestions.map(q => q.questionId) }
         },
@@ -332,9 +345,14 @@ exports.startInterviewPhase5 = async (req, res) => {
     finalQuestions.sort(() => Math.random() - 0.5);
 
     if (finalQuestions.length < INTERVIEW_CONFIG.TOTAL_QUESTIONS) {
-       // Absolute fallback if everything fails
-       const any = await InterviewQuestionBank.findAll({ order: sequelize.literal('RANDOM()'), limit: INTERVIEW_CONFIG.TOTAL_QUESTIONS });
-       finalQuestions = any;
+       // Absolute fallback if everything fails, pad with whatever we have
+       const needed = INTERVIEW_CONFIG.TOTAL_QUESTIONS - finalQuestions.length;
+       const any = await InterviewQuestionBank.findAll({ 
+         where: { questionId: { [Op.notIn]: finalQuestions.map(q => q.questionId) } },
+         order: sequelize.literal('RANDOM()'), 
+         limit: needed 
+       });
+       finalQuestions.push(...any);
     }
 
     if (finalQuestions.length === 0) {

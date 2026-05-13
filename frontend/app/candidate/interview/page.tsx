@@ -427,7 +427,7 @@ export default function CandidateInterview() {
       toast.success("Interview session initialized.");
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || "Initialization failed.");
+      toast.error(err.response?.data?.message || err.response?.data?.error || "Initialization failed.");
     }
   });
 
@@ -564,8 +564,9 @@ export default function CandidateInterview() {
   };
 
   const handleFullScreen = () => {
-    if (containerRef.current?.requestFullscreen) {
-      containerRef.current.requestFullscreen().catch(() => {
+    const elem = containerRef.current || document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {
          toast.error("Fullscreen mode was blocked by your browser settings.");
       });
     }

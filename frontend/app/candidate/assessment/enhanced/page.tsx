@@ -157,8 +157,9 @@ export default function IntegratedAssessmentPage() {
    };
 
    const handleFullScreen = () => {
-      if (containerRef.current?.requestFullscreen) {
-         containerRef.current.requestFullscreen().catch(() => {
+      const elem = containerRef.current || document.documentElement;
+      if (elem.requestFullscreen) {
+         elem.requestFullscreen().catch(() => {
             toast.error("Fullscreen mode was blocked by your browser settings.");
          });
       }

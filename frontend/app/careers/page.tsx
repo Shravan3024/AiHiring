@@ -68,7 +68,7 @@ export default function CareersPage() {
                      <h4 className="text-white text-xl font-black">Direct HR Channel</h4>
                      <p className="text-slate-400 text-sm font-medium leading-relaxed">Have a specific role in mind or want to discuss a customized career path? Connect with our talent acquisition team directly.</p>
                      <div className="pt-4">
-                        <a href="mailto:hr@maskpolymers.com" className="text-blue-400 hover:text-blue-300 font-black text-xs tracking-widest uppercase underline underline-offset-8">hr@maskpolymers.com</a>
+                        <a href="mailto:hr@AI HIRING SYSTEM.com" className="text-blue-400 hover:text-blue-300 font-black text-xs tracking-widest uppercase underline underline-offset-8">hr@AI HIRING SYSTEM.com</a>
                      </div>
                   </div>
                </div>

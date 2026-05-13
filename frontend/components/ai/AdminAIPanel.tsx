@@ -56,6 +56,7 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
       const response = await api.get("/admin/audit-logs?limit=20");
       return response.data;
     },
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time log updates
   });
 
   // Update config mutation
@@ -312,10 +313,10 @@ export const AdminAIPanel: React.FC<AdminAIPanelProps> = ({ systemId }) => {
                     <td className="py-3 px-3 text-gray-600">
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
-                    <td className="py-3 px-3 font-medium">{log.action}</td>
-                    <td className="py-3 px-3">{log.user_name || log.user_id}</td>
+                    <td className="py-3 px-3 font-medium">{log.actionType}</td>
+                    <td className="py-3 px-3">{log.userId}</td>
                     <td className="py-3 px-3 text-gray-600 max-w-xs truncate">
-                      {log.details}
+                      {log.description}
                     </td>
                     <td className="py-3 px-3 text-center">
                       {(log.status === "success" || log.status === "SUCCESS") ? (

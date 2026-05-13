@@ -172,7 +172,7 @@ export default function ApplicationDetailPage() {
                               </Button>
                            )}
                            {app.status === "INTERVIEW_SCHEDULED" && (
-                              <Button className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black uppercase tracking-widest transition-all" onClick={() => router.push(`/candidate/interview/${id}`)}>
+                              <Button className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black uppercase tracking-widest transition-all" onClick={() => router.push(`/candidate/interview`)}>
                                  Join Interview <ChevronRight className="w-5 h-5 ml-2" />
                               </Button>
                            )}
