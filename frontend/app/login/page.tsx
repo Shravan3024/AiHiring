@@ -4,14 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, AlertCircle, ShieldCheck, KeyRound } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { PublicNavbar } from "@/components/shared/PublicNavbar";
+import { motion } from "framer-motion";
+import { Navbar } from "@/components/landing/Navbar";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,50 +43,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-center font-sans overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/login-bg.png"
-          alt="Industrial Background"
-          className="w-full h-full object-cover scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-gray-900/60 to-black/80 backdrop-blur-[4px]" />
-      </div>
+    <div className="min-h-screen relative flex flex-col justify-center font-sans overflow-hidden dark:bg-[#050816] bg-[#F8FAFC] dark:text-white text-gray-900 transition-colors duration-300">
+      {/* Radial ambient glow */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(198,255,0,0.05) 0%, transparent 60%)",
+        }}
+      />
 
-      <PublicNavbar />
+      {/* Subtle grid texture */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 dark:opacity-20 opacity-[0.03] transition-opacity duration-300"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col items-center justify-center pt-20 px-4">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center mb-4">
-            <div className="bg-white/90 p-3 rounded-lg shadow-sm backdrop-blur-md border border-white/50">
-              <img src="/logo.png" alt="AI Hiring System Logo" className="h-16 w-auto object-contain" />
-            </div>
+      <Navbar />
+
+      <div className="relative z-10 flex flex-col items-center justify-center pt-24 px-4 pb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="sm:mx-auto sm:w-full sm:max-w-md text-center"
+        >
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-[#7C3AED]/20 to-[#C6FF00]/10 border border-white/10 mb-6 backdrop-blur-md">
+            <KeyRound className="w-8 h-8 text-[#C6FF00]" />
           </div>
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
+          <h2 className="text-3xl font-extrabold tracking-tight dark:text-white text-gray-900 mb-2 transition-colors">
             Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-300 font-medium">
-            Professional access to the AI Hiring System ecosystem.
+          <p className="text-sm dark:text-gray-400 text-gray-500 font-medium transition-colors">
+            Sign in to continue to GenHire AI
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]">
-          <div className="bg-white/80 backdrop-blur-2xl py-10 px-4 shadow-sm border border-white/30 sm:rounded-lg sm:px-10">
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]"
+        >
+          <div className="dark:bg-[#0B1020]/80 bg-white/80 backdrop-blur-2xl py-8 px-6 shadow-2xl border dark:border-white/10 border-gray-200 rounded-2xl sm:px-10 transition-colors">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="flex items-center gap-2 bg-red-50/80 backdrop-blur-sm border border-red-100 text-red-600 rounded-xl p-4 text-sm animate-shake">
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-3 text-sm">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span className="font-medium">{error}</span>
                 </div>
               )}
 
-              <div className="space-y-1">
-                <Label htmlFor="email" className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-xs font-bold dark:text-gray-400 text-gray-500 uppercase tracking-wider ml-1 transition-colors">
                   Email address
-                </Label>
+                </label>
                 <div className="mt-1">
-                  <Input
+                  <input
                     id="email"
                     type="email"
                     placeholder="Enter Your Email"
@@ -97,17 +111,17 @@ export default function LoginPage() {
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     autoComplete="email"
                     required
-                    className="block w-full rounded-xl border-gray-200/50 bg-gray-50/30 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-12 transition-all"
+                    className="block w-full rounded-xl border dark:border-white/10 border-gray-200 dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900 placeholder-gray-400 focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00] focus:outline-none sm:text-sm h-12 px-4 transition-all"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="password" className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="text-xs font-bold dark:text-gray-400 text-gray-500 uppercase tracking-wider ml-1 transition-colors">
                   Password
-                </Label>
+                </label>
                 <div className="mt-1 relative">
-                  <Input
+                  <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
@@ -115,45 +129,45 @@ export default function LoginPage() {
                     onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                     autoComplete="current-password"
                     required
-                    className="block w-full rounded-xl border-gray-200/50 bg-gray-50/30 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-12 pr-10 transition-all"
+                    className="block w-full rounded-xl border dark:border-white/10 border-gray-200 dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900 placeholder-gray-400 focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00] focus:outline-none sm:text-sm h-12 px-4 pr-10 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(s => !s)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors focus:outline-none"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2">
-                <Button
+              <div className="pt-4">
+                <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full h-12 flex justify-center py-2 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-200 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-[0.98]"
+                  className="w-full h-12 flex justify-center items-center py-2 px-4 rounded-xl shadow-[0_0_20px_rgba(198,255,0,0.2)] hover:shadow-[0_0_30px_rgba(198,255,0,0.4)] text-sm font-bold text-black bg-[#C6FF00] hover:bg-[#d4ff33] focus:outline-none transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {loginMutation.isPending ? "SIGNING IN..." : "SIGN IN"}
-                </Button>
+                </button>
               </div>
             </form>
 
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
+            <div className="mt-6 text-center">
+              <p className="text-sm dark:text-gray-400 text-gray-500 transition-colors">
                 New candidate?{" "}
-                <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700 transition-colors underline underline-offset-4 decoration-blue-500/30">
+                <Link href="/register" className="font-bold text-[#C6FF00] hover:text-[#d4ff33] transition-colors">
                   Create an account
                 </Link>
               </p>
             </div>
 
-            {/* Demo credentials - Glassy Section */}
-            <div className="mt-10 pt-8 border-t border-gray-100/50">
+            {/* Demo credentials */}
+            <div className="mt-8 pt-6 border-t dark:border-white/10 border-gray-200 transition-colors">
               <div className="flex items-center gap-2 justify-center mb-4">
-                <KeyRound className="w-3.5 h-3.5 text-gray-400" />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Select Managed Persona</p>
+                <KeyRound className="w-3.5 h-3.5 text-gray-500" />
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Select Managed Persona</p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { role: "Admin", email: "admin@example.com", pass: "password123" },
                   { role: "HR", email: "hr@example.com", pass: "password123" },
@@ -163,21 +177,21 @@ export default function LoginPage() {
                     key={cred.role}
                     type="button"
                     onClick={() => { const creds = { email: cred.email, password: cred.pass }; setForm(creds); setError(""); loginMutation.mutate(creds); }}
-                    className="group relative flex flex-col items-center justify-center p-3 rounded-lg bg-gray-50/50 border border-gray-100/50 hover:bg-white hover:shadow-xl hover:border-blue-500/50 transition-all duration-300"
+                    className="group relative flex flex-col items-center justify-center py-2 px-1 rounded-lg dark:bg-white/5 bg-gray-50 border dark:border-white/5 border-gray-200 dark:hover:bg-white/10 hover:bg-gray-100 hover:border-[#7C3AED]/50 transition-all duration-300"
                   >
-                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter mb-1 select-none">{cred.role}</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-blue-500 transition-colors" />
+                    <span className="text-[10px] font-bold dark:text-gray-300 text-gray-500 dark:group-hover:text-white group-hover:text-gray-900 uppercase tracking-wider mb-1 select-none transition-colors">{cred.role}</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-[#C6FF00] shadow-[0_0_10px_rgba(198,255,0,0)] group-hover:shadow-[0_0_10px_rgba(198,255,0,0.5)] transition-all" />
                   </button>
                 ))}
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="mt-8 text-center relative z-10 pb-10 px-4">
-        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest drop-shadow-sm">
-          &copy; {new Date().getFullYear()} AI Hiring System Pvt. Ltd. All rights reserved.
+      <div className="mt-auto text-center relative z-10 pb-8 px-4">
+        <p className="text-xs dark:text-gray-600 text-gray-400 font-medium tracking-wide transition-colors">
+          &copy; {new Date().getFullYear()} GenHire AI. All rights reserved.
         </p>
       </div>
     </div>

@@ -16,7 +16,7 @@ export default function CandidateLayout({
 
   return (
     <AuthGuard allowedRoles={["CANDIDATE"]}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+      <div className="flex h-screen dark:bg-[#050816] bg-[#f8fafc] overflow-hidden font-sans transition-colors duration-300">
         <Sidebar />
 
         <div className="relative flex flex-col flex-1 overflow-hidden z-10 transition-all duration-300">

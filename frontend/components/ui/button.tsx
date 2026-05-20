@@ -4,24 +4,32 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white hover:bg-blue-700",
-        destructive: "bg-red-600 text-white hover:bg-red-700",
-        outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
-        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
-        ghost: "hover:bg-gray-100 text-gray-700",
-        link: "text-blue-600 underline-offset-4 hover:underline",
-        success: "bg-green-600 text-white hover:bg-green-700",
-        warning: "bg-yellow-500 text-white hover:bg-yellow-600",
+        default:
+          "bg-gradient-to-r from-[#003b9a] to-[#0050cb] text-white shadow-lg shadow-[#003b9a]/25 hover:shadow-xl hover:shadow-[#003b9a]/30 hover:brightness-110",
+        destructive:
+          "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 hover:brightness-110",
+        outline:
+          "border border-border bg-[var(--glass-bg)] backdrop-blur-sm text-foreground shadow-sm hover:bg-muted hover:shadow-md",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
+        ghost:
+          "text-muted-foreground hover:bg-muted hover:text-foreground",
+        link:
+          "text-primary underline-offset-4 hover:underline",
+        success:
+          "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 hover:brightness-110",
+        warning:
+          "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 hover:brightness-110",
       },
       size: {
-        default: "h-8 px-3 py-1.5",
-        sm: "h-7 rounded-md px-2.5 text-[11px]",
-        lg: "h-9 rounded-md px-6",
-        icon: "h-8 w-8",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-lg px-3 text-[11px]",
+        lg: "h-10 rounded-xl px-6 text-sm",
+        icon: "h-9 w-9 rounded-xl",
       },
     },
     defaultVariants: {

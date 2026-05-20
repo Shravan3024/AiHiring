@@ -171,7 +171,7 @@ export default function HRDashboard() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative group">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input className="pl-8 h-8 w-60 bg-white border-border/50 rounded-md text-xs font-medium" placeholder="Search candidates, roles, skills..." />
+              <Input className="pl-8 h-8 w-60 bg-white/40 border-white/30 rounded-xl text-xs font-medium" placeholder="Search candidates, roles, skills..." />
             </div>
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function HRDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
           {/* Pipeline Overview */}
-          <Card className="lg:col-span-6 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+          <Card className="lg:col-span-6 border-border/40 shadow-sm rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Target className="w-3.5 h-3.5 text-primary" /> Pipeline Overview
@@ -283,7 +283,7 @@ export default function HRDashboard() {
           <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* AI Insights */}
-            <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+            <Card className="border-border/40 shadow-sm rounded-2xl overflow-hidden">
               <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
                 <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-amber-500" /> AI Insights
@@ -313,7 +313,7 @@ export default function HRDashboard() {
             </Card>
 
             {/* Top Candidate Spotlight */}
-            <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden border-t-2 border-t-emerald-500">
+            <Card className="border-border/40 shadow-sm rounded-2xl overflow-hidden border-t-2 border-t-emerald-500">
               <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
                 <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                   <Trophy className="w-3.5 h-3.5 text-emerald-500" /> Top Candidate
@@ -374,7 +374,7 @@ export default function HRDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-8">
 
           {/* Evaluation Summary */}
-          <Card className="lg:col-span-8 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+          <Card className="lg:col-span-8 border-border/40 shadow-sm rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-primary" /> Evaluation Summary
@@ -447,17 +447,17 @@ export default function HRDashboard() {
                   <div className="h-32 w-full">
                     <ResponsiveContainer minWidth={1} minHeight={1} width="100%" height="100%">
                       <LineChart data={sparkData.map((d, i) => ({ ...d, x: i }))}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dde9ff" />
                         <XAxis dataKey="x" hide />
                         <YAxis hide />
-                        <Tooltip contentStyle={{ fontSize: '10px', padding: '4px 8px' }} />
-                        <Line type="monotone" dataKey="v" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3, fill: '#0ea5e9' }} />
+                        <Tooltip contentStyle={{ fontSize: '10px', padding: '6px 10px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.4)' }} />
+                        <Line type="monotone" dataKey="v" stroke="#003b9a" strokeWidth={2} dot={{ r: 3, fill: '#003b9a' }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="flex justify-center gap-4 pt-2">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-0.5 rounded-full" style={{ backgroundColor: "#0ea5e9" }}></div>
+                      <div className="w-2 h-0.5 rounded-full" style={{ backgroundColor: "#003b9a" }}></div>
                       <span className="text-[8px] font-bold uppercase text-muted-foreground tracking-wider">Hired</span>
                     </div>
                   </div>
@@ -468,7 +468,7 @@ export default function HRDashboard() {
           </Card>
 
           {/* Pending Actions */}
-          <Card className="lg:col-span-4 border-border/40 bg-white shadow-sm rounded-xl overflow-hidden h-fit">
+          <Card className="lg:col-span-4 border-border/40 shadow-sm rounded-2xl overflow-hidden h-fit">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-rose-500" /> Action Items
@@ -504,7 +504,7 @@ export default function HRDashboard() {
 
         {/* ROW 4: MD Decisions & Recent Hires */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-8">
-          <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+          <Card className="border-border/40 shadow-sm rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-purple-500" /> MD Decisions
@@ -558,7 +558,7 @@ export default function HRDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/40 bg-white shadow-sm rounded-xl overflow-hidden">
+          <Card className="border-border/40 shadow-sm rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/40 px-4 py-2.5 flex flex-row items-center justify-between bg-muted/20">
               <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5 text-primary" /> Recently Hired Candidates

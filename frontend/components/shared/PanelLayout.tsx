@@ -24,7 +24,7 @@ export default function PanelLayout({
   return (
     <AuthGuard allowedRoles={allowedRoles}>
       <div className={cn(
-        "flex h-screen bg-slate-50 overflow-hidden font-sans selection:bg-blue-200",
+        "flex h-screen dark:bg-[#050816] bg-[#f8f9ff] overflow-hidden font-sans selection:bg-blue-200 transition-colors duration-300",
         fullScreen ? "w-screen" : "w-full industrial-grid"
       )}>
         {!fullScreen && <Sidebar />}

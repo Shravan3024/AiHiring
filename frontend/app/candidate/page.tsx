@@ -143,10 +143,10 @@ export default function CandidateDashboard() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Welcome, {user?.name?.split(" ")[0] || "Candidate"}! 👋</h2>
-          <p className="text-slate-500 font-medium text-sm">Your career journey at AI Hiring System starts here.</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Welcome, {user?.name?.split(" ")[0] || "Candidate"}! 👋</h2>
+          <p className="text-muted-foreground font-medium text-sm">Your career journey at AI Hiring System starts here.</p>
         </div>
-        <Button onClick={() => router.push("/candidate/profile")} className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-100 h-10 px-5 rounded-md font-semibold shadow-sm flex items-center gap-2 transition-all text-xs">
+        <Button onClick={() => router.push("/candidate/profile")} className="bg-white/60 hover:bg-white/80 text-foreground border border-white/30 h-10 px-5 rounded-xl font-semibold shadow-sm flex items-center gap-2 transition-all text-xs backdrop-blur-sm">
           Update Profile <ArrowRight className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -154,18 +154,18 @@ export default function CandidateDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Applications List */}
         <div className="lg:col-span-8 space-y-6">
-          <Card className="border border-slate-100 shadow-sm rounded-xl bg-white overflow-hidden">
-            <CardHeader className="p-6 pb-3 flex flex-row items-center justify-between border-b border-slate-50">
-              <CardTitle className="text-sm font-bold text-slate-900">Active Applications</CardTitle>
+          <Card className="border border-border/40 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="p-6 pb-3 flex flex-row items-center justify-between border-b border-border/30">
+              <CardTitle className="text-sm font-bold text-foreground">Active Applications</CardTitle>
               <Badge className="bg-blue-50 text-blue-600 px-3 py-1 rounded border-none font-semibold text-[10px]">{apps.length} Roles</Badge>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-slate-50">
+              <div className="divide-y divide-border/30">
                 {apps.length > 0 ? apps.map((app: any, idx: number) => (
                   <div
                     key={app.id || idx}
                     onClick={() => router.push(`/candidate/application/${app.id}`)}
-                    className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50/50 transition-all cursor-pointer group border-b border-slate-50 last:border-0"
+                    className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-primary/[0.04] transition-all cursor-pointer group border-b border-border/30 last:border-0"
                   >
                     <div className="flex items-center gap-4 mb-3 md:mb-0">
                       <div className={cn(
@@ -175,8 +175,8 @@ export default function CandidateDashboard() {
                         {idx % 3 === 0 ? <Beaker className="w-5 h-5" /> : idx % 3 === 1 ? <FlaskConical className="w-5 h-5" /> : <Layout className="w-5 h-5" />}
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{app.jobId?.title || "Role Title"}</h4>
-                        <div className="flex items-center gap-1.5 text-slate-400 mt-0.5">
+                        <h4 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{app.jobId?.title || "Role Title"}</h4>
+                        <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
                           <Briefcase className="w-3 h-3" />
                           <span className="text-[11px] font-medium">AI Hiring System Pvt. Ltd.</span>
                         </div>
@@ -188,29 +188,29 @@ export default function CandidateDashboard() {
                         {app.status?.replace(/_/g, " ") || "APPLIED"}
                       </Badge>
                       <div className="text-right hidden xl:block min-w-[80px]">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Applied On</p>
-                        <p className="text-[12px] font-semibold text-slate-900 mt-0.5">{app.applied_at ? new Date(app.applied_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "26 Apr 2026"}</p>
+                       <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Applied On</p>
+                        <p className="text-[12px] font-semibold text-foreground mt-0.5">{app.applied_at ? new Date(app.applied_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "26 Apr 2026"}</p>
                       </div>
-                      <div className="w-7 h-7 rounded bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <div className="w-7 h-7 rounded bg-muted/30 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
                 )) : (
                   <div className="p-6 text-center space-y-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center mx-auto">
-                      <Search className="w-5 h-5 text-slate-300" />
+                    <div className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center mx-auto">
+                      <Search className="w-5 h-5 text-muted-foreground/40" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-slate-900">No active applications</h4>
-                      <p className="text-xs text-slate-400 font-medium mt-1">You haven't applied for any positions yet.</p>
+                      <h4 className="text-sm font-semibold text-foreground">No active applications</h4>
+                      <p className="text-xs text-muted-foreground font-medium mt-1">You haven't applied for any positions yet.</p>
                     </div>
                     <Button onClick={() => router.push("/candidate/application")} className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-md font-semibold text-xs">Browse Open Positions</Button>
                   </div>
                 )}
               </div>
               {apps.length > 0 && (
-                <div className="p-4 border-t border-slate-50 text-center bg-slate-50/30">
+                <div className="p-4 border-t border-border/30 text-center bg-muted/10">
                   <Button variant="link" className="text-blue-600 font-semibold text-xs hover:no-underline flex items-center gap-1.5 mx-auto h-auto p-0" onClick={() => router.push("/candidate/application")}>
                     View All Applications <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
@@ -221,20 +221,20 @@ export default function CandidateDashboard() {
 
           {/* What's Next Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900">How our process works</h3>
+            <h3 className="text-sm font-bold text-foreground">How our process works</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { title: "Assessments", desc: "Showcase your skills through curated technical tests.", icon: ClipboardList, color: "bg-blue-50 text-blue-600" },
                 { title: "Interviews", desc: "Interact with our lead engineers and hiring managers.", icon: Video, color: "bg-emerald-50 text-emerald-600" },
                 { title: "Offer", desc: "Receive a formal offer and join our innovative team.", icon: Zap, color: "bg-purple-50 text-purple-600" }
               ].map((item, i) => (
-                <Card key={i} className="border border-slate-100 shadow-sm rounded-xl bg-white p-5 flex flex-col gap-4 group hover:shadow-md transition-all">
+                <Card key={i} className="border border-border/40 shadow-sm rounded-2xl p-5 flex flex-col gap-4 group hover:shadow-md transition-all">
                   <div className={cn("w-10 h-10 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform duration-300", item.color)}>
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-[13px]">{item.title}</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
+                    <h4 className="font-semibold text-foreground text-[13px]">{item.title}</h4>
+                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
                   </div>
                 </Card>
               ))}
@@ -244,14 +244,14 @@ export default function CandidateDashboard() {
 
         {/* Sidebar: Next Steps */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="border border-slate-100 shadow-sm rounded-xl bg-white overflow-hidden p-6">
-            <h3 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2.5">
+          <Card className="border border-border/40 shadow-sm rounded-2xl overflow-hidden p-6">
+            <h3 className="text-sm font-bold text-foreground mb-6 flex items-center gap-2.5">
               <Activity className="w-4 h-4 text-blue-600" /> Next Steps
             </h3>
 
             <div className="relative space-y-6">
               {/* Vertical Line */}
-              <div className="absolute left-[15px] top-[24px] bottom-[24px] w-0.5 border-l-2 border-dashed border-slate-100" />
+              <div className="absolute left-[15px] top-[24px] bottom-[24px] w-0.5 border-l-2 border-dashed border-border/40" />
 
               {nextSteps.map((step, i) => (
                 <div key={i} className="flex items-start gap-4 relative z-10 group">
@@ -265,7 +265,7 @@ export default function CandidateDashboard() {
                   </div>
                   <div className="flex-1 pt-0.5">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h4 className={cn("font-semibold text-[13px]", step.status === "current" ? "text-blue-600" : "text-slate-900")}>{step.label}</h4>
+                      <h4 className={cn("font-semibold text-[13px]", step.status === "current" ? "text-primary" : "text-foreground")}>{step.label}</h4>
                       <span className={cn(
                         "text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded",
                         step.status === "completed" ? "bg-emerald-50 text-emerald-600" :
@@ -273,7 +273,7 @@ export default function CandidateDashboard() {
                             "bg-slate-50 text-slate-400"
                       )}>{step.date}</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
                       {step.desc}
                     </p>
                   </div>
@@ -281,8 +281,8 @@ export default function CandidateDashboard() {
               ))}
             </div>
 
-            <div className="mt-8 p-4 bg-slate-50 rounded-lg border border-slate-100">
-              <div className="flex items-center gap-3 text-slate-500">
+            <div className="mt-8 p-4 bg-muted/20 rounded-xl border border-border/40">
+              <div className="flex items-center gap-3 text-muted-foreground">
                 <HelpCircle className="w-4 h-4 shrink-0" />
                 <p className="text-[11px] leading-tight">Need assistance? <button onClick={() => router.push("/contact")} className="text-blue-600 font-semibold hover:underline">Contact Support</button></p>
               </div>
@@ -290,7 +290,7 @@ export default function CandidateDashboard() {
           </Card>
 
           {/* Mini Banner */}
-          <Card className="border border-blue-600 shadow-sm rounded-xl bg-blue-600 p-6 text-white relative overflow-hidden group">
+          <Card className="border border-primary shadow-sm rounded-2xl bg-gradient-to-br from-[#003b9a] to-[#0050cb] p-6 text-white relative overflow-hidden group">
             <div className="relative z-10 space-y-3">
               <h4 className="text-[13px] font-bold">Top 1% Candidate?</h4>
               <p className="text-blue-100 text-[11px] leading-relaxed">Verified profiles get 3x more interview invites. Update your skills now.</p>
@@ -304,7 +304,7 @@ export default function CandidateDashboard() {
       </div>
 
       {/* Footer Disclaimer */}
-      <div className="pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400">
+      <div className="pt-6 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4 text-muted-foreground">
         <div className="flex items-center gap-3">
           <ShieldCheck className="w-4 h-4 text-blue-600/50" />
           <p className="text-[11px] font-medium">Data secured with AES-256 encryption. Powered by AI Hiring System AI.</p>

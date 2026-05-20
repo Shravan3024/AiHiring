@@ -83,8 +83,8 @@ export default function Topbar({ title }: { title?: string }) {
 
   return (
     <header className={cn(
-      "h-11 px-4 flex items-center justify-between sticky top-0 z-40 border-b backdrop-blur-xl transition-all duration-300",
-      "bg-background/80 border-border/40 shadow-sm"
+      "h-14 px-5 flex items-center justify-between sticky top-0 z-40 border-b backdrop-blur-[24px] transition-all duration-300",
+      "bg-white/50 border-white/40 shadow-sm"
     )}>
       {/* Left: Section Title */}
       <div className="flex items-center gap-3">
@@ -113,8 +113,8 @@ export default function Topbar({ title }: { title?: string }) {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <input
             className={cn(
-              "pl-8 pr-3 py-1.5 text-[10px] font-medium border rounded-md focus:outline-none transition-all w-48 uppercase tracking-wider",
-              "bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 focus:bg-background focus:ring-1 focus:ring-primary/20 focus:border-primary/50"
+              "pl-8 pr-3 py-1.5 text-[10px] font-medium border rounded-xl focus:outline-none transition-all w-48 uppercase tracking-wider",
+              "bg-white/40 border-white/30 text-foreground placeholder:text-muted-foreground/60 focus:bg-white/60 focus:ring-2 focus:ring-primary/20 focus:border-primary/30"
             )}
             placeholder="Search Entities..."
             value={search}

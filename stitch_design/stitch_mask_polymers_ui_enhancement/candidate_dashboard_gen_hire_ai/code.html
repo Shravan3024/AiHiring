@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Candidate Dashboard | Gen Hire AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Inter:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9ff;
+            overflow-x: hidden;
+        }
+        .font-h1 { font-family: 'Space Grotesk', sans-serif; }
+        .font-h2 { font-family: 'Space Grotesk', sans-serif; }
+        .font-h3 { font-family: 'Space Grotesk', sans-serif; }
+        .font-nav-item { font-family: 'Space Grotesk', sans-serif; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .industrial-blur-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('https://lh3.googleusercontent.com/aida/ADBb0uiYc7135bFLA-dBTgB1LCUntnKOwXvi17RUF2CLv9TNJbnfTa4cxseFik_FAdrtCIV0fIDkcvHKOLfl_1T0d-KTxnObi_znzlaVumEDXpVJMFeRJRQtLX1V4cFzFAJtjcbZadXEKHTdExRQUWwsPX3WvPyvZxGaGgCh2cl08L5dGdssvUcP90a_E7GBXtW8AK7IsglYwG5FU4eCYwl9n8WTmuXWXVayBURp4_awYDtERbaZZYU3jxc');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.12;
+            filter: blur(60px);
+        }
+
+        .active-glow {
+            box-shadow: 0 0 20px rgba(0, 59, 154, 0.15);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .step-line {
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: -8px;
+            width: 2px;
+            background: #d3e3ff;
+            z-index: 0;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "surface-container": "#e6eeff",
+                "glass-fill": "rgba(255, 255, 255, 0.5)",
+                "inverse-surface": "#213146",
+                "primary-fixed": "#dae1ff",
+                "on-secondary-fixed": "#0c1e26",
+                "status-warning": "#F59E0B",
+                "on-surface": "#0b1c30",
+                "surface-container-highest": "#d3e3ff",
+                "primary-container": "#0050cb",
+                "on-secondary-fixed-variant": "#384953",
+                "secondary-fixed": "#d3e5f1",
+                "on-error": "#ffffff",
+                "inverse-primary": "#b3c5ff",
+                "primary": "#003b9a",
+                "on-tertiary-fixed-variant": "#003fa4",
+                "on-surface-variant": "#434654",
+                "tertiary-fixed-dim": "#b3c5ff",
+                "outline-variant": "#c3c6d6",
+                "outline": "#737685",
+                "on-primary": "#ffffff",
+                "on-tertiary-fixed": "#001849",
+                "on-primary-container": "#c1cfff",
+                "surface-variant": "#d3e3ff",
+                "surface-container-high": "#dde9ff",
+                "on-secondary-container": "#54656f",
+                "inverse-on-surface": "#ebf1ff",
+                "glass-border": "rgba(255, 255, 255, 0.4)",
+                "surface-container-lowest": "#ffffff",
+                "on-tertiary": "#ffffff",
+                "surface-container-low": "#eff4ff",
+                "on-tertiary-container": "#c2cfff",
+                "status-success": "#22C55E",
+                "on-error-container": "#93000a",
+                "on-primary-fixed": "#001849",
+                "on-secondary": "#ffffff",
+                "secondary-fixed-dim": "#b7c9d5",
+                "primary-fixed-dim": "#b3c5ff",
+                "on-primary-fixed-variant": "#003fa4",
+                "tertiary": "#003b9a",
+                "surface-bright": "#f8f9ff",
+                "tertiary-fixed": "#dae1ff",
+                "tertiary-container": "#0050cb",
+                "surface": "#f8f9ff",
+                "status-error": "#BA1A1A",
+                "background": "#f8f9ff",
+                "secondary": "#50616b",
+                "secondary-container": "#d0e2ee",
+                "surface-tint": "#1155d0",
+                "surface-dim": "#cbdbf6",
+                "industrial-bg": "#F0F4F8",
+                "on-background": "#0b1c30",
+                "error": "#ba1a1a",
+                "error-container": "#ffdad6"
+              },
+              "spacing": {
+                "xxl": "80px",
+                "lg": "24px",
+                "md": "16px",
+                "xxs": "4px",
+                "sm": "12px",
+                "sidebar-width": "20rem",
+                "xs": "8px",
+                "xl": "48px"
+              },
+              "fontFamily": {
+                "h3": ["Space Grotesk"],
+                "nav-item": ["Space Grotesk"],
+                "h2": ["Space Grotesk"],
+                "label-caps": ["Inter"],
+                "body-md": ["Inter"],
+                "body-sm": ["Inter"],
+                "h1": ["Space Grotesk"]
+              },
+              "fontSize": {
+                "h3": ["26px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "nav-item": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                "h2": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "body-md": ["17px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "body-sm": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "h1": ["52px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-industrial-bg">
+<div class="industrial-blur-bg"></div>
+<!-- Side Navigation -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar-width glass-panel border-r border-glass-border flex flex-col p-md z-50">
+<div class="mb-xl px-4 pt-4">
+<h1 class="font-h3 text-h3 font-bold text-primary tracking-tight">Gen Hire AI</h1>
+<p class="font-body-sm text-[11px] uppercase tracking-[0.2em] text-on-surface-variant/70 mt-1">AI HR Intelligence</p>
+</div>
+<nav class="flex-1 space-y-2">
+<p class="px-4 text-[10px] font-bold text-outline uppercase tracking-widest mb-4">Operational Hub</p>
+<a class="bg-primary text-on-primary shadow-primary/25 font-nav-item uppercase rounded-lg px-4 py-3 flex items-center gap-3 transition-all scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                DASHBOARD
+            </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/40 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">groups</span>
+                TALENT POOL
+            </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/40 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">video_chat</span>
+                INTERVIEWS
+            </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/40 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">insights</span>
+                ANALYTICS
+            </a>
+<div class="pt-8">
+<p class="px-4 text-[10px] font-bold text-outline uppercase tracking-widest mb-4">Profile &amp; Settings</p>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/40 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">person</span>
+                    PROFILE
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/40 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+                    SETTINGS
+                </a>
+</div>
+</nav>
+<div class="mt-auto pt-md space-y-1">
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-glass-border/20 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">help</span>
+                Support
+            </a>
+<a class="text-error font-nav-item uppercase px-4 py-3 flex items-center gap-3 hover:bg-error/10 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-sidebar-width min-h-screen relative">
+<!-- Top Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-20rem)] z-40 glass-panel border-b border-glass-border flex justify-between items-center px-xl py-md">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+<input class="w-full bg-white/40 border-none rounded-xl pl-10 pr-4 py-2 text-body-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Search applications, roles, or insights..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 border-r border-outline-variant pr-6">
+<button class="relative p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">account_tree</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings_suggest</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right hidden xl:block">
+<p class="font-bold text-body-sm text-on-surface leading-none">Candidate User</p>
+<p class="text-[10px] text-primary font-bold uppercase tracking-tighter">CANDIDATE</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow-lg shadow-primary/20 overflow-hidden">
+<img alt="Recruiter Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a person with a friendly expression, captured with soft, natural lighting. The background is a slightly out-of-focus modern office setting, consistent with a clean and professional corporate aesthetic. The overall mood is approachable and expert, utilizing neutral tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqawhSl8fS3D_SpvQDN3CBz3adCjiH6pxCYHXdPrCTogjk631onlDfhKGkeCSyhJSuomMNrXhr4Mt33f4KawpDDYrzaioM3HYM9j0a40e4JK7RU3S1x7aqgvQw25QwtfUjhGcB0nzEfEHo8WBTyi9y0rCumo1lrSWeewBHpAxK77b-ezP_X-n9oNqsSV6b_GnKKat0bViV5n6DAelg-gf0lh2SSp8ayjze3g24A31Lz5793jtyvRAQWJXN6a2LnC3USBO7MQWa"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-[100px] px-xl pb-xl max-w-[1440px] mx-auto">
+<!-- Welcome Header -->
+<div class="flex justify-between items-end mb-xl">
+<div>
+<h2 class="font-h2 text-h2 text-on-surface mb-2">Welcome, Candidate! 👋</h2>
+<p class="text-body-md text-on-surface-variant/80">Your career journey at Gen Hire AI starts here. Track your progress in real-time.</p>
+</div>
+<button class="px-6 py-3 bg-primary text-on-primary rounded-xl font-nav-item flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/30">
+                    UPDATE PROFILE
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-12 gap-lg">
+<!-- Main Column: Active Applications -->
+<div class="col-span-12 lg:col-span-8 space-y-lg">
+<div class="glass-panel rounded-xxl p-lg">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-h3 text-on-surface flex items-center gap-3">
+                                Active Applications
+                                <span class="bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5 rounded-full uppercase">4 Roles</span>
+</h3>
+<button class="text-primary text-[12px] font-bold uppercase tracking-wider hover:underline">View All Applications</button>
+</div>
+<div class="space-y-4">
+<!-- Job Card 1 -->
+<div class="group relative flex items-center justify-between p-md rounded-xl hover:bg-white/60 transition-all border border-transparent hover:border-glass-border">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">precision_manufacturing</span>
+</div>
+<div>
+<h4 class="font-bold text-body-md text-on-surface">Rubber Process Engineer</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-outline">apartment</span>
+<p class="text-body-sm text-outline-variant">Gen Hire AI Systems Pvt. Ltd.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-12">
+<div class="hidden md:block">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Status</span>
+<span class="px-3 py-1 bg-surface-container-highest text-primary font-bold text-[11px] rounded-lg border border-primary/10">PROCEED TO HR</span>
+</div>
+<div class="hidden sm:block text-right">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Applied On</span>
+<p class="text-body-sm font-mono-data text-on-surface">31 Mar 2026</p>
+</div>
+<button class="p-2 rounded-full hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Job Card 2 -->
+<div class="group relative flex items-center justify-between p-md rounded-xl hover:bg-white/60 transition-all border border-transparent hover:border-glass-border">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined text-3xl">biotech</span>
+</div>
+<div>
+<h4 class="font-bold text-body-md text-on-surface">Assistant Manager - Marketing</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-outline">apartment</span>
+<p class="text-body-sm text-outline-variant">Gen Hire AI Systems Pvt. Ltd.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-12">
+<div class="hidden md:block">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Status</span>
+<span class="px-3 py-1 bg-surface-container-highest text-primary font-bold text-[11px] rounded-lg border border-primary/10">PROCEED TO HR</span>
+</div>
+<div class="hidden sm:block text-right">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Applied On</span>
+<p class="text-body-sm font-mono-data text-on-surface">23 Mar 2026</p>
+</div>
+<button class="p-2 rounded-full hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Job Card 3 -->
+<div class="group relative flex items-center justify-between p-md rounded-xl hover:bg-white/60 transition-all border border-transparent hover:border-glass-border">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+<span class="material-symbols-outlined text-3xl">view_quilt</span>
+</div>
+<div>
+<h4 class="font-bold text-body-md text-on-surface">Executive - Marketing</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-outline">apartment</span>
+<p class="text-body-sm text-outline-variant">Gen Hire AI Systems Pvt. Ltd.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-12">
+<div class="hidden md:block">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Insight</span>
+<span class="px-3 py-1 bg-surface-container text-on-surface-variant font-bold text-[11px] rounded-lg">RECOMMENDED BY AI</span>
+</div>
+<div class="hidden sm:block text-right">
+<span class="text-[10px] font-bold text-outline uppercase block mb-1">Applied On</span>
+<p class="text-body-sm font-mono-data text-on-surface">20 Nov 2025</p>
+</div>
+<button class="p-2 rounded-full hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Process Visualizer -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-md">
+<div class="glass-panel p-md rounded-xl flex flex-col items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h5 class="font-bold text-on-surface text-body-sm">Resume Analysis</h5>
+<p class="text-[12px] text-outline mt-1 leading-relaxed">AI engine parses and scores your skill set against the role.</p>
+</div>
+</div>
+<div class="glass-panel p-md rounded-xl flex flex-col items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-status-success/10 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined">videocam</span>
+</div>
+<div>
+<h5 class="font-bold text-on-surface text-body-sm">AI Interview</h5>
+<p class="text-[12px] text-outline mt-1 leading-relaxed">Engage with our intelligent recruiter avatar for first-round screening.</p>
+</div>
+</div>
+<div class="glass-panel p-md rounded-xl flex flex-col items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-status-warning/10 flex items-center justify-center text-status-warning">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<h5 class="font-bold text-on-surface text-body-sm">Fast-Track Match</h5>
+<p class="text-[12px] text-outline mt-1 leading-relaxed">High-match candidates move directly to final round human reviews.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar Column: Next Steps -->
+<div class="col-span-12 lg:col-span-4 space-y-lg">
+<div class="glass-panel rounded-xxl p-lg h-full">
+<h3 class="font-h3 text-on-surface flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                            Next Steps
+                        </h3>
+<div class="relative pl-2">
+<!-- Step 1 -->
+<div class="relative flex gap-6 mb-8">
+<div class="step-line"></div>
+<div class="relative z-10 w-6 h-6 rounded-full bg-status-success flex items-center justify-center text-white ring-4 ring-white shadow-lg">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold text-body-sm text-on-surface">Profile Setup</h5>
+<span class="text-[9px] font-bold text-status-success bg-status-success/10 px-2 py-0.5 rounded uppercase">Completed</span>
+</div>
+<p class="text-[13px] text-on-surface-variant leading-relaxed">Your professional profile is 100% complete. Good job!</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex gap-6 mb-8">
+<div class="step-line"></div>
+<div class="relative z-10 w-6 h-6 rounded-full bg-status-success flex items-center justify-center text-white ring-4 ring-white shadow-lg">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold text-body-sm text-on-surface">Application Review</h5>
+<span class="text-[9px] font-bold text-status-success bg-status-success/10 px-2 py-0.5 rounded uppercase">Completed</span>
+</div>
+<p class="text-[13px] text-on-surface-variant leading-relaxed">Recruiters have evaluated your resume and background.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="relative flex gap-6 mb-8">
+<div class="step-line"></div>
+<div class="relative z-10 w-6 h-6 rounded-full bg-status-success flex items-center justify-center text-white ring-4 ring-white shadow-lg">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold text-body-sm text-on-surface">Skills Assessment</h5>
+<span class="text-[9px] font-bold text-status-success bg-status-success/10 px-2 py-0.5 rounded uppercase">Completed</span>
+</div>
+<p class="text-[13px] text-on-surface-variant leading-relaxed">Complete tests to showcase your technical skills.</p>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="relative flex gap-6 mb-8">
+<div class="step-line"></div>
+<div class="relative z-10 w-6 h-6 rounded-full bg-status-success flex items-center justify-center text-white ring-4 ring-white shadow-lg">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold text-body-sm text-on-surface">Technical Interview</h5>
+<span class="text-[9px] font-bold text-status-success bg-status-success/10 px-2 py-0.5 rounded uppercase">Completed</span>
+</div>
+<p class="text-[13px] text-on-surface-variant leading-relaxed">Live interaction with our technology engineering team.</p>
+</div>
+</div>
+<!-- Step 5 (Active) -->
+<div class="relative flex gap-6">
+<div class="relative z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white ring-4 ring-white shadow-xl animate-pulse">
+<span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-bold text-body-sm text-primary">Final Offer</h5>
+<span class="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">Received</span>
+</div>
+<p class="text-[13px] text-on-surface font-semibold leading-relaxed">Join the Gen Hire AI System family. Review your offer now.</p>
+</div>
+</div>
+</div>
+<div class="mt-12 p-md rounded-xl bg-surface-container-low border border-glass-border">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">help_center</span>
+<p class="text-body-sm font-medium">Need assistance?</p>
+</div>
+<button class="w-full py-2 bg-white rounded-lg text-primary text-[12px] font-bold uppercase tracking-widest border border-primary/20 hover:bg-primary hover:text-white transition-all">
+                                CONTACT SUPPORT
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Stats -->
+<div class="mt-xl grid grid-cols-1 lg:grid-cols-4 gap-lg">
+<div class="lg:col-span-3 glass-panel rounded-xxl p-lg relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 -translate-x-full group-hover:translate-x-0 transition-transform duration-700 pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="relative">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle class="text-outline-variant/30" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="2.5" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-xl font-bold text-primary leading-none">99%</span>
+<span class="text-[8px] font-bold text-outline uppercase tracking-tighter">SCORE</span>
+</div>
+</div>
+<div>
+<h4 class="font-h3 text-on-surface">Top 1% Candidate?</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Your combined AI score and interview performance place you in the global elite tier.</p>
+</div>
+</div>
+<div class="hidden xl:flex gap-4">
+<div class="text-center">
+<p class="text-[10px] font-bold text-outline uppercase">Speed</p>
+<p class="text-body-md font-mono-data text-primary">0.4s</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] font-bold text-outline uppercase">Match</p>
+<p class="text-body-md font-mono-data text-primary">High</p>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-panel rounded-xxl p-lg bg-primary/90 text-on-primary">
+<p class="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 opacity-80">Referral Program</p>
+<h4 class="font-h3 mb-2 leading-tight">Help friends grow.</h4>
+<p class="text-body-sm opacity-90 mb-6">Earn credits and fast-track status for successful hires you refer.</p>
+<button class="w-full py-3 bg-white text-primary rounded-xl font-nav-item hover:shadow-white/20 hover:scale-105 transition-all">
+                        INVITE COLLEAGUES
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for hover states on job cards
+        const cards = document.querySelectorAll('.group');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const chevron = card.querySelector('.material-symbols-outlined:last-child');
+                if(chevron) chevron.style.transform = 'translateX(4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                const chevron = card.querySelector('.material-symbols-outlined:last-child');
+                if(chevron) chevron.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body></html>

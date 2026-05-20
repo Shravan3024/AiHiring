@@ -73,13 +73,13 @@ export default function Sidebar() {
       className={cn(
         "relative z-30 flex flex-col transition-all duration-500 ease-in-out h-screen border-r",
         sidebarOpen ? "w-72" : "w-20",
-        "bg-card/40 backdrop-blur-xl border-border/40 shadow-sm"
+        "bg-white/50 backdrop-blur-[24px] border-white/40 shadow-sm"
       )}
     >
       {/* Header / Logo */}
-      <div className="relative flex items-center justify-between px-5 h-20 border-b border-border/40 bg-background/20">
+      <div className="relative flex items-center justify-between px-5 h-20 border-b border-white/30 bg-white/20">
         <div className={cn("flex items-center gap-3 transition-all duration-500", !sidebarOpen && "scale-0 invisible w-0")}>
-          <div className="w-10 h-10 industrial-gradient rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+          <div className="w-10 h-10 industrial-gradient rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
             <Cpu className="text-white w-6 h-6 animate-pulse" />
           </div>
           <div className="flex flex-col">
@@ -113,8 +113,8 @@ export default function Sidebar() {
               className={cn(
                 "group relative flex items-center gap-4 px-4 py-3.5 rounded-lg text-sm transition-all duration-300",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30 scale-[1.02]"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]"
+                  : "text-muted-foreground hover:bg-white/40 hover:text-foreground"
               )}
             >
               <item.icon className={cn(
@@ -133,7 +133,7 @@ export default function Sidebar() {
       </nav>
 
       {/* System Actions & Toggles */}
-      <div className="p-4 border-t border-border/40 space-y-3 bg-background/20">
+      <div className="p-4 border-t border-white/30 space-y-3 bg-white/20">
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className={cn(

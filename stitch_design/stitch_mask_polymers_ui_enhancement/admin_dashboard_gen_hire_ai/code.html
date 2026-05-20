@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gen Hire AI | Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e6eeff",
+                        "glass-fill": "rgba(255, 255, 255, 0.5)",
+                        "inverse-surface": "#213146",
+                        "primary-fixed": "#dae1ff",
+                        "on-secondary-fixed": "#0c1e26",
+                        "status-warning": "#F59E0B",
+                        "on-surface": "#0b1c30",
+                        "surface-container-highest": "#d3e3ff",
+                        "primary-container": "#0050cb",
+                        "on-secondary-fixed-variant": "#384953",
+                        "secondary-fixed": "#d3e5f1",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#b3c5ff",
+                        "primary": "#003b9a",
+                        "on-tertiary-fixed-variant": "#003fa4",
+                        "on-surface-variant": "#434654",
+                        "tertiary-fixed-dim": "#b3c5ff",
+                        "outline-variant": "#c3c6d6",
+                        "outline": "#737685",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#001849",
+                        "on-primary-container": "#c1cfff",
+                        "surface-variant": "#d3e3ff",
+                        "surface-container-high": "#dde9ff",
+                        "on-secondary-container": "#54656f",
+                        "inverse-on-surface": "#ebf1ff",
+                        "glass-border": "rgba(255, 255, 255, 0.4)",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-container": "#c2cfff",
+                        "status-success": "#22C55E",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#001849",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#b7c9d5",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "tertiary": "#003b9a",
+                        "surface-bright": "#f8f9ff",
+                        "tertiary-fixed": "#dae1ff",
+                        "tertiary-container": "#0050cb",
+                        "surface": "#f8f9ff",
+                        "status-error": "#BA1A1A",
+                        "background": "#f8f9ff",
+                        "secondary": "#50616b",
+                        "secondary-container": "#d0e2ee",
+                        "surface-tint": "#1155d0",
+                        "surface-dim": "#cbdbf6",
+                        "industrial-bg": "#F0F4F8",
+                        "on-background": "#0b1c30",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xxl": "80px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "xxs": "4px",
+                        "sm": "12px",
+                        "sidebar-width": "20rem",
+                        "xs": "8px",
+                        "xl": "48px",
+                        "container-margin": "3rem"
+                    },
+                    "fontFamily": {
+                        "h3": ["Space Grotesk"],
+                        "nav-item": ["Space Grotesk"],
+                        "h1-mobile": ["Space Grotesk"],
+                        "h2": ["Space Grotesk"],
+                        "label-caps": ["Inter"],
+                        "mono-data": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Space Grotesk"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["26px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "nav-item": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "h1-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "h2": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "mono-data": ["15px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "body-md": ["17px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-sm": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["52px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["20px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 100%);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .bg-industrial {
+            background-image: url('https://lh3.googleusercontent.com/aida/ADBb0uiYc7135bFLA-dBTgB1LCUntnKOwXvi17RUF2CLv9TNJbnfTa4cxseFik_FAdrtCIV0fIDkcvHKOLfl_1T0d-KTxnObi_znzlaVumEDXpVJMFeRJRQtLX1V4cFzFAJtjcbZadXEKHTdExRQUWwsPX3WvPyvZxGaGgCh2cl08L5dGdssvUcP90a_E7GBXtW8AK7IsglYwG5FU4eCYwl9n8WTmuXWXVayBURp4_awYDtERbaZZYU3jxc');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .bg-industrial-overlay {
+            background-color: rgba(240, 244, 248, 0.85);
+            backdrop-filter: blur(8px);
+        }
+        .pipeline-track {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .pipeline-fill {
+            height: 100%;
+            background: #003b9a;
+            border-radius: 4px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-industrial font-body-md text-on-surface min-h-screen overflow-x-hidden">
+<div class="bg-industrial-overlay min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-glass-fill backdrop-blur-[24px] border-r border-glass-border flex flex-col gap-sm p-md h-full z-50">
+<div class="flex items-center gap-md px-md py-lg mb-md">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">neurology</span>
+</div>
+<div>
+<h1 class="font-h3 text-h3 font-bold text-primary tracking-tight">Gen Hire AI</h1>
+<p class="font-body-sm text-body-sm opacity-60">AI HR Intelligence</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-xs overflow-y-auto">
+<p class="font-label-caps text-label-caps px-md mb-xs opacity-50 uppercase tracking-widest">Operational Hub</p>
+<a class="bg-primary text-on-primary shadow-primary/25 font-nav-item uppercase rounded-lg px-4 py-3 flex items-center gap-md group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                    DASHBOARD
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">groups</span>
+                    TALENT POOL
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">video_chat</span>
+                    INTERVIEWS
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">work</span>
+                    JOBS
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+                    WORKFLOWS
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">insights</span>
+                    ANALYTICS
+                </a>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    SETTINGS
+                </a>
+</nav>
+<div class="mt-auto pt-md border-t border-glass-border/50">
+<div class="bg-surface-container-low rounded-xl p-md mb-md">
+<div class="flex items-center justify-between mb-sm">
+<span class="material-symbols-outlined text-primary">brightness_4</span>
+<div class="w-8 h-4 bg-primary/20 rounded-full relative">
+<div class="absolute right-1 top-1 w-2 h-2 bg-primary rounded-full"></div>
+</div>
+</div>
+<p class="font-nav-item uppercase text-[10px]">Deep Space Mode</p>
+</div>
+<a class="text-on-surface-variant font-nav-item uppercase px-4 py-3 hover:bg-glass-border/40 transition-all rounded-lg flex items-center gap-md" href="#">
+<span class="material-symbols-outlined text-status-error">logout</span>
+                    TERMINATE SESSION
+                </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 ml-sidebar-width flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-20rem)] z-40 bg-glass-fill backdrop-blur-[24px] border-b border-glass-border flex justify-between items-center px-xl py-md">
+<div class="flex items-center gap-xl">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-white/40 border-none rounded-xl pl-10 pr-md py-2 w-80 focus:ring-2 focus:ring-primary/20 outline-none font-body-sm transition-all" placeholder="Search HR Intelligence..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-2 h-2 rounded-full bg-status-success animate-pulse"></div>
+<span class="font-label-caps text-label-caps uppercase opacity-60">Enterprise Intelligence • MAY 20 • 04:43 PM</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-nav-item uppercase shadow-lg shadow-primary/25 hover:scale-105 transition-transform">
+                        Hire Intelligence
+                    </button>
+<div class="flex gap-md text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications_active</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">account_tree</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">settings_suggest</span>
+</div>
+<div class="flex items-center gap-sm pl-md border-l border-glass-border">
+<div class="text-right">
+<p class="font-nav-item uppercase text-[10px]">ADMIN USER</p>
+<p class="font-bold text-primary leading-tight">SYSCORP GLOBAL</p>
+</div>
+<img alt="Recruiter Profile" class="w-10 h-10 rounded-full border-2 border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDM-cLUNx_R0e6szDpJN4cPPFEa__8IXpWAlpFwT4sTJNLsACn0XfnAiSz19VRZtNQw3sJ9bAsNmVkoDJzZddh5k0eLgm5mZxJuf7zj-zud_rU-jLM8J5qhKZWtZCbC4q58wBh_1wd1x8cdXZzLhJLtnhb9HTmekWKKOZPHo3azuYFAwus7z2RXpzRsb7SbGF-sA0ROmKhafKZ5quuSmaGS8GM7sQCL0b6IqqpoXP4QkmnA4ndQWycK6I5Nawaf2mnd1TTaJ08p"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="mt-xxl p-xl space-y-xl">
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg">
+<!-- Total Applications -->
+<div class="glass-panel rounded-xl p-lg relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">groups</span>
+</div>
+<div class="bg-status-success/10 text-status-success px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+                                +14%
+                            </div>
+</div>
+<p class="font-label-caps text-label-caps uppercase opacity-60 mb-xs">Total Applications</p>
+<h2 class="font-h1 text-[40px] text-on-surface leading-none">27</h2>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+</div>
+<!-- Active Vacancies -->
+<div class="glass-panel rounded-xl p-lg relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">work</span>
+</div>
+<div class="bg-status-success text-white px-2 py-1 rounded text-[10px] font-bold">
+                                3 LIVE
+                            </div>
+</div>
+<p class="font-label-caps text-label-caps uppercase opacity-60 mb-xs">Active Vacancies</p>
+<h2 class="font-h1 text-[40px] text-on-surface leading-none">4</h2>
+</div>
+<!-- Pending Decisions -->
+<div class="glass-panel rounded-xl p-lg relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-status-warning/10 flex items-center justify-center text-status-warning">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div class="bg-status-error/10 text-status-error px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                Priority
+                            </div>
+</div>
+<p class="font-label-caps text-label-caps uppercase opacity-60 mb-xs">Pending Decisions</p>
+<h2 class="font-h1 text-[40px] text-on-surface leading-none">4</h2>
+</div>
+<!-- Pipeline Velocity -->
+<div class="glass-panel rounded-xl p-lg relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-status-success/10 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div class="bg-status-success/20 text-status-success px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                Optimal
+                            </div>
+</div>
+<p class="font-label-caps text-label-caps uppercase opacity-60 mb-xs">Pipeline Velocity</p>
+<h2 class="font-h1 text-[40px] text-on-surface leading-none">8.2<span class="text-sm font-normal opacity-50 ml-1">d</span></h2>
+</div>
+</div>
+<!-- Main Visualization Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-xl">
+<!-- Operational Velocity Chart -->
+<div class="lg:col-span-2 glass-panel rounded-[2rem] p-xl flex flex-col">
+<div class="flex justify-between items-end mb-xl">
+<div>
+<h3 class="font-h2 text-h2 text-on-surface mb-xs uppercase">Operational Velocity</h3>
+<p class="font-label-caps text-label-caps uppercase opacity-50">Inbound Flow: Last 6 Periods</p>
+</div>
+<div class="flex gap-md">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-label-caps text-[10px] uppercase">Active</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+<span class="font-label-caps text-[10px] uppercase">Target</span>
+</div>
+</div>
+</div>
+<!-- SVG Chart -->
+<div class="flex-1 min-h-[300px] relative">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 300">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#003b9a" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#003b9a" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Grid Lines -->
+<line stroke="rgba(0,0,0,0.05)" stroke-dasharray="4" x1="0" x2="800" y1="50" y2="50"></line>
+<line stroke="rgba(0,0,0,0.05)" stroke-dasharray="4" x1="0" x2="800" y1="150" y2="150"></line>
+<line stroke="rgba(0,0,0,0.05)" stroke-dasharray="4" x1="0" x2="800" y1="250" y2="250"></line>
+<!-- Area Path -->
+<path d="M0,300 L0,250 C100,240 200,260 300,180 C400,100 500,80 600,150 C700,220 800,240 800,240 L800,300 Z" fill="url(#chartGradient)"></path>
+<!-- Line Path -->
+<path d="M0,250 C100,240 200,260 300,180 C400,100 500,80 600,150 C700,220 800,240 800,240" fill="none" stroke="#003b9a" stroke-linecap="round" stroke-width="4"></path>
+<!-- Pulse Point -->
+<circle cx="400" cy="100" fill="#003b9a" r="6">
+<animate attributename="r" dur="2s" repeatcount="indefinite" values="6;10;6"></animate>
+<animate attributename="opacity" dur="2s" repeatcount="indefinite" values="1;0.3;1"></animate>
+</circle>
+</svg>
+<div class="absolute left-0 top-0 h-full flex flex-col justify-between font-mono-data text-[12px] opacity-40">
+<span>12</span>
+<span>9</span>
+<span>6</span>
+<span>0</span>
+</div>
+</div>
+</div>
+<!-- Capability Conversion Funnel -->
+<div class="glass-panel rounded-[2rem] p-xl">
+<h3 class="font-h2 text-[28px] text-on-surface mb-xs uppercase">Capability Conversion</h3>
+<p class="font-label-caps text-label-caps uppercase opacity-50 mb-xl">Talent Acquisition Lifecycle</p>
+<div class="space-y-lg">
+<!-- Applied -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center font-nav-item uppercase text-[11px] font-bold">
+<span>Applied</span>
+<span class="text-primary">34</span>
+</div>
+<div class="pipeline-track">
+<div class="pipeline-fill" style="width: 100%;"></div>
+</div>
+</div>
+<!-- Shortlisted -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center font-nav-item uppercase text-[11px] font-bold">
+<span>Shortlisted</span>
+<span class="text-primary">14</span>
+</div>
+<div class="pipeline-track">
+<div class="pipeline-fill" style="width: 41%;"></div>
+</div>
+</div>
+<!-- Assessment -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center font-nav-item uppercase text-[11px] font-bold">
+<span>Assessment</span>
+<span class="text-primary">14</span>
+</div>
+<div class="pipeline-track">
+<div class="pipeline-fill" style="width: 41%;"></div>
+</div>
+</div>
+<!-- Interview -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center font-nav-item uppercase text-[11px] font-bold">
+<span>Interview</span>
+<span class="text-primary">7</span>
+</div>
+<div class="pipeline-track">
+<div class="pipeline-fill" style="width: 20%;"></div>
+</div>
+</div>
+<!-- Offer -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center font-nav-item uppercase text-[11px] font-bold">
+<span>Offer</span>
+<span class="text-primary">2</span>
+</div>
+<div class="pipeline-track">
+<div class="pipeline-fill" style="width: 6%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-xl p-md bg-primary/5 rounded-xl border border-primary/10">
+<div class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-[12px] opacity-70">Current conversion rate is <span class="font-bold text-primary">5.8%</span>, which is <span class="text-status-success font-bold">2.1% above</span> industry benchmark for chemical engineering roles.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Intelligence Feed -->
+<div class="glass-panel rounded-[2rem] p-xl">
+<div class="flex justify-between items-center mb-xl">
+<h3 class="font-h3 text-h3 uppercase tracking-tight">AI Talent Intelligence Feed</h3>
+<button class="text-primary font-nav-item uppercase text-[11px] border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors">View All Insights</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="flex gap-md p-md hover:bg-white/30 rounded-2xl transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0">
+<img alt="Candidate 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtHmBLPxIax45xSANz5NwSODLyc_Ad5r91MkoxUh479MqXnrJJb53w0Du_itB5pmEkrfkhfCQ-2b-8kcgbaoM0gfW3c79Jfk6nKavBFlzXl_964GZiXDuz1sfLRIIx8jo25vIWxPBdfnETSGFEulsp68VVWBw7PRx4rNIObea-qm6X2l0vqWwiJilreRoda_IOH5i8SgNPrZgdSFKHpdEDEluyGOpA70S_-Ls9ecpG75ErUZ-4OChO9Mjh6KzfGojLpWyMBtgD"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<h4 class="font-bold text-on-surface">Anna Kristine</h4>
+<span class="text-[10px] font-bold text-status-success bg-status-success/10 px-2 py-0.5 rounded">98% MATCH</span>
+</div>
+<p class="text-[12px] opacity-60 mb-sm">Senior Polymer Scientist • Shortlisted</p>
+<div class="flex gap-xs">
+<span class="px-2 py-0.5 bg-surface-container rounded text-[10px] font-bold">R&amp;D</span>
+<span class="px-2 py-0.5 bg-surface-container rounded text-[10px] font-bold">FLUOROPOLYMERS</span>
+</div>
+</div>
+</div>
+<div class="flex gap-md p-md hover:bg-white/30 rounded-2xl transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0">
+<img alt="Candidate 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzLFMk8_6GlMYGzrolQnP2lNkxEKMluMxkxAjbZDyA65aAmQ-uKQz2Q3-2TTO8yg2vI2lg4EM9KiBiK4aE1wyxJLTVKQZkoXXLneSD9Wi02_jAffw1uvpeiOwpU1KXaKZztQLrtTOHg_vjJuKC4hGm0W3jm5eXobc69zAjeUMp4Y1O-LKGutauW7fWCWj21bYY_M_CjFdSCc1PoavNW5nb8yPL9-mi7FnypkOIZ-E_68WZLQQ92T0-pRfTXARdbE3Oha0zLr0a"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<h4 class="font-bold text-on-surface">Marcus Thorne</h4>
+<span class="text-[10px] font-bold text-status-warning bg-status-warning/10 px-2 py-0.5 rounded">91% MATCH</span>
+</div>
+<p class="text-[12px] opacity-60 mb-sm">Industrial Process Engineer • In Review</p>
+<div class="flex gap-xs">
+<span class="px-2 py-0.5 bg-surface-container rounded text-[10px] font-bold">LEAN</span>
+<span class="px-2 py-0.5 bg-surface-container rounded text-[10px] font-bold">ISO-9001</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Micro-interaction: Mouse tracking glow effect for glass panels
+        document.addEventListener('mousemove', (e) => {
+            const panels = document.querySelectorAll('.glass-panel');
+            panels.forEach(panel => {
+                const rect = panel.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                panel.style.setProperty('--mouse-x', `${x}px`);
+                panel.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Initialize progress bars animation
+        window.addEventListener('DOMContentLoaded', () => {
+            const fills = document.querySelectorAll('.pipeline-fill');
+            fills.forEach(fill => {
+                const targetWidth = fill.style.width;
+                fill.style.width = '0';
+                setTimeout(() => {
+                    fill.style.width = targetWidth;
+                }, 300);
+            });
+        });
+    </script>
+</body></html>
