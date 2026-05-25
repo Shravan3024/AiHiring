@@ -205,7 +205,7 @@ export default function CandidateApplication() {
                   applications
                     .filter((app: any) => !searchTerm || app.job_title?.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map((app: any, idx: number) => (
-                      <TableRow key={app.id || idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
+                      <TableRow key={`app-${app.id || app._id || ''}-${idx}`} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
                         <TableCell className="px-5 py-6">
                           <div className="flex items-center gap-4">
                             <div className={cn(

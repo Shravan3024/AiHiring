@@ -83,8 +83,8 @@ export default function JobOffersPage() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {offers.map((app) => (
-            <Card key={app.id} className="rounded-[40px] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+          {offers.map((app, idx) => (
+            <Card key={`${app.id}-${idx}`} className="rounded-[40px] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                   {/* Left: Info */}

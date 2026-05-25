@@ -496,6 +496,7 @@ exports.submitResponsePhase5 = async (req, res) => {
       });
 
       let interviewScore = 0;
+      let aiAnalysis = null;
       try {
         logger.info(`[Interview AI] Running Gemini-2.0-flash analysis for session ${sessionId}`);
         
@@ -505,18 +506,24 @@ exports.submitResponsePhase5 = async (req, res) => {
           duration: q.response_duration_seconds
         }));
  
-        const aiAnalysis = await aiService.analyzeFullInterview(qaPairs, application.Job?.title);
-        
+        aiAnalysis = await aiService.analyzeFullInterview(qaPairs, application.Job?.title);
         interviewScore = aiAnalysis.overall_interview_score || 0;
         
+      } catch (aiErr) {
+        logger.error(`[Interview AI] Error: ${aiErr.message}`);
+        interviewScore = 0; // Fallback
+      }
+
+      // Always update session and application, regardless of AI success
+      try {
         await interviewSession.update({
           questions_asked: questionsAsked,
           status: 'COMPLETED',
           submitted_at: new Date(),
           overall_score: interviewScore,
-          dimension_scores: aiAnalysis.dimension_scores,
-          highlights: aiAnalysis.highlights,
-          hire_recommendation: aiAnalysis.recommendation?.toUpperCase().replace(/\s+/g, '_') || 'MAYBE'
+          dimension_scores: aiAnalysis?.dimension_scores || {},
+          highlights: aiAnalysis?.highlights || [],
+          hire_recommendation: aiAnalysis?.recommendation?.toUpperCase().replace(/\s+/g, '_') || 'MAYBE'
         });
  
         await application.update({
@@ -526,10 +533,8 @@ exports.submitResponsePhase5 = async (req, res) => {
         });
  
         logger.info(`[Interview AI] Score: ${interviewScore}, Analysis Persisted.`);
-        
-      } catch (aiErr) {
-        logger.error(`[Interview AI] Error: ${aiErr.message}`);
-        interviewScore = 0; // Fallback
+      } catch (dbErr) {
+        logger.error(`[Interview DB] Error saving final interview state: ${dbErr.message}`);
       }
  
       // Auto-rejection engine

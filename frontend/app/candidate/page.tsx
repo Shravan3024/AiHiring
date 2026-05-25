@@ -163,7 +163,7 @@ export default function CandidateDashboard() {
               <div className="divide-y divide-border/30">
                 {apps.length > 0 ? apps.map((app: any, idx: number) => (
                   <div
-                    key={app.id || idx}
+                    key={`app-${app.id || app._id || ''}-${idx}`}
                     onClick={() => router.push(`/candidate/application/${app.id}`)}
                     className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-primary/[0.04] transition-all cursor-pointer group border-b border-border/30 last:border-0"
                   >

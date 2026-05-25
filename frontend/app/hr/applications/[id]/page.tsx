@@ -68,6 +68,7 @@ export default function HRApplicationDetailsPage() {
   const { data: application, isLoading, error } = useQuery({
     queryKey: ["hr-application", applicationId],
     queryFn: async () => (await api.get(`/hr/applications/${applicationId}`)).data,
+    refetchInterval: 5000, // Poll every 5s for realtime updates
   });
 
   const appData = application?.data as ApplicationDetails;
@@ -75,6 +76,7 @@ export default function HRApplicationDetailsPage() {
   const { data: aiAnalysisRaw } = useQuery({
     queryKey: ["ai-analysis-full", applicationId],
     queryFn: async () => (await api.get(`/ai/analysis/${applicationId}`)).data,
+    refetchInterval: 5000, // Poll every 5s for realtime updates
   });
 
   const reparseMutation = useMutation({

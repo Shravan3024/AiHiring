@@ -117,12 +117,12 @@ export default function OffersCommunicationsPage() {
 
   const handleOfferSubmit = () => {
     createOfferMutation.mutate({
-      applicationId: offerForm.applicationId,
+      application_id: offerForm.applicationId,
       salary: Number(offerForm.salary),
       currency: offerForm.currency,
-      startDate: offerForm.startDate,
-      expiryDate: offerForm.expiryDate,
-      notes: offerForm.notes,
+      joining_date: offerForm.startDate,
+      expires_at: offerForm.expiryDate,
+      benefits: offerForm.notes,
       templateId: offerForm.templateId || undefined,
     });
   };

@@ -100,13 +100,14 @@ const parseResumeWithAI = async (filePath, jobContext = {}) => {
 const parseResumeWithGeminiDirect = async (filePath, jobContext = {}) => {
   try {
     const fs = require('fs');
-    const pdf = require('pdf-parse');
+    const { PDFParse } = require('pdf-parse');
     const dataBuffer = fs.readFileSync(filePath);
 
     let text = "";
     if (filePath.toLowerCase().endsWith('.pdf')) {
-      const pdfData = await pdf(dataBuffer);
-      text = pdfData.text;
+      const pdfInstance = new PDFParse({ data: dataBuffer });
+      const textResult = await pdfInstance.getText();
+      text = textResult.text;
     } else {
       text = dataBuffer.toString('utf-8');
     }
@@ -166,14 +167,15 @@ Evaluate ALL insights specifically for this role.
 const localResumeParser = async (filePath) => {
   try {
     const fs = require('fs');
-    const pdf = require('pdf-parse');
+    const { PDFParse } = require('pdf-parse');
     let text = "";
 
     try {
       const dataBuffer = fs.readFileSync(filePath);
       if (filePath.toLowerCase().endsWith('.pdf')) {
-        const pdfData = await pdf(dataBuffer);
-        text = pdfData.text;
+        const pdfInstance = new PDFParse({ data: dataBuffer });
+        const textResult = await pdfInstance.getText();
+        text = textResult.text;
       } else {
         text = dataBuffer.toString('utf-8');
       }

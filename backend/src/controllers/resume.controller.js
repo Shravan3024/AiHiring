@@ -35,9 +35,14 @@ exports.uploadResume = async (req, res) => {
 
     try {
       const dataBuffer = fs.readFileSync(req.file.path);
-      const pdfInstance = new PDFParse({ data: dataBuffer });
-      const textResult = await pdfInstance.getText();
-      const text = textResult.text;
+      let text = "";
+      if (req.file.path.toLowerCase().endsWith('.pdf')) {
+        const pdfInstance = new PDFParse({ data: dataBuffer });
+        const textResult = await pdfInstance.getText();
+        text = textResult.text;
+      } else {
+        text = dataBuffer.toString('utf-8');
+      }
 
       // ---------------- CGPA ----------------
       const cgpaMatch = text.match(/CGPA[\s:]*([0-9.]+)/i);
@@ -325,10 +330,23 @@ exports.uploadResume = async (req, res) => {
         });
 
         if (candidate) {
+          // Extract first education object if available
+          const firstEdu = aiParsedData.education && aiParsedData.education.length > 0 ? aiParsedData.education[0] : null;
+          
+          const safeInt = (val, fallback) => {
+            const parsed = parseInt(val);
+            return isNaN(parsed) ? fallback : parsed;
+          };
+
           await candidate.update({
-            experience_years: aiParsedData.experience_years || candidate.experience_years,
-            skills: aiParsedData.skills ? Object.values(aiParsedData.skills).flat() : candidate.skills,
-            education: aiParsedData.education?.[0]?.degree || candidate.education
+            experience_years: aiParsedData.experience_years !== undefined ? safeInt(aiParsedData.experience_years, candidate.experience_years) : candidate.experience_years,
+            skills: aiParsedData.skills ? (Array.isArray(aiParsedData.skills) ? aiParsedData.skills : Object.values(aiParsedData.skills).flat()) : candidate.skills,
+            education: aiParsedData.highest_qualification || firstEdu?.degree || candidate.education,
+            specialization: firstEdu?.specialization || candidate.specialization,
+            year_of_passout: firstEdu?.year_of_passout ? safeInt(firstEdu.year_of_passout, candidate.year_of_passout) : candidate.year_of_passout,
+            phone: aiParsedData.contact_info?.phone || candidate.phone,
+            summary: aiParsedData.summary || candidate.summary,
+            candidate_type: aiParsedData.candidate_type || (aiParsedData.experience_years === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL') || candidate.candidate_type
           });
         }
 
@@ -469,10 +487,22 @@ exports.reparseResume = async (req, res) => {
       experience_years: aiAnalysis.total_years_experience
     });
 
+    const firstEdu = aiParsedData.education && aiParsedData.education.length > 0 ? aiParsedData.education[0] : null;
+
+    const safeInt = (val, fallback) => {
+      const parsed = parseInt(val);
+      return isNaN(parsed) ? fallback : parsed;
+    };
+
     await candidate.update({
-        skills: aiParsedData.skills ? Object.values(aiParsedData.skills).flat() : candidate.skills,
-        education: aiParsedData.education?.[0]?.degree || candidate.education,
-        experience_years: aiAnalysis.total_years_experience || candidate.experience_years
+        experience_years: aiAnalysis.total_years_experience !== undefined ? safeInt(aiAnalysis.total_years_experience, candidate.experience_years) : candidate.experience_years,
+        skills: aiParsedData.skills ? (Array.isArray(aiParsedData.skills) ? aiParsedData.skills : Object.values(aiParsedData.skills).flat()) : candidate.skills,
+        education: aiParsedData.highest_qualification || firstEdu?.degree || candidate.education,
+        specialization: firstEdu?.specialization || candidate.specialization,
+        year_of_passout: firstEdu?.year_of_passout ? safeInt(firstEdu.year_of_passout, candidate.year_of_passout) : candidate.year_of_passout,
+        phone: aiParsedData.contact_info?.phone || candidate.phone,
+        summary: aiParsedData.summary || candidate.summary,
+        candidate_type: aiParsedData.candidate_type || (aiAnalysis.total_years_experience === 0 ? 'FRESHER' : 'WORKING_PROFESSIONAL') || candidate.candidate_type
     });
 
     logger.info(`[Reparse] Completed successfully for app ${applicationId}. Score: ${resumeScore}`);
